@@ -6,7 +6,29 @@
   <title>Robotics Dashboard</title>
 </head>
 <body>
-  <h1>Welcome to the Robotics Dashboard</h1>
-  <p>This is a live GitHub Pages site — more to come soon!</p>
+  <h1>Robotics Inventory Submission</h1>
+
+  <form action="https://formspree.io/f/mkgjpqgj" method="POST">
+    <label for="project">Select Project:</label><br>
+    <select name="Project" id="project" required>
+      <option value="">-- Choose a project --</option>
+      <option value="Project Alpha">Project Alpha</option>
+      <option value="Project Beta">Project Beta</option>
+      <option value="General Inventory Pull">General Inventory Pull</option>
+    </select><br><br>
+
+    <label for="part">Part Number:</label><br>
+    <input type="text" id="part" name="Part Number" required><br><br>
+
+    <label for="qty">Quantity:</label><br>
+    <input type="number" id="qty" name="Quantity" required min="1"><br><br>
+
+    <label for="notes">Notes (optional):</label><br>
+    <textarea id="notes" name="Notes" rows="3" cols="30"></textarea><br><br>
+
+    <button type="submit">Submit Request</button>
+  </form>
+
+  <p style="margin-top: 30px;">Submissions go straight to the assigned email. We’ll add multi-part entry and smarter dropdowns in the next step.</p>
 </body>
 </html>
