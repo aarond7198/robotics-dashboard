@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Robotics Inventory Dashboard</title>
+  <title>Inventory Tracking</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -12,6 +12,22 @@
       padding: 40px 20px;
       max-width: 800px;
       margin: auto;
+    }
+
+    nav {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    nav a {
+      text-decoration: none;
+      font-weight: 600;
+      margin: 0 15px;
+      color: #0055cc;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
     }
 
     h1 {
@@ -95,6 +111,11 @@
 </head>
 <body>
   <div id="overlay">✅ Request Submitted!</div>
+
+  <nav>
+    <a href="index.html">📦 Inventory Tracking</a>
+    <a href="orders.html">🧾 Order Tracking</a>
+  </nav>
 
   <h1>Inventory Request Form</h1>
 
@@ -189,11 +210,9 @@
       });
 
       if (response.ok) {
-        // Show overlay
         const overlay = document.getElementById("overlay");
         overlay.style.display = "flex";
 
-        // Clear everything
         parts.length = 0;
         document.getElementById("partTable").style.display = "none";
         form.reset();
