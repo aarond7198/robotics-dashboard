@@ -3,32 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Robotics Dashboard</title>
+  <title>Robotics Inventory Dashboard</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, textarea, button {
+      display: block;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      width: 100%;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
+    }
+  </style>
 </head>
 <body>
-  <h1>Robotics Inventory Submission</h1>
+  <h1>Inventory Part Request</h1>
 
-  <form action="https://formspree.io/f/mkgjpqgj" method="POST">
-    <label for="project">Select Project:</label><br>
+  <form id="main-form" action="https://formspree.io/f/mkgjpqgj" method="POST">
+    <label for="submittedBy">Submitted By:</label>
+    <input type="text" id="submittedBy" name="Submitted By" required>
+
+    <label for="project">Select Project:</label>
     <select name="Project" id="project" required>
       <option value="">-- Choose a project --</option>
       <option value="Project Alpha">Project Alpha</option>
       <option value="Project Beta">Project Beta</option>
       <option value="General Inventory Pull">General Inventory Pull</option>
-    </select><br><br>
+    </select>
 
-    <label for="part">Part Number:</label><br>
-    <input type="text" id="part" name="Part Number" required><br><br>
+    <hr>
 
-    <label for="qty">Quantity:</label><br>
-    <input type="number" id="qty" name="Quantity" required min="1"><br><br>
+    <h3>Add Part to Request</h3>
+    <label for="partNumber">Part Number:</label>
+    <input type="text" id="partNumber" />
 
-    <label for="notes">Notes (optional):</label><br>
-    <textarea id="notes" name="Notes" rows="3" cols="30"></textarea><br><br>
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" min="1" />
+
+    <label for="notes">Notes (optional):</label>
+    <input type="text" id="notes" />
+
+    <button type="button" onclick="addPart()">Add to List</button>
+
+    <table id="partTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>Part Number</th>
+          <th>Quantity</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <input type="hidden" name="Part List" id="partListData" />
 
     <button type="submit">Submit Request</button>
   </form>
 
-  <p style="margin-top: 30px;">Submissions go straight to the assigned email. We’ll add multi-part entry and smarter dropdowns in the next step.</p>
+  <script>
+    const parts = [];
+
+    function addPart() {
+      const part = document.getElementById("partNumber").value.trim();
+      const qty = document.getElementById("quantity").value.trim();
+      const notes = document.getElementById("notes").value.trim();
+
+      if (!part || !qty) {
+        alert("Part number and quantity are required.");
+        return;
+      }
+
+      parts.push({ part, qty, notes });
+
+      // Update preview table
+      const table = document.getElementById("partTable");
+      const tbody = table.querySelector("tbody");
+      tbody.innerHTML = "";
+      parts.forEach(p => {
+        const row = `<tr><td>${p.part}</td><td>${p.qty}</td><td>${p.notes}</td></tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+      table.style.display = "table";
+
+      // Update hidden field for Formspree
+      document.getElementById("partListData").value = parts.map(p => 
+        `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
+      ).join("\n");
+
+      // Clear input fields
+      document.getElementById("partNumber").value = "";
+      document.getElementById("quantity").value = "";
+      document.getElementById("notes").value = "";
+    }
+  </script>
 </body>
 </html>
