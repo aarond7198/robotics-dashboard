@@ -77,12 +77,28 @@
       border-top: 1px solid #eee;
       margin: 30px 0;
     }
+
+    #overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      z-index: 999;
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="overlay">✅ Request Submitted!</div>
+
   <h1>Inventory Request Form</h1>
 
-  <form id="main-form" action="https://formspree.io/f/mkgjpqgj" method="POST">
+  <form id="main-form">
     <label for="submittedBy">Submitted By</label>
     <input type="text" id="submittedBy" name="Submitted By" required>
 
@@ -99,13 +115,13 @@
     <h3>Add Parts</h3>
 
     <label for="partNumber">Part Number</label>
-    <input type="text" id="partNumber" placeholder="e.g., AB1234" />
+    <input type="text" id="partNumber" />
 
     <label for="quantity">Quantity</label>
-    <input type="number" id="quantity" min="1" placeholder="e.g., 3" />
+    <input type="number" id="quantity" min="1" />
 
     <label for="notes">Notes (optional)</label>
-    <input type="text" id="notes" placeholder="Location, alternate, etc." />
+    <input type="text" id="notes" />
 
     <button type="button" onclick="addPart()">➕ Add to List</button>
 
@@ -140,7 +156,6 @@
 
       parts.push({ part, qty, notes });
 
-      // Update preview table
       const table = document.getElementById("partTable");
       const tbody = table.querySelector("tbody");
       tbody.innerHTML = "";
@@ -150,16 +165,46 @@
       });
       table.style.display = "table";
 
-      // Update hidden field for Formspree
-      document.getElementById("partListData").value = parts.map(p => 
+      document.getElementById("partListData").value = parts.map(p =>
         `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
       ).join("\n");
 
-      // Clear input fields
       document.getElementById("partNumber").value = "";
       document.getElementById("quantity").value = "";
       document.getElementById("notes").value = "";
     }
+
+    document.getElementById("main-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const response = await fetch("https://formspree.io/f/mkgjpqgj", {
+        method: "POST",
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Show overlay
+        const overlay = document.getElementById("overlay");
+        overlay.style.display = "flex";
+
+        // Clear everything
+        parts.length = 0;
+        document.getElementById("partTable").style.display = "none";
+        form.reset();
+
+        setTimeout(() => {
+          overlay.style.display = "none";
+        }, 3000);
+      } else {
+        alert("There was a problem submitting the form. Please try again.");
+      }
+    });
   </script>
 </body>
 </html>
