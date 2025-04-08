@@ -2,7 +2,7 @@ name: Sync project_data.csv from OneDrive
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # Every 30 minutes
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,16 +13,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Download project_data.csv
+      - name: Download project_data.csv (via proxy)
         run: |
-          curl -L "https://genuinecable-my.sharepoint.com/:x:/p/701037/EbAUFEUfEdJKkwRcbucVVWMBHe24B_wFn1qivfROdG77uw?e=XNSPj9" -o project_data.csv
+          curl -L "https://corsproxy.io/?https://genuinecable-my.sharepoint.com/:x:/p/701037/EbAUFEUfEdJKkwRcbucVVWMBHe24B_wFn1qivfROdG77uw" -o project_data.csv
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit and push using token remote
+      - name: Commit and push
         env:
           GH_CSV_TOKEN: ${{ secrets.GH_CSV_TOKEN }}
         run: |
