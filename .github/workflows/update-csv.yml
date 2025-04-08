@@ -2,8 +2,8 @@ name: Sync project_data.csv from OneDrive
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # ⏱ Every 30 minutes
-  workflow_dispatch:       # ▶️ Manual trigger from Actions tab
+    - cron: "*/30 * * * *"  # Every 30 minutes
+  workflow_dispatch:         # Allow manual trigger
 
 jobs:
   download-and-commit:
