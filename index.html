@@ -166,8 +166,8 @@
     const parts = [];
     const projectData = {};
 
-    // Fetch and process live CSV file
-    fetch("https://genuinecable.sharepoint.com/:u:/t/cobotintegration/EWq8SA6LWxtNhh1xuf3SswUBT-v3KLlPlfJv7_fPyrSLfw?e=Cojgpa")
+    // ✅ Updated fetch link using your OneDrive-hosted CSV
+    fetch("https://genuinecable-my.sharepoint.com/:x:/p/701037/EbAUFEUfEdJKkwRcbucVVWMBHe24B_wFn1qivfROdG77uw?e=XNSPj9")
       .then(res => res.text())
       .then(text => {
         const lines = text.trim().split("\n");
@@ -199,7 +199,7 @@
           }
         }
 
-        // Hook into change to update hidden BOM field
+        // Update hidden BOM path on project change
         projectDropdown.addEventListener("change", () => {
           const selected = projectDropdown.value;
           document.getElementById("bomPathField").value = projectData[selected] || "";
