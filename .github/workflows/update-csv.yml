@@ -2,7 +2,7 @@ name: Sync project_data.csv from OneDrive
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # Every 30 minutes
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -13,9 +13,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Download project_data.csv
+      - name: Download project_data.csv from OneDrive
         run: |
-          curl -L "https://genuinecable-my.sharepoint.com/personal/701037_genuinecable_com/_layouts/15/download.aspx?SourceUrl=/personal/701037_genuinecable_com/Documents/Documents/project_data.csv" -o project_data.csv
+          curl -L "https://genuinecable-my.sharepoint.com/personal/701037_genuinecable_com/_layouts/15/download.aspx?SourceUrl=/personal/701037_genuinecable_com/Documents/project_data.csv" -o project_data.csv
 
       - name: Configure Git
         run: |
