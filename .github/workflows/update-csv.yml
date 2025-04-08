@@ -3,7 +3,7 @@ name: 🔄 Update project_data.csv from Google Drive
 on:
   schedule:
     - cron: "*/30 * * * *"  # Runs every 30 minutes
-  workflow_dispatch:       # Allows manual run from Actions tab
+  workflow_dispatch:        # Allows manual run from GitHub Actions tab
 
 jobs:
   update-csv:
@@ -13,19 +13,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Download CSV from Google Drive
+      - name: Download CSV from Google Drive (handles confirm token)
         run: |
-          curl -L "https://drive.google.com/uc?export=download&id=1jBXBQRi9ejjhJNgj3vq-HLLfEaqa-TA6" -o project_data.csv
+          FILE_ID=1jBXBQRi9ejjhJNgj3vq-HLLfEaqa-TA6
+          curl -c cookies.txt -s -L "https://drive.google.com/uc?export=download&id=${FILE_ID}" > response.html
+          CONFIRM_CODE=$(grep -o 'confirm=[^&]*' response.html | sed 's/confirm=//')
+          curl -Lb cookies.txt -s -L "https://drive.google.com/uc?export=download&confirm=${CONFIRM_CODE}&id=${FILE_ID}" -o project_data.csv
 
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit and push if changed
+      - name: Commit and push CSV update
         env:
-          GH_TOKEN: ${{ secrets.GH_CSV_TOKEN }}
+          GH_CSV_TOKEN: ${{ secrets.GH_CSV_TOKEN }}
         run: |
           git add project_data.csv
           git commit -m "🔄 Auto-update project_data.csv from Google Drive" || echo "No changes to commit"
-          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git push https://x-access-token:${GH_CSV_TOKEN}@github.com/${{ github.repository }}.git
