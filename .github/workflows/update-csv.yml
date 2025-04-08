@@ -3,7 +3,7 @@ name: Sync project_data.csv from OneDrive
 on:
   schedule:
     - cron: "*/30 * * * *"  # Every 30 minutes
-  workflow_dispatch:         # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   download-and-commit:
@@ -22,10 +22,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit and push
+      - name: Commit and push using token remote
         env:
           GH_CSV_TOKEN: ${{ secrets.GH_CSV_TOKEN }}
         run: |
+          git remote set-url origin https://x-access-token:${GH_CSV_TOKEN}@github.com/${{ github.repository }}.git
           git add project_data.csv
           git commit -m "Auto-update project_data.csv" || echo "No changes to commit"
-          git push https://x-access-token:${GH_CSV_TOKEN}@github.com/${{ github.repository }}.git
+          git push origin HEAD:main
