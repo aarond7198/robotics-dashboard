@@ -166,8 +166,8 @@
     const parts = [];
     const projectData = {};
 
-    // ✅ Updated fetch link using your OneDrive-hosted CSV
-    fetch("https://genuinecable-my.sharepoint.com/:x:/p/701037/EbAUFEUfEdJKkwRcbucVVWMBHe24B_wFn1qivfROdG77uw?e=XNSPj9")
+    // ✅ CORS Proxy used to fetch OneDrive CSV
+    fetch("https://corsproxy.io/?https://genuinecable-my.sharepoint.com/:x:/p/701037/EbAUFEUfEdJKkwRcbucVVWMBHe24B_wFn1qivfROdG77uw?e=XNSPj9")
       .then(res => res.text())
       .then(text => {
         const lines = text.trim().split("\n");
@@ -206,7 +206,7 @@
         });
       })
       .catch(err => {
-        console.error("Failed to load project data:", err);
+        console.error("❌ Failed to load project data:", err);
         alert("Could not load project list. Please try again later.");
       });
 
