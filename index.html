@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Tracking</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
@@ -125,11 +125,11 @@
 
     <label for="project">Select Project</label>
     <select name="Project" id="project" required>
-      <option value="">-- Choose a project --</option>
-      <option value="Project Alpha">Project Alpha</option>
-      <option value="Project Beta">Project Beta</option>
-      <option value="General Inventory Pull">General Inventory Pull</option>
+      <option value="">Loading projects...</option>
     </select>
+
+    <!-- Hidden field for BOM Path -->
+    <input type="hidden" name="BOM Path" id="bomPathField" />
 
     <hr>
 
@@ -164,6 +164,51 @@
 
   <script>
     const parts = [];
+    const projectData = {};
+
+    // Fetch and process live CSV file
+    fetch("https://genuinecable.sharepoint.com/:u:/t/cobotintegration/EWq8SA6LWxtNhh1xuf3SswUBT-v3KLlPlfJv7_fPyrSLfw?e=Cojgpa")
+      .then(res => res.text())
+      .then(text => {
+        const lines = text.trim().split("\n");
+        const headers = lines[0].split(",");
+        const projectDropdown = document.getElementById("project");
+
+        projectDropdown.innerHTML = `<option value="">-- Select a Project --</option>`;
+
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(",");
+
+          const partA = row[0]?.trim();
+          const partB = row[1]?.trim();
+          const description = row[2]?.trim();
+          const bomPath = row[11]?.trim(); // Column L
+          const dashboardActive = row[12]?.trim().toLowerCase(); // Column M
+
+          if (dashboardActive === "yes") {
+            const projectKey = `${partA}-${partB}`;
+            const displayName = `${projectKey} – ${description}`;
+
+            const option = document.createElement("option");
+            option.value = displayName;
+            option.textContent = displayName;
+            projectDropdown.appendChild(option);
+
+            // Store BOM path by projectKey
+            projectData[displayName] = bomPath;
+          }
+        }
+
+        // Hook into change to update hidden BOM field
+        projectDropdown.addEventListener("change", () => {
+          const selected = projectDropdown.value;
+          document.getElementById("bomPathField").value = projectData[selected] || "";
+        });
+      })
+      .catch(err => {
+        console.error("Failed to load project data:", err);
+        alert("Could not load project list. Please try again later.");
+      });
 
     function addPart() {
       const part = document.getElementById("partNumber").value.trim();
@@ -216,6 +261,7 @@
         parts.length = 0;
         document.getElementById("partTable").style.display = "none";
         form.reset();
+        document.getElementById("bomPathField").value = "";
 
         setTimeout(() => {
           overlay.style.display = "none";
