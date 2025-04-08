@@ -3,7 +3,7 @@ name: Sync project_data.csv from OneDrive
 on:
   schedule:
     - cron: "*/30 * * * *"  # Every 30 minutes
-  workflow_dispatch:         # Manual trigger too
+  workflow_dispatch:         # Manual trigger available too
 
 jobs:
   download-and-commit:
@@ -15,7 +15,9 @@ jobs:
 
       - name: Download project_data.csv from OneDrive
         run: |
-          curl -L "https://onedrive.live.com/download?resid=922D0F1C88E8E6DB!4218" -o project_data.csv
+          curl -L \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36" \
+            "https://onedrive.live.com/download?resid=922D0F1C88E8E6DB!4218" -o project_data.csv
 
       - name: Configure Git
         run: |
