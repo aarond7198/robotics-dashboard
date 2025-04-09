@@ -11,7 +11,7 @@
       background: #f9f9f9;
       margin: 0;
       padding: 40px 20px;
-      max-width: 950px;
+      max-width: 1100px;
       margin: 40px auto;
       color: #333;
     }
@@ -60,158 +60,166 @@
     }
 
     .order-card {
-      border: 1px solid #ddd;
+      border: 1px solid #ccc;
       border-radius: 10px;
       margin-bottom: 20px;
-      padding: 15px;
+      padding: 20px;
       background: #fff;
+      transition: all 0.3s ease;
     }
 
-    .order-card h3 {
-      margin-top: 0;
-    }
-
-    .status-bar {
+    .order-header {
       display: flex;
-      gap: 8px;
-      margin: 10px 0 20px 0;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      margin-bottom: 10px;
     }
 
-    .status-step {
-      padding: 6px 12px;
-      border-radius: 5px;
-      background: #eee;
-      font-size: 14px;
+    .stage-bar {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0 20px;
+    }
+
+    .stage {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin: 0 4px;
+      background: #e0e0e0;
       color: #666;
+      transition: all 0.3s;
     }
 
-    .status-step.active {
-      background: #0078D4;
-      color: white;
-      font-weight: bold;
-    }
-
-    .prompt {
-      margin-top: 10px;
-    }
-
-    .prompt input, .prompt select, .prompt button {
-      margin-top: 6px;
-      padding: 8px;
-      font-size: 14px;
-      width: 100%;
-      margin-bottom: 12px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-
-    .prompt button {
+    .stage.active {
       background: #0078D4;
       color: white;
       font-weight: 600;
-      border: none;
-      cursor: pointer;
     }
 
-    .prompt button:hover {
+    .actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .actions input, .actions select {
+      flex: 1;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+    }
+
+    .actions button {
+      padding: 8px 14px;
+      background: #0078D4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .actions button:hover {
       background: #005a9e;
+    }
+
+    .add-order {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .add-order button {
+      background: #28a745;
+      color: white;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .add-order button:hover {
+      background: #218838;
+    }
+
+    @media (max-width: 768px) {
+      .stage-bar { flex-wrap: wrap; gap: 4px; }
+      .stage { flex: 0 0 48%; margin-bottom: 6px; }
     }
   </style>
 </head>
 <body>
   <nav>
     <a href="index.html">📦 Inventory Request</a>
-    <a href="orders.html" class="active">🨾 Order Tracking</a>
+    <a href="orders.html" class="active">🧾 Order Tracking</a>
   </nav>
 
   <h1>Order Tracking Dashboard</h1>
 
-  <div class="dashboard" id="orders">
-    <!-- Order cards will be dynamically inserted here -->
+  <div class="dashboard" id="orderContainer">
+    <!-- Orders will be dynamically inserted here -->
+  </div>
+
+  <div class="add-order">
+    <button onclick="addNewOrder()">➕ Add New Order</button>
   </div>
 
   <script>
-    const exampleOrders = [
-      {
-        id: 1,
-        project: "Project Alpha",
-        supplier: "Automation Supply Co",
-        status: "pending",
-        tracking: "",
-        eta: "",
-        po: "",
-        ackDate: ""
-      }
-    ];
+    let orderId = 1;
+    const stages = ["Pending", "Ordered", "Acknowledged", "Expected", "Received"];
 
-    const statusStages = ["pending", "ordered", "acknowledged", "expected", "received"];
+    function createOrderCard(id) {
+      const container = document.createElement("div");
+      container.className = "order-card";
+      container.dataset.stage = 0;
 
-    function renderOrders() {
-      const container = document.getElementById("orders");
-      container.innerHTML = "";
+      container.innerHTML = `
+        <div class="order-header">Order #${id}</div>
+        <div class="stage-bar">
+          ${stages.map((s, i) => `<div class="stage ${i === 0 ? 'active' : ''}" data-stage="${i}">${s}</div>`).join('')}
+        </div>
+        <div class="actions">
+          <input type="text" placeholder="PO Number" />
+          <input type="text" placeholder="Supplier" />
+          <input type="text" placeholder="Tracking #" />
+          <input type="date" placeholder="ETA" />
+          <button onclick="nextStage(this)">Next ➡️</button>
+          <button onclick="prevStage(this)">⬅️ Back</button>
+        </div>
+      `;
+      document.getElementById("orderContainer").appendChild(container);
+    }
 
-      exampleOrders.forEach(order => {
-        const card = document.createElement("div");
-        card.className = "order-card";
+    function nextStage(btn) {
+      const card = btn.closest(".order-card");
+      let current = parseInt(card.dataset.stage);
+      if (current < stages.length - 1) current++;
+      updateStages(card, current);
+    }
 
-        const currentIndex = statusStages.indexOf(order.status);
+    function prevStage(btn) {
+      const card = btn.closest(".order-card");
+      let current = parseInt(card.dataset.stage);
+      if (current > 0) current--;
+      updateStages(card, current);
+    }
 
-        card.innerHTML = `
-          <h3>Project: ${order.project}</h3>
-          <p><strong>Supplier:</strong> ${order.supplier}</p>
-          <div class="status-bar">
-            ${statusStages.map((stage, i) => `
-              <div class="status-step ${i <= currentIndex ? 'active' : ''}">${stage.charAt(0).toUpperCase() + stage.slice(1)}</div>
-            `).join('')}
-          </div>
-          <div class="prompt">
-            ${renderPrompt(order)}
-          </div>
-        `;
-        container.appendChild(card);
+    function updateStages(card, index) {
+      card.dataset.stage = index;
+      card.querySelectorAll(".stage").forEach((el, i) => {
+        el.classList.toggle("active", i === index);
       });
     }
 
-    function renderPrompt(order) {
-      switch (order.status) {
-        case "pending":
-          return `<label>Enter PO Number:<input type="text" onchange="updateOrder(${order.id}, 'po', this.value)"></label>
-                  <button onclick="advanceStatus(${order.id})">Mark as Ordered</button>`;
-        case "ordered":
-          return `<label>Enter Acknowledgement Date:<input type="date" onchange="updateOrder(${order.id}, 'ackDate', this.value)"></label>
-                  <button onclick="advanceStatus(${order.id})">Mark as Acknowledged</button>`;
-        case "acknowledged":
-          return `<label>Enter Expected Delivery Date:<input type="date" onchange="updateOrder(${order.id}, 'eta', this.value)"></label>
-                  <button onclick="advanceStatus(${order.id})">Mark as Expected</button>`;
-        case "expected":
-          return `<label>Enter Tracking Number:<input type="text" onchange="updateOrder(${order.id}, 'tracking', this.value)"></label>
-                  <button onclick="advanceStatus(${order.id})">Mark as Received</button>`;
-        case "received":
-          return `<strong>Order Complete ✅</strong>`;
-        default:
-          return ``;
-      }
+    function addNewOrder() {
+      createOrderCard(orderId++);
     }
-
-    function updateOrder(id, field, value) {
-      const order = exampleOrders.find(o => o.id === id);
-      if (order) order[field] = value;
-    }
-
-    function advanceStatus(id) {
-      const order = exampleOrders.find(o => o.id === id);
-      if (!order) return;
-
-      const currentIndex = statusStages.indexOf(order.status);
-      if (currentIndex < statusStages.length - 1) {
-        order.status = statusStages[currentIndex + 1];
-        renderOrders();
-      } else {
-        // Archive logic could go here
-      }
-    }
-
-    renderOrders();
   </script>
 </body>
 </html>
