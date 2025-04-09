@@ -1,5 +1,0 @@
-PO Number,Supplier,Part Numbers,Project,Acknowledgement Date,Expected Delivery,Received,Status
-10001,SMC,MGPL40-50,1234-01,2025-04-02,2025-04-10,false,In Progress
-10002,Festo,VUVG-L14,1234-02,,,,false,Ready to Order
-10003,Keyence,IV2-G500CA,1234-03,2025-04-01,2025-04-09,false,Ordered
-10004,Phoenix Contact,QUINT4-PS,1234-04,2025-03-28,2025-04-05,true,Closed
