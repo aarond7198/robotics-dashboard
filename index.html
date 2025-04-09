@@ -13,6 +13,16 @@
       background: #f9f9f9;
       color: #333;
     }
+    nav {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    nav a {
+      margin: 0 20px;
+      text-decoration: none;
+      font-weight: bold;
+      color: #0078D4;
+    }
     h1 {
       text-align: center;
       font-size: 2rem;
@@ -77,6 +87,11 @@
 </head>
 <body>
   <div id="overlay">✅ Submitted!</div>
+
+  <nav>
+    <a href="index.html">Inventory Request</a>
+    <a href="orders.html">Order Tracking</a>
+  </nav>
 
   <h1>Inventory Request</h1>
 
@@ -209,7 +224,7 @@
     document.getElementById("main-form").addEventListener("submit", async e => {
       e.preventDefault();
 
-      // Auto-add final part if filled but not submitted
+      // Auto-add last part if filled
       const pendingPart = document.getElementById("partNumber").value.trim();
       const pendingQty = document.getElementById("quantity").value.trim();
       const pendingNotes = document.getElementById("notes").value.trim();
