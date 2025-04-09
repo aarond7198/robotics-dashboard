@@ -1,3 +1,4 @@
+<!-- Your original HTML, now updated with Sales Order handling -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -61,8 +62,9 @@
       <option>Loading projects...</option>
     </select>
 
-    <!-- Hidden BOM Path Field -->
+    <!-- Hidden Fields -->
     <input type="hidden" id="bomPath" name="BOM Path" />
+    <input type="hidden" id="salesOrder" name="Sales Order" />
 
     <hr>
 
@@ -99,8 +101,8 @@
     const parts = [];
     const projectDropdown = document.getElementById("project");
     const bomPathField = document.getElementById("bomPath");
+    const salesOrderField = document.getElementById("salesOrder");
 
-    // Load and parse CSV from GitHub
     fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
       .then(res => res.text())
       .then(text => {
@@ -115,11 +117,12 @@
           const description = row[2]?.trim();
           const bomPath = row[3]?.trim();
           const dashboardActive = row[4]?.trim().toLowerCase();
+          const salesOrder = row[5]?.trim();
 
           if (dashboardActive === "yes") {
             const key = `${partA}-${partB}`;
             const label = `${key} – ${description}`;
-            projects.push({ label, bomPath });
+            projects.push({ label, bomPath, salesOrder });
           }
         });
 
@@ -129,12 +132,14 @@
           opt.value = project.label;
           opt.textContent = project.label;
           opt.dataset.bom = project.bomPath;
+          opt.dataset.so = project.salesOrder;
           projectDropdown.appendChild(opt);
         });
 
         projectDropdown.addEventListener("change", () => {
           const selected = projectDropdown.selectedOptions[0];
           bomPathField.value = selected?.dataset.bom || "";
+          salesOrderField.value = selected?.dataset.so || "";
         });
       })
       .catch(err => {
@@ -177,6 +182,15 @@
       const form = e.target;
       const formData = new FormData(form);
 
+      const bom = formData.get("BOM Path");
+      const so = formData.get("Sales Order");
+      const parts = formData.get("Part List");
+      const submittedBy = formData.get("Submitted By");
+      const project = formData.get("Project");
+
+      // Custom message body
+      formData.set("message", `Submitted by: ${submittedBy}\nProject: ${project}\n\nSO: ${so}\nBOM Path: ${bom}\n\nParts:\n${parts}`);
+
       const response = await fetch("https://formspree.io/f/mkgjpqgj", {
         method: "POST",
         body: formData,
@@ -189,6 +203,7 @@
         document.getElementById("partTable").style.display = "none";
         form.reset();
         bomPathField.value = "";
+        salesOrderField.value = "";
         setTimeout(() => {
           document.getElementById("overlay").style.display = "none";
         }, 3000);
