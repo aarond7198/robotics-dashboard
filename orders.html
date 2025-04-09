@@ -310,10 +310,12 @@ fetch(`https://sheets.googleapis.com/v4/spreadsheets/1tlG9DzmSRHmPu8Qo4Xd6TFStIh
       });
 
     
+
 fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
   .then(res => res.text())
   .then(text => {
-    const rows = text.trim().split('\n').slice(1);
+    const rows = text.trim().split('
+').slice(1);
     projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
     rows.forEach(row => {
       const cols = row.split(',');
@@ -321,7 +323,7 @@ fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
       if (isActive) {
         const projectCode = cols[1];
         const label = `${projectCode} – ${cols[2]}`;
-        const combinedKey = `${cols[0]}|${cols[1]}`; // for unique keys
+        const combinedKey = `${cols[0]}|${cols[1]}`;
         projectMap[projectCode] = label;
         const opt = document.createElement("option");
         opt.value = projectCode;
@@ -329,6 +331,11 @@ fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
         projectSelect.appendChild(opt);
       }
     });
+  })
+  .catch(err => {
+    console.error("❌ Failed to load project_data.csv:", err);
+  });
+
   });
 
       .then(res => res.text())
