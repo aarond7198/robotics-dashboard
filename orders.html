@@ -257,8 +257,32 @@
     const projectSelect = document.getElementById("projectSelect");
     const projectMap = {};
 
-    fetch("https://raw.githubusercontent.com/aarond7198/robotics-dashboard/refs/heads/main/orders_data.csv")
-      .then(res => res.text())
+    
+fetch(`https://sheets.googleapis.com/v4/spreadsheets/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/values/Sheet1?key=YOUR_GOOGLE_SHEETS_API_KEY`)
+  .then(res => res.json())
+  .then(data => {
+    const rows = data.values || [];
+    rows.slice(1).forEach(cols => {
+      const order = {
+        po: cols[0],
+        supplier: cols[1],
+        partNumbers: cols[2],
+        project: cols[3],
+        ackDate: cols[4],
+        eta: cols[5],
+        received: cols[6] === "true",
+        status: cols[7] || "Ready to Order",
+        description: ''  // You can expand this later if needed
+      };
+      if (order.status === "Closed") {
+        archived.push(order);
+      } else {
+        orders.push(order);
+      }
+    });
+    renderOrders();
+  });
+
       .then(csv => {
         const rows = csv.trim().split('\n');
         const headers = rows[0].split(',');
