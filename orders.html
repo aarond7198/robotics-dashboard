@@ -309,7 +309,28 @@ fetch(`https://sheets.googleapis.com/v4/spreadsheets/1tlG9DzmSRHmPu8Qo4Xd6TFStIh
         renderOrders();
       });
 
-    fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+    
+fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+  .then(res => res.text())
+  .then(text => {
+    const rows = text.trim().split('\n').slice(1);
+    projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+    rows.forEach(row => {
+      const cols = row.split(',');
+      const isActive = cols[5]?.trim().toLowerCase() === 'yes';
+      if (isActive) {
+        const projectCode = cols[1];
+        const label = `${projectCode} – ${cols[2]}`;
+        const combinedKey = `${cols[0]}|${cols[1]}`; // for unique keys
+        projectMap[projectCode] = label;
+        const opt = document.createElement("option");
+        opt.value = projectCode;
+        opt.textContent = label;
+        projectSelect.appendChild(opt);
+      }
+    });
+  });
+
       .then(res => res.text())
       .then(text => {
         const rows = text.trim().split('\n').slice(1);
@@ -489,6 +510,5 @@ document.getElementById("saveButton").addEventListener("click", async () => {
   }
 });
 </script>
-
 </body>
 </html>
