@@ -423,29 +423,24 @@
     }
   </script><script>
 document.getElementById("saveButton").addEventListener("click", () => {
-  const csvRows = [
-    ["PO Number", "Supplier", "Part Numbers", "Project", "Acknowledgement Date", "Expected Delivery", "Received", "Status"]
-  ];
-  orders.forEach(order => {
-    csvRows.push([
-      order.po || "",
-      order.supplier || "",
-      order.partNumbers || "",
-      order.project || "",
-      order.ackDate || "",
-      order.eta || "",
-      order.received ? "true" : "false",
-      order.status || ""
-    ]);
+  fetch("https://api.github.com/repos/YOUR_USERNAME/robotics-dashboard/dispatches", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer YOUR_PERSONAL_ACCESS_TOKEN",
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      event_type: "save-orders"
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert("✅ Save triggered! GitHub Action is writing to your repo.");
+    } else {
+      alert("❌ Save failed. Check token/permissions.");
+    }
   });
-
-  const csvContent = csvRows.map(e => e.join(",")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv" });
-  const file = new File([blob], "orders_data.csv");
-
-  const event = new CustomEvent("submit-csv", { detail: file });
-  document.dispatchEvent(event);
-  alert("Save requested — CSV ready for GitHub Action upload.");
 });
 </script>
 </body>
