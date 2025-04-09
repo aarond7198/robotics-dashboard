@@ -31,6 +31,6 @@ MRP,2401,Quick Reteach Project,,,No
 KMC,2401,Dipping Automation,,,No
 MAT,,,,,
 KAD,,,,,
-FAF,2501,CT Header Automation,bom path ct,ct###123,Yes
-MCF,2501,Dual Lane Palletizing,bom path mcclancy,1245mc,Yes
-ARP,2501,AirPro Welding,bom path airpro,12345ap,Yes
+FAF,2501,CT Header Automation,I:\Departments\PCC Robotics\Customer Files\Fastenal\BOMs\Wallingford\Fastenal HoloKrome Induction Cell BOM Nov 2024.xlsx,ct###123,Yes
+MCF,2501,Dual Lane Palletizing,I:\Departments\PCC Robotics\Customer Files\McClancy\BOMs\McClancy Palletizer Apr 2024.xlsx,1245mc,Yes
+ARP,2501,AirPro Welding System,I:\Departments\PCC Robotics\Customer Files\AirPro Fan\BOMs\AirPro Fan welding cobot BOM Jan 2025.xlsx,TBD,Yes
