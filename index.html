@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inventory Request</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventory Request</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
     body {
       font-family: 'Inter', sans-serif;
       background: #f9f9f9;
@@ -119,86 +120,103 @@
   </style>
 </head>
 <body>
-  <div id="overlay">✅ Submitted!</div>
-
-  <nav>
-    <a href="index.html" class="active">📦 Inventory Request</a>
-    <a href="orders.html">🧾 Order Tracking</a>
-  </nav>
-
-  <h1>Inventory Request</h1>
-
-  <form id="main-form">
-    <label for="submittedBy">Submitted By</label>
-    <input type="text" id="submittedBy" name="Submitted By" required />
-
-    <label for="project">Select Project</label>
-    <select id="project" name="Project" required>
-      <option>Loading projects...</option>
-    </select>
-
-    <input type="hidden" id="bomPath" name="BOM Path" />
-    <input type="hidden" id="salesOrder" name="Sales Order" />
-    <input type="hidden" id="message" name="message" />
-
-    <hr style="margin: 30px 0;">
-
-    <h3 style="margin-top:0;">Add Parts to Cart</h3>
-
-    <label for="partNumber">Part Number</label>
-    <input type="text" id="partNumber" />
-
-    <label for="quantity">Quantity</label>
-    <input type="number" id="quantity" min="1" />
-
-    <label for="notes">Notes (optional)</label>
-    <input type="text" id="notes" />
-
-    <button type="button" onclick="addPart()">➕ Add Part</button>
-
-    <table id="partTable" style="display:none;">
-      <thead>
-        <tr>
-          <th>Part Number</th>
-          <th>Quantity</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <input type="hidden" id="partListData" name="Part List" />
-
-    <button type="submit" style="margin-top: 30px;">📨 Submit Request</button>
-  </form>
-
-  <script>
+<div id="overlay">✅ Submitted!</div>
+<nav>
+<a class="active" href="index.html">📦 Inventory Request</a>
+<a href="orders.html">🧾 Order Tracking</a>
+</nav>
+<h1>Inventory Request</h1>
+<form id="main-form">
+<label for="submittedBy">Submitted By</label>
+<input id="submittedBy" name="Submitted By" required="" type="text"/>
+<label for="project">Select Project</label>
+<select id="project" name="Project" required="">
+<option>Loading projects...</option>
+</select>
+<input id="bomPath" name="BOM Path" type="hidden"/>
+<input id="salesOrder" name="Sales Order" type="hidden"/>
+<input id="message" name="message" type="hidden"/>
+<hr style="margin: 30px 0;"/>
+<h3 style="margin-top:0;">Add Parts to Cart</h3>
+<label for="partNumber">Part Number</label>
+<input id="partNumber" type="text"/>
+<label for="quantity">Quantity</label>
+<input id="quantity" min="1" type="number"/>
+<label for="notes">Notes (optional)</label>
+<input id="notes" type="text"/>
+<button onclick="addPart()" type="button">➕ Add Part</button>
+<table id="partTable" style="display:none;">
+<thead>
+<tr>
+<th>Part Number</th>
+<th>Quantity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<input id="partListData" name="Part List" type="hidden"/>
+<button style="margin-top: 30px;" type="submit">📨 Submit Request</button>
+</form>
+<script>
     const parts = [];
     const projectDropdown = document.getElementById("project");
     const bomPathField = document.getElementById("bomPath");
     const salesOrderField = document.getElementById("salesOrder");
     const messageField = document.getElementById("message");
 
-    fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
-      .then(res => res.text())
-      .then(text => {
-        const lines = text.trim().split(/\r?\n/);
-        const headers = lines[0].split(",");
-        const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
+    
+fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+  .then(res => {
+    if (!res.ok) throw new Error("Network response was not ok");
+    return res.text();
+  })
+  .then(text => {
+    const lines = text.trim().split(/
+?
+/);
+    console.log("CSV Raw Lines:", lines);
+    const headers = lines[0].split(",");
+    const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
 
-        const projects = [];
-        rows.forEach(row => {
-          const partA = row[0]?.trim();
-          const partB = row[1]?.trim();
-          const description = row[2]?.trim();
-          const bomPath = row[3]?.trim();
-          const salesOrder = row[4]?.trim();
-          const dashboardActive = row[5]?.trim().toLowerCase();
+    const projects = [];
+    rows.forEach(row => {
+      const partA = row[0]?.trim();
+      const partB = row[1]?.trim();
+      const description = row[2]?.trim();
+      const bomPath = row[3]?.trim();
+      const salesOrder = row[4]?.trim();
+      const dashboardActive = row[5]?.trim().toLowerCase();
 
-          if (dashboardActive === "yes") {
-            const key = `${partA}-${partB}`;
-            const label = `${key} – ${description}`;
-            projects.push({ label, bomPath, salesOrder });
+      if (dashboardActive === "yes") {
+        const key = `${partA}-${partB}`;
+        const label = `${key} – ${description}`;
+        projects.push({ label, bomPath, salesOrder });
+      }
+    });
+
+    const projectDropdown = document.getElementById("project");
+    projectDropdown.innerHTML = `<option value="">-- Select a Project --</option>`;
+    projects.forEach(project => {
+      const opt = document.createElement("option");
+      opt.value = project.label;
+      opt.textContent = project.label;
+      opt.dataset.bom = project.bomPath;
+      opt.dataset.so = project.salesOrder;
+      projectDropdown.appendChild(opt);
+    });
+
+    projectDropdown.addEventListener("change", () => {
+      const selected = projectDropdown.selectedOptions[0];
+      document.getElementById("bomPath").value = selected?.dataset.bom || "";
+      document.getElementById("salesOrder").value = selected?.dataset.so || "";
+    });
+  })
+  .catch(err => {
+    console.error("❌ CSV load error:", err);
+    alert("Error loading project list.");
+  });
+
           }
         });
 
