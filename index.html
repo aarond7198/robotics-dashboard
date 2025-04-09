@@ -4,41 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inventory Request</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 40px 20px;
       max-width: 950px;
       margin: 40px auto;
-      padding: 20px;
-      background: #f9f9f9;
       color: #333;
     }
+
     nav {
       text-align: center;
       margin-bottom: 30px;
     }
+
     nav a {
       margin: 0 20px;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 600;
       color: #0078D4;
+      transition: color 0.3s ease;
     }
+
+    nav a:hover {
+      color: #005a9e;
+    }
+
     h1 {
       text-align: center;
       font-size: 2rem;
       margin-bottom: 20px;
+      color: #222;
     }
+
     form {
       background: white;
       padding: 25px;
       border-radius: 10px;
       box-shadow: 0 0 12px rgba(0,0,0,0.1);
     }
+
     label {
-      font-weight: bold;
+      font-weight: 600;
       display: block;
       margin-top: 20px;
     }
+
     input, select, textarea, button {
       width: 100%;
       padding: 10px;
@@ -48,29 +62,36 @@
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
+
     button {
       background-color: #0078D4;
       color: white;
       border: none;
       cursor: pointer;
       transition: background 0.3s ease;
+      font-weight: 600;
     }
+
     button:hover {
       background-color: #005a9e;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
+
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+      border: 1px solid #ccc;
+      padding: 8px;
       text-align: left;
     }
+
     th {
-      background: #f0f0f0;
+      background: #eee;
     }
+
     #overlay {
       position: fixed;
       top: 0; left: 0;
@@ -89,8 +110,8 @@
   <div id="overlay">✅ Submitted!</div>
 
   <nav>
-    <a href="index.html">Inventory Request</a>
-    <a href="orders.html">Order Tracking</a>
+    <a href="index.html">📦 Inventory Request</a>
+    <a href="orders.html">🧾 Order Tracking</a>
   </nav>
 
   <h1>Inventory Request</h1>
@@ -104,7 +125,6 @@
       <option>Loading projects...</option>
     </select>
 
-    <!-- Hidden Fields -->
     <input type="hidden" id="bomPath" name="BOM Path" />
     <input type="hidden" id="salesOrder" name="Sales Order" />
     <input type="hidden" id="message" name="message" />
@@ -224,7 +244,6 @@
     document.getElementById("main-form").addEventListener("submit", async e => {
       e.preventDefault();
 
-      // Auto-add last part if filled
       const pendingPart = document.getElementById("partNumber").value.trim();
       const pendingQty = document.getElementById("quantity").value.trim();
       const pendingNotes = document.getElementById("notes").value.trim();
