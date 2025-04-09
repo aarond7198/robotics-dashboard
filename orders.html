@@ -1,3 +1,4 @@
+<!-- FULL UPDATED HTML - PASTE INTO orders.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@
       background: #f9f9f9;
       margin: 0;
       padding: 40px 20px;
-      max-width: 950px;
+      max-width: 1100px;
       margin: 40px auto;
       color: #333;
     }
@@ -59,18 +60,30 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.07);
     }
 
+    #ordersContainer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
     .order-card {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 15px;
+      border: 2px solid #d0d0d0;
+      border-radius: 12px;
+      padding: 12px;
+      width: calc(50% - 8px);
       background: #fff;
       font-size: 0.85rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     .order-card h3 {
       margin: 0 0 5px;
       font-size: 1rem;
+    }
+
+    .order-card p {
+      margin: 3px 0;
     }
 
     .form-row {
@@ -84,25 +97,31 @@
       font-size: 0.9rem;
     }
 
-    input, select, button {
-      padding: 6px;
+    input, select {
+      padding: 5px;
       width: 100%;
       box-sizing: border-box;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
 
-    button {
-      background: #0078D4;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+    .inline-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       margin-top: 8px;
     }
 
-    button:hover {
-      background: #005a9e;
+    .inline-input label {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .inline-input input[type="text"],
+    .inline-input input[type="date"] {
+      flex: 2;
+      font-size: 0.8rem;
     }
 
     .status-bar {
@@ -116,7 +135,7 @@
       padding: 5px;
       text-align: center;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       background: #eee;
     }
 
@@ -126,8 +145,25 @@
       font-weight: bold;
     }
 
+    .received-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .received-btn:hover {
+      background: #218838;
+    }
+
     #archiveTitle {
-      margin-top: 30px;
+      margin-top: 20px;
       font-size: 1.1rem;
       color: #555;
       border-top: 1px solid #ccc;
@@ -138,6 +174,27 @@
       font-size: 0.85rem;
       margin-bottom: 5px;
       color: #555;
+    }
+
+    #orderForm {
+      margin-top: 30px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+
+    button[type="submit"] {
+      background: #0078D4;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background: #005a9e;
     }
   </style>
 </head>
@@ -150,6 +207,8 @@
   <h1>Order Tracking Dashboard</h1>
 
   <div class="dashboard">
+    <div id="ordersContainer"></div>
+
     <form id="orderForm">
       <div class="form-row">
         <label>Supplier</label>
@@ -168,7 +227,6 @@
       <button type="submit">Add Order</button>
     </form>
 
-    <div id="ordersContainer"></div>
     <div id="archiveContainer"></div>
   </div>
 
@@ -237,12 +295,23 @@
         let inputField = "";
 
         if (status === "Ready to Order") {
-          inputField = `<label>PO Number<input onblur="updateField(${index}, 'po', this.value)" /></label>`;
+          inputField = `
+            <div class="inline-input">
+              <label>PO Number</label>
+              <input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" />
+            </div>`;
         } else if (status === "Ordered") {
-          inputField = `<label>Ack Date<input onblur="updateField(${index}, 'ackDate', this.value)" /></label>
-                        <label>Expected ETA<input onblur="updateField(${index}, 'eta', this.value)" /></label>`;
+          inputField = `
+            <div class="inline-input">
+              <label>Ack Date</label>
+              <input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" />
+            </div>
+            <div class="inline-input">
+              <label>ETA</label>
+              <input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" />
+            </div>`;
         } else if (status === "In Progress") {
-          inputField = `<label>Confirm Delivery<input type="checkbox" onchange="markReceived(${index}, this.checked)" /></label>`;
+          inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
         }
 
         div.innerHTML = `
@@ -277,18 +346,17 @@
 
     function updateField(index, field, value) {
       orders[index][field] = value;
-      if (field === 'po') orders[index].status = 'Ordered';
-      if ((field === 'ackDate' || field === 'eta') && orders[index].ackDate && orders[index].eta) {
-        orders[index].status = 'In Progress';
+      const o = orders[index];
+      if (field === 'po' && value) o.status = 'Ordered';
+      if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) {
+        o.status = 'In Progress';
       }
       renderOrders();
     }
 
-    function markReceived(index, checked) {
-      if (checked) {
-        orders[index].status = 'Closed';
-        renderOrders();
-      }
+    function markReceived(index) {
+      orders[index].status = 'Closed';
+      renderOrders();
     }
   </script>
 </body>
