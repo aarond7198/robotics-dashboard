@@ -311,26 +311,7 @@ fetch(`https://sheets.googleapis.com/v4/spreadsheets/1tlG9DzmSRHmPu8Qo4Xd6TFStIh
 
     
 
-fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
-  .then(res => res.text())
-  .then(text => {
-    const rows = text.trim().split('
-').slice(1);
-    projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
-    rows.forEach(row => {
-      const cols = row.split(',');
-      const isActive = cols[5]?.trim().toLowerCase() === 'yes';
-      if (isActive) {
-        const projectCode = cols[1];
-        const label = `${projectCode} – ${cols[2]}`;
-        const combinedKey = `${cols[0]}|${cols[1]}`;
-        projectMap[projectCode] = label;
-        const opt = document.createElement("option");
-        opt.value = projectCode;
-        opt.textContent = label;
-        projectSelect.appendChild(opt);
-      }
-    });
+
   })
   .catch(err => {
     console.error("❌ Failed to load project_data.csv:", err);
@@ -517,5 +498,46 @@ document.getElementById("saveButton").addEventListener("click", async () => {
   }
 });
 </script>
+
+<script>
+window.onload = function () {
+  const orders = [];
+  const archived = [];
+  const projectSelect = document.getElementById("projectSelect");
+  const projectMap = {};
+
+  fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+    .then(res => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.text();
+    })
+    .then(text => {
+      alert("✅ Project CSV loaded!");
+      const rows = text.trim().split(/\r?\n/).slice(1);
+      projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+      rows.forEach(row => {
+        const cols = row.split(',');
+        const isActive = cols[5]?.trim().toLowerCase() === 'yes';
+        if (isActive) {
+          const projectCode = cols[1];
+          const label = `${projectCode} – ${cols[2]}`;
+          projectMap[projectCode] = label;
+          const opt = document.createElement("option");
+          opt.value = projectCode;
+          opt.textContent = label;
+          projectSelect.appendChild(opt);
+        }
+      });
+    })
+    .catch(err => {
+      console.error("❌ Failed to load project_data.csv:", err);
+      alert("Error loading project list.");
+    });
+
+  // Reuse rest of logic from original HTML
+  // We'll keep existing script from orders.html except project_data.csv parts
+};
+</script>
+
 </body>
 </html>
