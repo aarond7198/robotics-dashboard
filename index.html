@@ -116,8 +116,8 @@
           const partB = row[1]?.trim();
           const description = row[2]?.trim();
           const bomPath = row[3]?.trim();
-          const dashboardActive = row[4]?.trim().toLowerCase();
-          const salesOrder = row[5]?.trim();
+          const salesOrder = row[4]?.trim();
+          const dashboardActive = row[5]?.trim().toLowerCase();;
 
           if (dashboardActive === "yes") {
             const key = `${partA}-${partB}`;
