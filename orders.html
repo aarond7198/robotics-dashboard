@@ -59,67 +59,159 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.07);
     }
 
-    .coming-soon {
-      text-align: center;
-      font-size: 18px;
-      color: #666;
+    .order-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
       margin-bottom: 20px;
+      padding: 15px;
+      background: #fff;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .order-card h3 {
+      margin-top: 0;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 20px 0;
+    }
+
+    .status-step {
+      padding: 6px 12px;
+      border-radius: 5px;
+      background: #eee;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .status-step.active {
+      background: #0078D4;
+      color: white;
+      font-weight: bold;
+    }
+
+    .prompt {
       margin-top: 10px;
     }
 
-    th, td {
-      padding: 12px;
-      border: 1px solid #ddd;
-      text-align: left;
+    .prompt input, .prompt select, .prompt button {
+      margin-top: 6px;
+      padding: 8px;
+      font-size: 14px;
+      width: 100%;
+      margin-bottom: 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
     }
 
-    th {
-      background-color: #f0f0f0;
+    .prompt button {
+      background: #0078D4;
+      color: white;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
     }
 
-    tr:hover {
-      background-color: #f9f9f9;
+    .prompt button:hover {
+      background: #005a9e;
     }
   </style>
 </head>
 <body>
   <nav>
     <a href="index.html">📦 Inventory Request</a>
-    <a href="orders.html" class="active">🧾 Order Tracking</a>
+    <a href="orders.html" class="active">🨾 Order Tracking</a>
   </nav>
 
   <h1>Order Tracking Dashboard</h1>
 
-  <div class="dashboard">
-    <div class="coming-soon">🚧 Dashboard under construction. This will soon show live order data.</div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>PO Number</th>
-          <th>Supplier</th>
-          <th>Project</th>
-          <th>Status</th>
-          <th>Tracking #</th>
-          <th>ETA</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>PO-2025-001</td>
-          <td>Automation Supply Co</td>
-          <td>Project Alpha</td>
-          <td>Ordered</td>
-          <td>1Z12345EXAMPLE</td>
-          <td>Apr 10, 2025</td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="dashboard" id="orders">
+    <!-- Order cards will be dynamically inserted here -->
   </div>
+
+  <script>
+    const exampleOrders = [
+      {
+        id: 1,
+        project: "Project Alpha",
+        supplier: "Automation Supply Co",
+        status: "pending",
+        tracking: "",
+        eta: "",
+        po: "",
+        ackDate: ""
+      }
+    ];
+
+    const statusStages = ["pending", "ordered", "acknowledged", "expected", "received"];
+
+    function renderOrders() {
+      const container = document.getElementById("orders");
+      container.innerHTML = "";
+
+      exampleOrders.forEach(order => {
+        const card = document.createElement("div");
+        card.className = "order-card";
+
+        const currentIndex = statusStages.indexOf(order.status);
+
+        card.innerHTML = `
+          <h3>Project: ${order.project}</h3>
+          <p><strong>Supplier:</strong> ${order.supplier}</p>
+          <div class="status-bar">
+            ${statusStages.map((stage, i) => `
+              <div class="status-step ${i <= currentIndex ? 'active' : ''}">${stage.charAt(0).toUpperCase() + stage.slice(1)}</div>
+            `).join('')}
+          </div>
+          <div class="prompt">
+            ${renderPrompt(order)}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderPrompt(order) {
+      switch (order.status) {
+        case "pending":
+          return `<label>Enter PO Number:<input type="text" onchange="updateOrder(${order.id}, 'po', this.value)"></label>
+                  <button onclick="advanceStatus(${order.id})">Mark as Ordered</button>`;
+        case "ordered":
+          return `<label>Enter Acknowledgement Date:<input type="date" onchange="updateOrder(${order.id}, 'ackDate', this.value)"></label>
+                  <button onclick="advanceStatus(${order.id})">Mark as Acknowledged</button>`;
+        case "acknowledged":
+          return `<label>Enter Expected Delivery Date:<input type="date" onchange="updateOrder(${order.id}, 'eta', this.value)"></label>
+                  <button onclick="advanceStatus(${order.id})">Mark as Expected</button>`;
+        case "expected":
+          return `<label>Enter Tracking Number:<input type="text" onchange="updateOrder(${order.id}, 'tracking', this.value)"></label>
+                  <button onclick="advanceStatus(${order.id})">Mark as Received</button>`;
+        case "received":
+          return `<strong>Order Complete ✅</strong>`;
+        default:
+          return ``;
+      }
+    }
+
+    function updateOrder(id, field, value) {
+      const order = exampleOrders.find(o => o.id === id);
+      if (order) order[field] = value;
+    }
+
+    function advanceStatus(id) {
+      const order = exampleOrders.find(o => o.id === id);
+      if (!order) return;
+
+      const currentIndex = statusStages.indexOf(order.status);
+      if (currentIndex < statusStages.length - 1) {
+        order.status = statusStages[currentIndex + 1];
+        renderOrders();
+      } else {
+        // Archive logic could go here
+      }
+    }
+
+    renderOrders();
+  </script>
 </body>
 </html>
