@@ -17,20 +17,32 @@
     }
 
     nav {
-      text-align: center;
+      display: flex;
+      justify-content: center;
       margin-bottom: 30px;
+      gap: 10px;
     }
 
     nav a {
-      margin: 0 20px;
       text-decoration: none;
       font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background-color: #e1ecf7;
       color: #0078D4;
-      transition: color 0.3s ease;
+      transition: background-color 0.3s, color 0.3s, transform 0.2s;
+    }
+
+    nav a.active {
+      background-color: #0078D4;
+      color: white;
     }
 
     nav a:hover {
-      color: #005a9e;
+      background-color: #005a9e;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
@@ -110,7 +122,7 @@
   <div id="overlay">✅ Submitted!</div>
 
   <nav>
-    <a href="index.html">📦 Inventory Request</a>
+    <a href="index.html" class="active">📦 Inventory Request</a>
     <a href="orders.html">🧾 Order Tracking</a>
   </nav>
 
@@ -172,7 +184,7 @@
       .then(text => {
         const lines = text.trim().split(/\r?\n/);
         const headers = lines[0].split(",");
-        const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/));
+        const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
 
         const projects = [];
         rows.forEach(row => {
@@ -190,9 +202,9 @@
           }
         });
 
-        projectDropdown.innerHTML = `<option value="">-- Select a Project --</option>`;
+        projectDropdown.innerHTML = `<option value=\"\">-- Select a Project --</option>`;
         projects.forEach(project => {
-          const opt = document.createElement("option");
+          const opt = document.createElement(\"option\");
           opt.value = project.label;
           opt.textContent = project.label;
           opt.dataset.bom = project.bomPath;
@@ -200,105 +212,105 @@
           projectDropdown.appendChild(opt);
         });
 
-        projectDropdown.addEventListener("change", () => {
+        projectDropdown.addEventListener(\"change\", () => {
           const selected = projectDropdown.selectedOptions[0];
-          bomPathField.value = selected?.dataset.bom || "";
-          salesOrderField.value = selected?.dataset.so || "";
+          bomPathField.value = selected?.dataset.bom || \"\";
+          salesOrderField.value = selected?.dataset.so || \"\";
         });
       })
       .catch(err => {
-        console.error("CSV load error:", err);
-        alert("Error loading project list.");
+        console.error(\"CSV load error:\", err);
+        alert(\"Error loading project list.\");
       });
 
     function addPart() {
-      const part = document.getElementById("partNumber").value.trim();
-      const qty = document.getElementById("quantity").value.trim();
-      const notes = document.getElementById("notes").value.trim();
+      const part = document.getElementById(\"partNumber\").value.trim();
+      const qty = document.getElementById(\"quantity\").value.trim();
+      const notes = document.getElementById(\"notes\").value.trim();
 
       if (!part || !qty) {
-        alert("Part number and quantity are required.");
+        alert(\"Part number and quantity are required.\");
         return;
       }
 
       parts.push({ part, qty, notes });
 
-      const table = document.getElementById("partTable");
-      const tbody = table.querySelector("tbody");
-      tbody.innerHTML = "";
+      const table = document.getElementById(\"partTable\");
+      const tbody = table.querySelector(\"tbody\");
+      tbody.innerHTML = \"\";
       parts.forEach(p => {
         const row = `<tr><td>${p.part}</td><td>${p.qty}</td><td>${p.notes}</td></tr>`;
-        tbody.insertAdjacentHTML("beforeend", row);
+        tbody.insertAdjacentHTML(\"beforeend\", row);
       });
-      table.style.display = "table";
+      table.style.display = \"table\";
 
-      document.getElementById("partListData").value = parts.map(p =>
+      document.getElementById(\"partListData\").value = parts.map(p =>
         `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
-      ).join("\n");
+      ).join(\"\\n\");
 
-      document.getElementById("partNumber").value = "";
-      document.getElementById("quantity").value = "";
-      document.getElementById("notes").value = "";
+      document.getElementById(\"partNumber\").value = \"\";
+      document.getElementById(\"quantity\").value = \"\";
+      document.getElementById(\"notes\").value = \"\";
     }
 
-    document.getElementById("main-form").addEventListener("submit", async e => {
+    document.getElementById(\"main-form\").addEventListener(\"submit\", async e => {
       e.preventDefault();
 
-      const pendingPart = document.getElementById("partNumber").value.trim();
-      const pendingQty = document.getElementById("quantity").value.trim();
-      const pendingNotes = document.getElementById("notes").value.trim();
+      const pendingPart = document.getElementById(\"partNumber\").value.trim();
+      const pendingQty = document.getElementById(\"quantity\").value.trim();
+      const pendingNotes = document.getElementById(\"notes\").value.trim();
 
       if (pendingPart && pendingQty) {
         parts.push({ part: pendingPart, qty: pendingQty, notes: pendingNotes });
 
-        const table = document.getElementById("partTable");
-        const tbody = table.querySelector("tbody");
-        tbody.innerHTML = "";
+        const table = document.getElementById(\"partTable\");
+        const tbody = table.querySelector(\"tbody\");
+        tbody.innerHTML = \"\";
         parts.forEach(p => {
           const row = `<tr><td>${p.part}</td><td>${p.qty}</td><td>${p.notes}</td></tr>`;
-          tbody.insertAdjacentHTML("beforeend", row);
+          tbody.insertAdjacentHTML(\"beforeend\", row);
         });
-        table.style.display = "table";
+        table.style.display = \"table\";
 
-        document.getElementById("partListData").value = parts.map(p =>
+        document.getElementById(\"partListData\").value = parts.map(p =>
           `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
-        ).join("\n");
+        ).join(\"\\n\");
 
-        document.getElementById("partNumber").value = "";
-        document.getElementById("quantity").value = "";
-        document.getElementById("notes").value = "";
+        document.getElementById(\"partNumber\").value = \"\";
+        document.getElementById(\"quantity\").value = \"\";
+        document.getElementById(\"notes\").value = \"\";
       }
 
       const form = e.target;
       const formData = new FormData(form);
 
-      const bom = formData.get("BOM Path");
-      const so = formData.get("Sales Order");
-      const partsList = formData.get("Part List");
-      const submittedBy = formData.get("Submitted By");
-      const project = formData.get("Project");
+      const bom = formData.get(\"BOM Path\");
+      const so = formData.get(\"Sales Order\");
+      const partsList = formData.get(\"Part List\");
+      const submittedBy = formData.get(\"Submitted By\");
+      const project = formData.get(\"Project\");
 
-      const customMessage = `Submitted by: ${submittedBy}\nProject: ${project}\n\nSO: ${so}\nBOM Path: ${bom}\n\nParts:\n${partsList}`;
+      const customMessage = `Submitted by: ${submittedBy}\\nProject: ${project}\\n\\nSO: ${so}\\nBOM Path: ${bom}\\n\\nParts:\\n${partsList}`;
       messageField.value = customMessage;
 
-      const response = await fetch("https://formspree.io/f/mkgjpqgj", {
-        method: "POST",
+      const response = await fetch(\"https://formspree.io/f/mkgjpqgj\", {
+        method: \"POST\",
         body: formData,
-        headers: { Accept: "application/json" }
+        headers: { Accept: \"application/json\" }
       });
 
       if (response.ok) {
-        document.getElementById("overlay").style.display = "flex";
+        document.getElementById(\"overlay\").style.display = \"flex\";
         parts.length = 0;
-        document.getElementById("partTable").style.display = "none";
+        document.getElementById(\"partTable\").style.display = \"none\";
         form.reset();
-        bomPathField.value = "";
-        salesOrderField.value = "";
+        bomPathField.value = \"\";
+        salesOrderField.value = \"\";
         setTimeout(() => {
-          document.getElementById("overlay").style.display = "none";
+          document.getElementById(\"overlay\").style.display = \"none\";
         }, 3000);
       } else {
-        alert("Error submitting form. Please try again.");
+        alert(\"Error submitting form. Please try again.\");
       }
     });
   </script>
