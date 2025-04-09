@@ -1,0 +1,27 @@
+name: Save Orders Data
+
+on:
+  repository_dispatch:
+    types: [save-orders]
+
+jobs:
+  save-orders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Create placeholder CSV (replace with real logic later)
+        run: |
+          echo "PO Number,Supplier,Part Numbers,Project,Acknowledgement Date,Expected Delivery,Received,Status" > orders_data.csv
+          echo "1234,Acme,XYZ-999,2025-01-A,2025-04-01,2025-04-10,false,Ready to Order" >> orders_data.csv
+
+      - name: Commit and push
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "actions@github.com"
+          git add orders_data.csv
+          git commit -m "📝 Save orders_data.csv via Save button"
+          git push
+        env:
+          GH_TOKEN: ${{ secrets.GH_CSV_TOKEN }}
