@@ -421,27 +421,50 @@
       }
       renderOrders();
     }
-  </script><script>
-document.getElementById("saveButton").addEventListener("click", () => {
-  fetch("https://api.github.com/repos/aarond7198/robotics-dashboard/dispatches", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer YOUR_PERSONAL_ACCESS_TOKEN",
-      "Accept": "application/vnd.github+json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      event_type: "save-orders"
-    })
-  })
-  .then(res => {
+  </script>
+<script>
+document.getElementById("saveButton").addEventListener("click", async () => {
+  const sheetId = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+  const apiKey = "YOUR_GOOGLE_SHEETS_API_KEY"; // Replace this with your actual API key
+  const sheetName = "Sheet1";
+
+  const csvRows = orders.map(o => [
+    o.po || "",
+    o.supplier || "",
+    o.partNumbers || "",
+    o.project || "",
+    o.ackDate || "",
+    o.eta || "",
+    o.received ? "true" : "false",
+    o.status || ""
+  ]);
+
+  const body = { values: csvRows };
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}:append?valueInputOption=USER_ENTERED&key=${apiKey}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
     if (res.ok) {
-      alert("✅ Save triggered! GitHub Action is writing to your repo.");
+      alert("✅ Orders saved to Google Sheet!");
     } else {
-      alert("❌ Save failed. Check token/permissions.");
+      const text = await res.text();
+      alert("❌ Failed to save orders to Google Sheet.
+" + text);
     }
-  });
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error occurred while saving to Google Sheets.");
+  }
 });
 </script>
+
 </body>
 </html>
