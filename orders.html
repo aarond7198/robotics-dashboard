@@ -54,7 +54,7 @@
 
     .dashboard {
       background: white;
-      padding: 25px;
+      padding: 15px;
       border-radius: 10px;
       box-shadow: 0 0 12px rgba(0,0,0,0.07);
     }
@@ -62,31 +62,33 @@
     .order-card {
       border: 1px solid #ccc;
       border-radius: 8px;
-      padding: 12px 15px;
+      padding: 10px;
       margin-bottom: 15px;
       background: #fff;
+      font-size: 0.85rem;
     }
 
     .order-card h3 {
-      margin-top: 0;
-      font-size: 1.1rem;
+      margin: 0 0 5px;
+      font-size: 1rem;
     }
 
     .form-row {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     label {
       font-weight: 600;
       display: block;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
+      font-size: 0.9rem;
     }
 
     input, select, button {
-      padding: 8px;
+      padding: 6px;
       width: 100%;
       box-sizing: border-box;
-      font-size: 1rem;
+      font-size: 0.9rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
@@ -96,7 +98,7 @@
       color: white;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     button:hover {
@@ -111,7 +113,7 @@
 
     .status-step {
       flex: 1;
-      padding: 6px;
+      padding: 5px;
       text-align: center;
       border-radius: 6px;
       font-size: 0.85rem;
@@ -124,21 +126,18 @@
       font-weight: bold;
     }
 
-    .archive {
-      margin-top: 40px;
+    #archiveTitle {
+      margin-top: 30px;
+      font-size: 1.1rem;
+      color: #555;
+      border-top: 1px solid #ccc;
+      padding-top: 15px;
     }
 
-    .archive h2 {
-      font-size: 1.2rem;
-      margin-bottom: 10px;
-    }
-
-    .archive-entry {
-      font-size: 0.95rem;
-      padding: 8px;
-      background: #f1f1f1;
-      border-radius: 5px;
-      margin-bottom: 6px;
+    .archived-order {
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+      color: #555;
     }
   </style>
 </head>
@@ -170,15 +169,12 @@
     </form>
 
     <div id="ordersContainer"></div>
-    <div class="archive">
-      <h2>📁 Recently Closed Orders</h2>
-      <div id="archiveContainer"></div>
-    </div>
+    <div id="archiveContainer"></div>
   </div>
 
   <script>
     const orders = [];
-    const archive = [];
+    const archived = [];
     const projectSelect = document.getElementById("projectSelect");
 
     fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
@@ -188,7 +184,8 @@
         projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
         rows.forEach(row => {
           const cols = row.split(',');
-          if (cols[5]?.toLowerCase() === 'yes') {
+          const dashboardActive = cols[5]?.trim().toLowerCase();
+          if (dashboardActive === 'yes') {
             const projectCode = `${cols[0]}-${cols[1]}`;
             const label = `${projectCode} – ${cols[2]}`;
             const opt = document.createElement("option");
@@ -223,16 +220,13 @@
 
     function renderOrders() {
       const container = document.getElementById("ordersContainer");
-      const archiveContainer = document.getElementById("archiveContainer");
+      const archive = document.getElementById("archiveContainer");
       container.innerHTML = "";
-      archiveContainer.innerHTML = "";
+      archive.innerHTML = "";
 
       orders.forEach((order, index) => {
         if (order.status === "Closed") {
-          const entry = document.createElement("div");
-          entry.className = "archive-entry";
-          entry.textContent = `${order.project} from ${order.supplier} (Parts: ${order.partNumbers})`;
-          archiveContainer.appendChild(entry);
+          archived.push(order);
           return;
         }
 
@@ -243,14 +237,12 @@
         let inputField = "";
 
         if (status === "Ready to Order") {
-          inputField = `<label>PO Number<input onchange="updateField(${index}, 'po', this.value)"/></label>`;
+          inputField = `<label>PO Number<input onblur="updateField(${index}, 'po', this.value)" /></label>`;
         } else if (status === "Ordered") {
-          inputField = `
-            <label>Ack Date<input onchange="updateField(${index}, 'ackDate', this.value)"/></label>
-            <label>Expected ETA<input onchange="updateField(${index}, 'eta', this.value)"/></label>
-          `;
+          inputField = `<label>Ack Date<input onblur="updateField(${index}, 'ackDate', this.value)" /></label>
+                        <label>Expected ETA<input onblur="updateField(${index}, 'eta', this.value)" /></label>`;
         } else if (status === "In Progress") {
-          inputField = `<label>Confirm Delivery<input type="checkbox" onchange="markReceived(${index}, this.checked)"/></label>`;
+          inputField = `<label>Confirm Delivery<input type="checkbox" onchange="markReceived(${index}, this.checked)" /></label>`;
         }
 
         div.innerHTML = `
@@ -267,12 +259,26 @@
         `;
         container.appendChild(div);
       });
+
+      if (archived.length) {
+        const title = document.createElement("h3");
+        title.id = "archiveTitle";
+        title.textContent = "Recently Closed Orders";
+        archive.appendChild(title);
+
+        archived.slice(-5).reverse().forEach(order => {
+          const p = document.createElement("p");
+          p.className = "archived-order";
+          p.textContent = `${order.partNumbers} from ${order.supplier} (${order.project})`;
+          archive.appendChild(p);
+        });
+      }
     }
 
     function updateField(index, field, value) {
       orders[index][field] = value;
       if (field === 'po') orders[index].status = 'Ordered';
-      if ((orders[index].ackDate && orders[index].eta)) {
+      if ((field === 'ackDate' || field === 'eta') && orders[index].ackDate && orders[index].eta) {
         orders[index].status = 'In Progress';
       }
       renderOrders();
