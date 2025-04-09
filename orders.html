@@ -17,20 +17,32 @@
     }
 
     nav {
-      text-align: center;
+      display: flex;
+      justify-content: center;
       margin-bottom: 30px;
+      gap: 10px;
     }
 
     nav a {
-      margin: 0 20px;
       text-decoration: none;
       font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background-color: #e1ecf7;
       color: #0078D4;
-      transition: color 0.3s ease;
+      transition: background-color 0.3s, color 0.3s, transform 0.2s;
+    }
+
+    nav a.active {
+      background-color: #0078D4;
+      color: white;
     }
 
     nav a:hover {
-      color: #005a9e;
+      background-color: #005a9e;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
 
     h1 {
@@ -78,7 +90,7 @@
 <body>
   <nav>
     <a href="index.html">📦 Inventory Request</a>
-    <a href="orders.html">🧾 Order Tracking</a>
+    <a href="orders.html" class="active">🧾 Order Tracking</a>
   </nav>
 
   <h1>Order Tracking Dashboard</h1>
