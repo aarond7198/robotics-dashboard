@@ -8,39 +8,49 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background: #f4f6f8;
+      background: #f9f9f9;
       padding: 40px 20px;
       max-width: 1000px;
       margin: auto;
+      color: #333;
     }
 
     nav {
-      margin-bottom: 30px;
       text-align: center;
+      margin-bottom: 30px;
     }
 
     nav a {
+      margin: 0 20px;
       text-decoration: none;
       font-weight: 600;
-      margin: 0 15px;
-      color: #0055cc;
+      color: #0078D4;
+      transition: color 0.3s ease;
     }
 
     nav a:hover {
-      text-decoration: underline;
+      color: #005a9e;
     }
 
     h1 {
       text-align: center;
+      font-size: 2rem;
       margin-bottom: 30px;
-      color: #333;
+      color: #222;
     }
 
     .dashboard {
       background: white;
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      box-shadow: 0 0 15px rgba(0,0,0,0.07);
+    }
+
+    .coming-soon {
+      text-align: center;
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 20px;
     }
 
     table {
@@ -59,17 +69,14 @@
       background-color: #f0f0f0;
     }
 
-    .coming-soon {
-      text-align: center;
-      font-size: 18px;
-      color: #666;
-      padding: 40px 0;
+    tr:hover {
+      background-color: #f9f9f9;
     }
   </style>
 </head>
 <body>
   <nav>
-    <a href="index.html">📦 Inventory Tracking</a>
+    <a href="index.html">📦 Inventory Request</a>
     <a href="orders.html">🧾 Order Tracking</a>
   </nav>
 
@@ -78,7 +85,6 @@
   <div class="dashboard">
     <div class="coming-soon">🚧 Dashboard under construction. This will soon show live order data.</div>
 
-    <!-- Example of future table layout -->
     <table>
       <thead>
         <tr>
