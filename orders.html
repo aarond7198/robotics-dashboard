@@ -266,9 +266,7 @@ window.onload = function () {
     })
     .then(text => {
       alert("✅ Project CSV loaded!");
-      const lines = text.trim().split(/\r?\n/); // patched
-?
-/);
+      const lines = text.trim().split(/\r?\n/);
       const rows = lines.slice(1).map(row => row.split(","));
       projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
       rows.forEach(row => {
