@@ -418,7 +418,9 @@ window.markReceived = function(index) {
 </script>
 <script>
 document.getElementById("saveButton").addEventListener("click", function () {
-  if (!window.orders || orders.length === 0) {
+  console.log("Orders to save:", orders);
+  console.log("Archived to save:", archived);
+  if ((!orders || orders.length === 0) && (!archived || archived.length === 0)) {
     alert("No orders to save.");
     return;
   }
@@ -441,7 +443,7 @@ document.getElementById("saveButton").addEventListener("click", function () {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(formatted)
+    body: JSON.stringify([...orders, ...archived])
   })
   .then(res => res.text())
   .then(res => {
