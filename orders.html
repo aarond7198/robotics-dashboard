@@ -455,115 +455,69 @@ document.getElementById("saveButton").addEventListener("click", function () {
     alert("❌ Error saving orders.");
   });
 });
-</script>
-<script>
-const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+</script><script>
+function renderOrders() {
+  const container = document.getElementById("ordersContainer");
+  const archive = document.getElementById("archiveContainer");
+  container.innerHTML = "";
+  archive.innerHTML = "";
 
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
+  orders.forEach((order, index) => {
+    const div = document.createElement("div");
+    div.className = "order-card";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const loginBtn = document.getElementById("loginBtn");
-  loginBtn.onclick = () => {
-    if (tokenClient) {
-      tokenClient.requestAccessToken();
-    } else {
-      console.log("Token client not initialized");
+    const status = order.status;
+    let inputField = "";
+
+    if (status === "Ready to Order") {
+      inputField = \`<div class="inline-input"><label>PO Number</label><input type="text" value="\${order.po}" onchange="updateField(\${index}, 'po', this.value)" /></div>\`;
+    } else if (status === "Ordered") {
+      inputField = \`<div class="inline-input"><label>Ack Date</label><input type="text" value="\${order.ackDate}" onchange="updateField(\${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="\${order.eta}" onchange="updateField(\${index}, 'eta', this.value)" /></div>\`;
+    } else if (status === "In Progress") {
+      inputField = \`<button class="received-btn" onclick="markReceived(\${index})">Mark as Received</button>\`;
     }
-  };
 
-  const gapiScript = document.createElement("script");
-  gapiScript.src = "https://apis.google.com/js/api.js";
-  gapiScript.onload = () => {
-    gapi.load("client", async () => {
-      await gapi.client.init({
-        apiKey: "", // not needed since using OAuth
-        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
-      });
-      gapiInited = true;
-      maybeEnableLogin();
+    const extraDetails = \`
+      \${order.po ? \`<p><strong>PO:</strong> \${order.po}</p>\` : ''}
+      \${order.eta ? \`<p class="highlight"><strong>Expected:</strong> \${order.eta}</p>\` : ''}
+      \${order.description ? \`<p><strong>Notes:</strong> \${order.description}</p>\` : ''}
+    \`;
+
+    const statusBar = \`
+      <div class="status-bar">
+        <div class="status-segment \${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+        <div class="status-segment \${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+        <div class="status-segment \${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+        <div class="status-segment \${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+      </div>
+    \`;
+
+    div.innerHTML = \`
+      <div class="back-button" onclick="stepBack(\${index})">↩️</div>
+      <h3>\${projectMap[order.project] || order.project}</h3>
+      <p><strong>Supplier:</strong> \${order.supplier}</p>
+      <p><strong>Parts:</strong> \${order.partNumbers}</p>
+      \${extraDetails}
+      \${statusBar}
+      \${inputField}
+    \`;
+    container.appendChild(div);
+  });
+
+  if (archived.length) {
+    const title = document.createElement("h3");
+    title.id = "archiveTitle";
+    title.textContent = "Recently Closed Orders";
+    archive.appendChild(title);
+
+    archived.slice(-10).reverse().forEach((order, index) => {
+      const p = document.createElement("p");
+      p.className = "archived-order";
+      p.innerHTML = \`\${order.partNumbers} from \${order.supplier} (\${projectMap[order.project] || order.project}) <button onclick="restoreOrder(\${archived.length - 1 - index})">♻️</button>\`;
+      archive.appendChild(p);
     });
-  };
-  document.body.appendChild(gapiScript);
-
-  const gisScript = document.createElement("script");
-  gisScript.src = "https://accounts.google.com/gsi/client";
-  gisScript.onload = () => {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: (tokenResponse) => {
-        console.log("✅ Token received:", tokenResponse);
-        gapi.client.setToken(tokenResponse);
-        setTimeout(() => {
-          if (!gapi.client.getToken()) {
-            console.warn("⚠️ Token not applied properly!");
-          } else {
-            console.log("🔑 Token confirmed. Proceeding to load data...");
-            loadOrdersFromSheet();
-          }
-        }, 1000);
-      },
-    });
-    gisInited = true;
-    maybeEnableLogin();
-  };
-  document.body.appendChild(gisScript);
-});
-
-function maybeEnableLogin() {
-  if (gapiInited && gisInited) {
-    document.getElementById("loginBtn").disabled = false;
   }
 }
-
-async function loadOrdersFromSheet() {
-  console.log("📥 Loading orders from Google Sheet...");
-  try {
-    const res = await gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SHEET_ID,
-      range: "Sheet1"
-    });
-
-    const rows = res.result.values;
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
-
-    orders.length = 0;
-    archived.length = 0;
-
-    dataRows.forEach(row => {
-      const order = {};
-      headers.forEach((key, i) => {
-        order[key.trim()] = row[i];
-      });
-      const formattedOrder = {
-        po: order["PO Number"] || "",
-        supplier: order["Supplier"] || "",
-        partNumbers: order["Part Numbers"] || "",
-        project: order["Project"] || "",
-        ackDate: order["Acknowledgement Date"] || "",
-        eta: order["Expected Delivery"] || "",
-        received: order["Received"] === "true" || order["Received"] === true,
-        status: order["Status"] || "Ready to Order"
-      };
-      if (formattedOrder.status === "Closed" || formattedOrder.received) {
-        archived.push(formattedOrder);
-      } else {
-        orders.push(formattedOrder);
-      }
-    });
-
-    console.log("✅ Orders loaded from sheet.");
-    console.log("📋 Active Orders:", JSON.parse(JSON.stringify(orders)));
-    console.log("📋 Archived Orders:", JSON.parse(JSON.stringify(archived)));
-    renderOrders();
-  } catch (err) {
-    console.error("❌ Failed to load from sheet:", err);
-  }
-}
-</script></body>
+</script>
+</body>
 </html>
