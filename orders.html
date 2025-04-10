@@ -479,7 +479,10 @@ document.addEventListener("DOMContentLoaded", () => {
   gapiScript.src = "https://apis.google.com/js/api.js";
   gapiScript.onload = () => {
     gapi.load("client", async () => {
-      await gapi.client.init({});
+      await gapi.client.init({
+        apiKey: "", // not needed since using OAuth
+        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+      });
       gapiInited = true;
       maybeEnableLogin();
     });
@@ -520,9 +523,11 @@ function maybeEnableLogin() {
 async function loadOrdersFromSheet() {
   console.log("📥 Loading orders from Google Sheet...");
   try {
-    const res = await gapi.client.request({
-      path: `/v4/spreadsheets/${SHEET_ID}/values/Sheet1`,
+    const res = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "Sheet1"
     });
+
     const rows = res.result.values;
     const headers = rows[0];
     const dataRows = rows.slice(1);
