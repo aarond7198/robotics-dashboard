@@ -254,15 +254,14 @@
 </form>
 <div id="archiveContainer"></div>
 </div>
+
+
+
+    
 <script>const orders = [];
 const archived = [];
 
-
-
-
-
 window.onload = function () {
-  
   
   const projectSelect = document.getElementById("projectSelect");
   const projectMap = {};
@@ -418,8 +417,7 @@ window.markReceived = function(index) {
     renderOrders();
   }
 };
-</script>
-<script>
+
 document.getElementById("saveButton").addEventListener("click", function () {
   if (!window.orders || orders.length === 0) {
     alert("No orders to save.");
@@ -455,9 +453,7 @@ document.getElementById("saveButton").addEventListener("click", function () {
     alert("❌ Error saving orders.");
   });
 });
-</script>
 
-<script>
 const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
@@ -551,5 +547,6 @@ async function loadOrdersFromSheet() {
     console.error("❌ Failed to load from sheet:", err);
   }
 }
-</script></body>
+</script>
+</body>
 </html>
