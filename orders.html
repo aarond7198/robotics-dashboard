@@ -254,7 +254,177 @@
 </form>
 <div id="archiveContainer"></div>
 </div>
+<script>const orders = [];
+const archived = [];
 
+
+
+
+
+window.onload = function () {
+  
+  
+  const projectSelect = document.getElementById("projectSelect");
+  const projectMap = {};
+
+  fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+    .then(res => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.text();
+    })
+    .then(text => {
+      alert("✅ Project CSV loaded!");
+      const lines = text.trim().split(/\r?\n/);
+      const rows = lines.slice(1).map(row => row.split(","));
+      projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+      rows.forEach(row => {
+        const customerCode = row[0]?.trim();
+        const projectCode = row[1]?.trim();
+        const description = row[2]?.trim();
+        const isActive = row[5]?.trim().toLowerCase() === "yes";
+        if (isActive) {
+          const label = `${customerCode} - ${projectCode}`;
+          projectMap[`${customerCode}-${projectCode}`] = label;
+          const opt = document.createElement("option");
+          opt.value = `${customerCode}-${projectCode}`;
+          opt.textContent = label;
+          projectSelect.appendChild(opt);
+          }
+        });
+        renderOrders(); // Render orders after projectMap is ready
+
+        }
+      });
+    })
+    .catch(err => {
+      console.error("❌ CSV load error:", err);
+      alert("Error loading project list.");
+    });
+
+  document.getElementById("orderForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const supplier = document.getElementById("supplier").value.trim();
+    const partNumbers = document.getElementById("partNumbers").value.trim();
+    const project = projectSelect.value;
+    const description = document.getElementById("description").value.trim();
+
+    const order = {
+      supplier,
+      partNumbers,
+      project,
+      description,
+      status: "Ready to Order",
+      po: "",
+      ackDate: "",
+      eta: "",
+      received: false
+    };
+
+    orders.push(order);
+    renderOrders();
+    e.target.reset();
+  });
+
+  function renderOrders() {
+    const container = document.getElementById("ordersContainer");
+    const archive = document.getElementById("archiveContainer");
+    console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
+  container.innerHTML = "";
+    archive.innerHTML = "";
+
+    orders.forEach((order, index) => {
+      const div = document.createElement("div");
+      div.className = "order-card";
+
+      const status = order.status;
+      let inputField = "";
+
+      if (status === "Ready to Order") {
+        inputField = `<div class="inline-input"><label>PO Number</label><input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" /></div>`;
+      } else if (status === "Ordered") {
+        inputField = `<div class="inline-input"><label>Ack Date</label><input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" /></div>`;
+      } else if (status === "In Progress") {
+        inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
+      }
+
+      const extraDetails = `
+        ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
+        ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+        ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
+      `;
+
+      const statusBar = `
+        <div class="status-bar">
+          <div class="status-segment ${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+          <div class="status-segment ${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+          <div class="status-segment ${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+          <div class="status-segment ${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+        </div>
+      `;
+
+      div.innerHTML = `
+        ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
+        <h3>${projectMap[order.project] || order.project}</h3>
+        <p><strong>Supplier:</strong> ${order.supplier}</p>
+        <p><strong>Parts:</strong> ${order.partNumbers}</p>
+        ${extraDetails}
+        ${statusBar}
+        ${inputField}
+      `;
+      container.appendChild(div);
+    });
+
+    if (archived.length) {
+      const title = document.createElement("h3");
+      title.id = "archiveTitle";
+      title.textContent = "Recently Closed Orders";
+      archive.appendChild(title);
+
+      archived.slice(-5).reverse().forEach(order => {
+        const p = document.createElement("p");
+        p.className = "archived-order";
+        p.textContent = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project})`;
+        archive.appendChild(p);
+      });
+    }
+  }
+
+  window.updateField = function(index, field, value) {
+    orders[index][field] = value;
+    const o = orders[index];
+    if (field === 'po' && value) o.status = 'Ordered';
+    if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) {
+      o.status = 'In Progress';
+    }
+    renderOrders();
+  }
+
+  
+window.markReceived = function(index) {
+  const closedOrder = orders.splice(index, 1)[0];
+  closedOrder.status = 'Closed';
+  archived.push(closedOrder);
+  renderOrders();
+}
+
+
+  window.stepBack = function(index) {
+    const o = orders[index];
+    if (o.status === 'In Progress') {
+      o.status = 'Ordered';
+      o.eta = '';
+      o.ackDate = '';
+    } else if (o.status === 'Ordered') {
+      o.status = 'Ready to Order';
+      o.po = '';
+    } else if (o.status === 'Ready to Order') {
+      orders.splice(index, 1);
+    }
+    renderOrders();
+  }
+};
+</script>
 <script>
 document.getElementById("saveButton").addEventListener("click", function () {
   if (!window.orders || orders.length === 0) {
@@ -469,6 +639,8 @@ async function loadOrdersFromSheet() {
 function renderOrders() {
   const container = document.getElementById("ordersContainer");
   const archive = document.getElementById("archiveContainer");
+  console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
   container.innerHTML = "";
   archive.innerHTML = "";
 
