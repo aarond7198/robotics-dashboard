@@ -251,7 +251,10 @@
 </form>
 <div id="archiveContainer"></div>
 </div>
-<script>
+<script>const orders = [];
+const archived = [];
+
+
 
 
 
@@ -415,11 +418,7 @@ window.markReceived = function(index) {
 </script>
 <script>
 document.getElementById("saveButton").addEventListener("click", function () {
-  
-  console.log("Orders to save:", orders);
-  console.log("Archived to save:", archived);
-
-  if ((!orders || orders.length === 0) && (!archived || archived.length === 0)) {
+  if (!window.orders || orders.length === 0) {
     alert("No orders to save.");
     return;
   }
