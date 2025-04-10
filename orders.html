@@ -221,6 +221,10 @@
   </style>
 </head>
 <body>
+<div style="text-align: right; margin-bottom: 10px;">
+<button id="loginBtn" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 6px;">🔐 Log in with Google</button>
+</div>
+
 <nav>
 <a href="index.html">📦 Inventory Request</a>
 <a class="active" href="orders.html">🧾 Order Tracking</a>
@@ -372,17 +376,11 @@ window.onload = function () {
       title.textContent = "Recently Closed Orders";
       archive.appendChild(title);
 
-      archived.slice(-10).reverse().forEach((order, index) => {
+      archived.slice(-5).reverse().forEach(order => {
         const p = document.createElement("p");
         p.className = "archived-order";
         p.textContent = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project})`;
-        const restoreBtn = document.createElement("button");
-  restoreBtn.textContent = "↩️";
-  restoreBtn.style.marginLeft = "10px";
-  restoreBtn.style.fontSize = "0.8rem";
-  restoreBtn.onclick = () => restoreOrder(order);
-  p.appendChild(restoreBtn);
-  archive.appendChild(p);
+        archive.appendChild(p);
       });
     }
   }
@@ -421,14 +419,6 @@ window.markReceived = function(index) {
     renderOrders();
   }
 };
-
-window.restoreOrder = function(order) {
-  archived.splice(archived.indexOf(order), 1);
-  order.received = false;
-  order.status = "In Progress";
-  orders.push(order);
-  renderOrders();
-}
 </script>
 <script>
 document.getElementById("saveButton").addEventListener("click", function () {
@@ -468,30 +458,88 @@ document.getElementById("saveButton").addEventListener("click", function () {
 });
 </script>
 <script>
-fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec")
-  .then(res => res.json())
-  .then(data => {
-    data.forEach(order => {
-      const formattedOrder = {
-        po: order["PO Number"] || "",
-        supplier: order["Supplier"] || "",
-        partNumbers: order["Part Numbers"] || "",
-        project: order["Project"] || "",
-        ackDate: order["Acknowledgement Date"] || "",
-        eta: order["Expected Delivery"] || "",
-        received: order["Received"] === "true" || order["Received"] === true,
-        status: order["Status"] || "Ready to Order"
-      };
-      if (formattedOrder.status === "Closed" || formattedOrder.received) {
-        archived.push(formattedOrder);
-      } else {
-        orders.push(formattedOrder);
-      }
+<script src="https://apis.google.com/js/api.js"></script>
+<script>
+  const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+  const API_KEY = "";
+  const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+  const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+
+  let tokenClient;
+  let gapiInited = false;
+  let gisInited = false;
+
+  document.getElementById("loginBtn").onclick = () => handleAuthClick();
+
+  function gapiLoaded() {
+    gapi.load("client", initializeGapiClient);
+  }
+
+  async function initializeGapiClient() {
+    await gapi.client.init({ apiKey: API_KEY });
+    gapiInited = true;
+  }
+
+  function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse) => {
+        gapi.client.setToken(tokenResponse);
+        loadOrdersFromSheet();
+      },
     });
-    renderOrders();
-  })
-  .catch(err => {
-    console.error("Failed to load order data:", err);
-  });
+    gisInited = true;
+  }
+
+  function handleAuthClick() {
+    tokenClient.requestAccessToken();
+  }
+
+  async function loadOrdersFromSheet() {
+    try {
+      const res = await gapi.client.request({
+        path: `/v4/spreadsheets/${SHEET_ID}/values/Sheet1`,
+      });
+      const rows = res.result.values;
+      const headers = rows[0];
+      const dataRows = rows.slice(1);
+
+      orders.length = 0;
+      archived.length = 0;
+
+      dataRows.forEach(row => {
+        const order = {};
+        headers.forEach((key, i) => {
+          order[key.trim()] = row[i];
+        });
+        const formattedOrder = {
+          po: order["PO Number"] || "",
+          supplier: order["Supplier"] || "",
+          partNumbers: order["Part Numbers"] || "",
+          project: order["Project"] || "",
+          ackDate: order["Acknowledgement Date"] || "",
+          eta: order["Expected Delivery"] || "",
+          received: order["Received"] === "true" || order["Received"] === true,
+          status: order["Status"] || "Ready to Order"
+        };
+        if (formattedOrder.status === "Closed" || formattedOrder.received) {
+          archived.push(formattedOrder);
+        } else {
+          orders.push(formattedOrder);
+        }
+      });
+
+      renderOrders();
+    } catch (err) {
+      console.error("Error loading orders from sheet:", err);
+    }
+  }
+
+  window.onload = () => {
+    gapiLoaded();
+    gisLoaded();
+  };
+</script>
 </script></body>
 </html>
