@@ -222,7 +222,7 @@
 </head>
 <body>
 <div style="text-align: right; margin-bottom: 10px;">
-<button id="loginBtn" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 6px;">🔐 Log in with Google</button>
+<button disabled="" id="loginBtn" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 6px;">🔐 Log in with Google</button>
 </div>
 
 <nav>
@@ -458,8 +458,6 @@ document.getElementById("saveButton").addEventListener("click", function () {
 });
 </script>
 <script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://apis.google.com/js/api.js"></script>
 <script>
   const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
   const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
@@ -469,10 +467,13 @@ document.getElementById("saveButton").addEventListener("click", function () {
   let gapiInited = false;
   let gisInited = false;
 
-  document.getElementById("loginBtn").onclick = () => handleAuthClick();
+  document.getElementById("loginBtn").onclick = () => {
+    if (tokenClient) tokenClient.requestAccessToken();
+    else console.log("Token client not initialized yet.");
+  };
 
   function gapiLoaded() {
-    console.log("GAPI loaded");
+    console.log("✅ GAPI script loaded");
     gapi.load("client", async () => {
       await gapi.client.init({});
       gapiInited = true;
@@ -481,12 +482,12 @@ document.getElementById("saveButton").addEventListener("click", function () {
   }
 
   function gisLoaded() {
-    console.log("GIS loaded");
+    console.log("✅ GIS script loaded");
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResponse) => {
-        console.log("Token received");
+        console.log("✅ Token received");
         gapi.client.setToken(tokenResponse);
         loadOrdersFromSheet();
       },
@@ -501,14 +502,8 @@ document.getElementById("saveButton").addEventListener("click", function () {
     }
   }
 
-  function handleAuthClick() {
-    if (tokenClient) {
-      tokenClient.requestAccessToken();
-    }
-  }
-
   async function loadOrdersFromSheet() {
-    console.log("Loading orders from Google Sheet...");
+    console.log("📥 Loading orders from Google Sheet...");
     try {
       const res = await gapi.client.request({
         path: `/v4/spreadsheets/${SHEET_ID}/values/Sheet1`,
@@ -542,16 +537,24 @@ document.getElementById("saveButton").addEventListener("click", function () {
         }
       });
 
-      console.log("Orders loaded:", orders);
+      console.log("✅ Orders loaded:", orders);
       renderOrders();
     } catch (err) {
-      console.error("Error loading orders from sheet:", err);
+      console.error("❌ Failed to load from sheet:", err);
     }
   }
 
+  // Attach script loaders
   window.onload = () => {
-    gapiLoaded();
-    gisLoaded();
+    const gapiScript = document.createElement("script");
+    gapiScript.src = "https://apis.google.com/js/api.js";
+    gapiScript.onload = gapiLoaded;
+    document.body.appendChild(gapiScript);
+
+    const gisScript = document.createElement("script");
+    gisScript.src = "https://accounts.google.com/gsi/client";
+    gisScript.onload = gisLoaded;
+    document.body.appendChild(gisScript);
   };
 </script>
 </script></body>
