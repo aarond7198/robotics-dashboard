@@ -440,6 +440,7 @@ document.getElementById("saveButton").addEventListener("click", function () {
 
   fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
     method: "POST",
+    mode: "no-cors",
     headers: {
       "Content-Type": "application/json"
     },
