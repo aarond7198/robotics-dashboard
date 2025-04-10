@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -266,7 +266,9 @@ window.onload = function () {
     })
     .then(text => {
       alert("✅ Project CSV loaded!");
-      const lines = text.trim().split(/\r?\n/);
+      const lines = text.trim().split(/\r?\n/); // patched
+?
+/);
       const rows = lines.slice(1).map(row => row.split(","));
       projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
       rows.forEach(row => {
@@ -350,7 +352,7 @@ window.onload = function () {
       `;
 
       div.innerHTML = `
-        <div class="back-button" onclick="stepBack(${index})">↩️</div>
+        ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
         <h3>${projectMap[order.project] || order.project}</h3>
         <p><strong>Supplier:</strong> ${order.supplier}</p>
         <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -386,10 +388,14 @@ window.onload = function () {
     renderOrders();
   }
 
-  window.markReceived = function(index) {
-    orders[index].status = 'Closed';
-    renderOrders();
-  }
+  
+window.markReceived = function(index) {
+  const closedOrder = orders.splice(index, 1)[0];
+  closedOrder.status = 'Closed';
+  archived.push(closedOrder);
+  renderOrders();
+}
+
 
   window.stepBack = function(index) {
     const o = orders[index];
