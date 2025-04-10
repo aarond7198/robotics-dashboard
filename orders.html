@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 
 <html lang="en">
 <head>
@@ -251,7 +251,6 @@
 </form>
 <div id="archiveContainer"></div>
 </div>
-
 <script>
 window.onload = function () {
   const orders = [];
@@ -412,5 +411,42 @@ window.markReceived = function(index) {
 };
 </script>
 
+<script>
+document.getElementById("saveButton").addEventListener("click", function () {
+  if (!window.orders || orders.length === 0) {
+    alert("No orders to save.");
+    return;
+  }
+
+  const formatted = orders.map(order => {
+    return {
+      po: order.po || "",
+      supplier: order.supplier || "",
+      partNumbers: order.partNumbers || "",
+      project: order.project || "",
+      ackDate: order.ackDate || "",
+      eta: order.eta || "",
+      received: order.received || false,
+      status: order.status || ""
+    };
+  });
+
+  fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(formatted)
+  })
+  .then(res => res.text())
+  .then(res => {
+    alert("✅ Orders saved to Google Sheets!");
+  })
+  .catch(err => {
+    console.error("❌ Failed to save:", err);
+    alert("❌ Error saving orders.");
+  });
+});
+</script>
 </body>
 </html>
