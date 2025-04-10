@@ -458,7 +458,7 @@ document.getElementById("saveButton").addEventListener("click", function () {
 </script>
 <script>
 const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
 const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
 
 let tokenClient;
@@ -493,8 +493,16 @@ document.addEventListener("DOMContentLoaded", () => {
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (tokenResponse) => {
+        console.log("✅ Token received:", tokenResponse);
         gapi.client.setToken(tokenResponse);
-        loadOrdersFromSheet();
+        setTimeout(() => {
+          if (!gapi.client.getToken()) {
+            console.warn("⚠️ Token not applied properly!");
+          } else {
+            console.log("🔑 Token confirmed. Proceeding to load data...");
+            loadOrdersFromSheet();
+          }
+        }, 1000);
       },
     });
     gisInited = true;
@@ -544,8 +552,9 @@ async function loadOrdersFromSheet() {
       }
     });
 
-    console.log("✅ Orders loaded:", orders);
-    console.log("📦 Archived loaded:", archived);
+    console.log("✅ Orders loaded from sheet.");
+    console.log("📋 Active Orders:", JSON.parse(JSON.stringify(orders)));
+    console.log("📋 Archived Orders:", JSON.parse(JSON.stringify(archived)));
     renderOrders();
   } catch (err) {
     console.error("❌ Failed to load from sheet:", err);
