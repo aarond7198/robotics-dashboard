@@ -372,11 +372,17 @@ window.onload = function () {
       title.textContent = "Recently Closed Orders";
       archive.appendChild(title);
 
-      archived.slice(-5).reverse().forEach(order => {
+      archived.slice(-10).reverse().forEach((order, index) => {
         const p = document.createElement("p");
         p.className = "archived-order";
         p.textContent = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project})`;
-        archive.appendChild(p);
+        const restoreBtn = document.createElement("button");
+  restoreBtn.textContent = "↩️";
+  restoreBtn.style.marginLeft = "10px";
+  restoreBtn.style.fontSize = "0.8rem";
+  restoreBtn.onclick = () => restoreOrder(order);
+  p.appendChild(restoreBtn);
+  archive.appendChild(p);
       });
     }
   }
@@ -415,12 +421,18 @@ window.markReceived = function(index) {
     renderOrders();
   }
 };
+
+window.restoreOrder = function(order) {
+  archived.splice(archived.indexOf(order), 1);
+  order.received = false;
+  order.status = "In Progress";
+  orders.push(order);
+  renderOrders();
+}
 </script>
 <script>
 document.getElementById("saveButton").addEventListener("click", function () {
-  console.log("Orders to save:", orders);
-  console.log("Archived to save:", archived);
-  if ((!orders || orders.length === 0) && (!archived || archived.length === 0)) {
+  if (!window.orders || orders.length === 0) {
     alert("No orders to save.");
     return;
   }
@@ -440,11 +452,10 @@ document.getElementById("saveButton").addEventListener("click", function () {
 
   fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
     method: "POST",
-    mode: "no-cors",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify([...orders, ...archived])
+    body: JSON.stringify(formatted)
   })
   .then(res => res.text())
   .then(res => {
@@ -456,5 +467,31 @@ document.getElementById("saveButton").addEventListener("click", function () {
   });
 });
 </script>
-</body>
+<script>
+fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec")
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(order => {
+      const formattedOrder = {
+        po: order["PO Number"] || "",
+        supplier: order["Supplier"] || "",
+        partNumbers: order["Part Numbers"] || "",
+        project: order["Project"] || "",
+        ackDate: order["Acknowledgement Date"] || "",
+        eta: order["Expected Delivery"] || "",
+        received: order["Received"] === "true" || order["Received"] === true,
+        status: order["Status"] || "Ready to Order"
+      };
+      if (formattedOrder.status === "Closed" || formattedOrder.received) {
+        archived.push(formattedOrder);
+      } else {
+        orders.push(formattedOrder);
+      }
+    });
+    renderOrders();
+  })
+  .catch(err => {
+    console.error("Failed to load order data:", err);
+  });
+</script></body>
 </html>
