@@ -204,7 +204,7 @@
 
         projectDropdown.innerHTML = `<option value=\"\">-- Select a Project --</option>`;
         projects.forEach(project => {
-          const opt = document.createElement(\"option\");
+          const opt = document.createElement("option");
           opt.value = project.label;
           opt.textContent = project.label;
           opt.dataset.bom = project.bomPath;
