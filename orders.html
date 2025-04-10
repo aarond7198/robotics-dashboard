@@ -1,4 +1,745 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Tracking</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 40px 20px;
+      max-width: 1100px;
+      margin: 40px auto;
+      color: #333;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+      gap: 10px;
+    }
+
+    nav a {
+      text-decoration: none;
+      font-weight: 600;
+      padding: 10px 20px;
+      border-radius: 8px;
+      background-color: #e1ecf7;
+      color: #0078D4;
+      transition: background-color 0.3s, color 0.3s, transform 0.2s;
+    }
+
+    nav a.active {
+      background-color: #0078D4;
+      color: white;
+    }
+
+    nav a:hover {
+      background-color: #005a9e;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      color: #222;
+    }
+
+    .dashboard {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.07);
+    }
+
+    #ordersContainer {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .order-card {
+      border: 2px solid #d0d0d0;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #888;
+    }
+
+    .order-card h3 {
+      margin: 0 0 5px;
+      font-size: 1rem;
+    }
+
+    .order-card p {
+      margin: 3px 0;
+    }
+
+    .form-row {
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 3px;
+      font-size: 0.9rem;
+    }
+
+    input, select {
+      padding: 5px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .inline-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .inline-input label {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .inline-input input[type="text"],
+    .inline-input input[type="date"] {
+      flex: 2;
+      font-size: 0.8rem;
+    }
+
+    .status-bar {
+      display: flex;
+      overflow: hidden;
+      border-radius: 12px;
+      margin: 12px 0;
+      box-shadow: inset 0 0 0 1px #ccc;
+    }
+
+    .status-segment {
+      flex: 1;
+      padding: 6px;
+      text-align: center;
+      font-size: 0.8rem;
+      background: #eee;
+      position: relative;
+      color: #333;
+    }
+
+    .status-complete {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .status-current {
+      background: #004B9E;
+      color: white;
+    }
+
+    .received-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .received-btn:hover {
+      background: #218838;
+    }
+
+    #archiveTitle {
+      margin-top: 20px;
+      font-size: 1.1rem;
+      color: #555;
+      border-top: 1px solid #ccc;
+      padding-top: 15px;
+    }
+
+    .archived-order {
+      font-size: 0.85rem;
+      margin-bottom: 5px;
+      color: #555;
+    }
+
+    #orderForm {
+      margin-top: 30px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+
+    button[type="submit"] {
+      background: #0078D4;
+      color: white;
+      font-weight: bold;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background: #005a9e;
+    }
+
+    .highlight {
+      font-weight: bold;
+      text-decoration: underline;
+      color: #0078D4;
+    }
+  </style>
+</head>
+<body><script>var projectMap = {};</script>
+<div style="text-align: right; margin-bottom: 10px;">
+<button id="loginBtn" style="padding: 6px 14px; font-size: 0.9rem; border-radius: 6px;">🔐 Log in with Google</button>
+</div>
+<nav>
+<a href="index.html">📦 Inventory Request</a>
+<a class="active" href="orders.html">🧾 Order Tracking</a>
+</nav><button id="saveButton" style="position: absolute; top: 20px; right: 20px; background-color: #0078D4; color: white; padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">💾 Save</button>
+<h1>Order Tracking Dashboard</h1>
+<div class="dashboard">
+<div id="ordersContainer"></div>
+<form id="orderForm">
+<div class="form-row">
+<label>Supplier</label>
+<input id="supplier" required="" type="text"/>
+</div>
+<div class="form-row">
+<label>Part Number(s)</label>
+<input id="partNumbers" required="" type="text"/>
+</div>
+<div class="form-row">
+<label>Project</label>
+<select id="projectSelect" required="">
+<option value="">Loading...</option>
+</select>
+</div>
+<div class="form-row">
+<label>Short Description</label>
+<input id="description" placeholder="e.g. Safety Fence &amp; Cables" type="text"/>
+</div>
+<button type="submit">Add Order</button>
+</form>
+<div id="archiveContainer"></div>
+</div>
+<script>const orders = [];
+const archived = [];
+
+
+
+
+
+window.onload = function () {
+  
+  
+  const projectSelect = document.getElementById("projectSelect");
+  const projectMap = {};
+
+  fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+    .then(res => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.text();
+    })
+    .then(text => {
+      alert("✅ Project CSV loaded!");
+      const lines = text.trim().split(/\r?\n/);
+      const rows = lines.slice(1).map(row => row.split(","));
+      projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+      rows.forEach(row => {
+        const customerCode = row[0]?.trim();
+        const projectCode = row[1]?.trim();
+        const description = row[2]?.trim();
+        const isActive = row[5]?.trim().toLowerCase() === "yes";
+        if (isActive) {
+          const label = `${customerCode} - ${projectCode}`;
+          projectMap[`${customerCode}-${projectCode}`] = label;
+          const opt = document.createElement("option");
+          opt.value = `${customerCode}-${projectCode}`;
+          opt.textContent = label;
+          projectSelect.appendChild(opt);
+        renderOrders();  // Call renderOrders after dropdown is built
+        }
+      });
+    })
+    .catch(err => {
+      console.error("❌ CSV load error:", err);
+      alert("Error loading project list.");
+    });
+
+  document.getElementById("orderForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const supplier = document.getElementById("supplier").value.trim();
+    const partNumbers = document.getElementById("partNumbers").value.trim();
+    const project = projectSelect.value;
+    const description = document.getElementById("description").value.trim();
+
+    const order = {
+      supplier,
+      partNumbers,
+      project,
+      description,
+      status: "Ready to Order",
+      po: "",
+      ackDate: "",
+      eta: "",
+      received: false
+    };
+
+    orders.push(order);
+    renderOrders();
+    e.target.reset();
+  });
+
+  function renderOrders() {
+    const container = document.getElementById("ordersContainer");
+    const archive = document.getElementById("archiveContainer");
+    console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
+  container.innerHTML = "";
+    archive.innerHTML = "";
+
+    orders.forEach((order, index) => {
+      const div = document.createElement("div");
+      div.className = "order-card";
+
+      const status = order.status;
+      let inputField = "";
+
+      if (status === "Ready to Order") {
+        inputField = `<div class="inline-input"><label>PO Number</label><input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" /></div>`;
+      } else if (status === "Ordered") {
+        inputField = `<div class="inline-input"><label>Ack Date</label><input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" /></div>`;
+      } else if (status === "In Progress") {
+        inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
+      }
+
+      const extraDetails = `
+        ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
+        ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+        ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
+      `;
+
+      const statusBar = `
+        <div class="status-bar">
+          <div class="status-segment ${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+          <div class="status-segment ${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+          <div class="status-segment ${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+          <div class="status-segment ${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+        </div>
+      `;
+
+      div.innerHTML = `
+        ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
+        <h3>${projectMap[order.project] || order.project}</h3>
+        <p><strong>Supplier:</strong> ${order.supplier}</p>
+        <p><strong>Parts:</strong> ${order.partNumbers}</p>
+        ${extraDetails}
+        ${statusBar}
+        ${inputField}
+      `;
+      container.appendChild(div);
+    });
+
+    if (archived.length) {
+      const title = document.createElement("h3");
+      title.id = "archiveTitle";
+      title.textContent = "Recently Closed Orders";
+      archive.appendChild(title);
+
+      archived.slice(-5).reverse().forEach(order => {
+        const p = document.createElement("p");
+        p.className = "archived-order";
+        p.textContent = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project})`;
+        archive.appendChild(p);
+      });
+    }
+  }
+
+  window.updateField = function(index, field, value) {
+    orders[index][field] = value;
+    const o = orders[index];
+    if (field === 'po' && value) o.status = 'Ordered';
+    if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) {
+      o.status = 'In Progress';
+    }
+    renderOrders();
+  }
+
+  
+window.markReceived = function(index) {
+  const closedOrder = orders.splice(index, 1)[0];
+  closedOrder.status = 'Closed';
+  archived.push(closedOrder);
+  renderOrders();
+}
+
+
+  window.stepBack = function(index) {
+    const o = orders[index];
+    if (o.status === 'In Progress') {
+      o.status = 'Ordered';
+      o.eta = '';
+      o.ackDate = '';
+    } else if (o.status === 'Ordered') {
+      o.status = 'Ready to Order';
+      o.po = '';
+    } else if (o.status === 'Ready to Order') {
+      orders.splice(index, 1);
+    }
+    renderOrders();
+  }
+};
+</script>
+<script>
+document.getElementById("saveButton").addEventListener("click", function () {
+  if (!window.orders || orders.length === 0) {
+    alert("No orders to save.");
+    return;
+  }
+
+  const formatted = orders.map(order => {
+    return {
+      po: order.po || "",
+      supplier: order.supplier || "",
+      partNumbers: order.partNumbers || "",
+      project: order.project || "",
+      ackDate: order.ackDate || "",
+      eta: order.eta || "",
+      received: order.received || false,
+      status: order.status || ""
+    };
+  });
+
+  fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(formatted)
+  })
+  .then(res => res.text())
+  .then(res => {
+    alert("✅ Orders saved to Google Sheets!");
+  })
+  .catch(err => {
+    console.error("❌ Failed to save:", err);
+    alert("❌ Error saving orders.");
+  });
+});
+</script>
+<script>
+const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("loginBtn");
+  loginBtn.onclick = () => {
+    if (tokenClient) {
+      tokenClient.requestAccessToken();
+    } else {
+      console.log("Token client not initialized");
+    }
+  };
+
+  const gapiScript = document.createElement("script");
+  gapiScript.src = "https://apis.google.com/js/api.js";
+  gapiScript.onload = () => {
+    gapi.load("client", async () => {
+      await gapi.client.init({
+        apiKey: "", // not needed since using OAuth
+        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+      });
+      gapiInited = true;
+      maybeEnableLogin();
+    });
+  };
+  document.body.appendChild(gapiScript);
+
+  const gisScript = document.createElement("script");
+  gisScript.src = "https://accounts.google.com/gsi/client";
+  gisScript.onload = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse) => {
+        console.log("✅ Token received:", tokenResponse);
+        gapi.client.setToken(tokenResponse);
+        setTimeout(() => {
+          if (!gapi.client.getToken()) {
+            console.warn("⚠️ Token not applied properly!");
+          } else {
+            console.log("🔑 Token confirmed. Proceeding to load data...");
+            loadOrdersFromSheet();
+          }
+        }, 1000);
+      },
+    });
+    gisInited = true;
+    maybeEnableLogin();
+  };
+  document.body.appendChild(gisScript);
+});
+
+function maybeEnableLogin() {
+  if (gapiInited && gisInited) {
+    document.getElementById("loginBtn").disabled = false;
+  }
+}
+
+
+function renderOrders() {
+  const container = document.getElementById("ordersContainer");
+  const archive = document.getElementById("archiveContainer");
+  console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
+  container.innerHTML = "";
+  archive.innerHTML = "";
+
+  orders.forEach((order, index) => {
+    const div = document.createElement("div");
+    div.className = "order-card";
+
+    const status = order.status;
+    let inputField = "";
+
+    if (status === "Ready to Order") {
+      inputField = `<div class="inline-input"><label>PO Number</label><input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" /></div>`;
+    } else if (status === "Ordered") {
+      inputField = `<div class="inline-input"><label>Ack Date</label><input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" /></div>`;
+    } else if (status === "In Progress") {
+      inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
+    }
+
+    const extraDetails = `
+      ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
+      ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+      ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
+    `;
+
+    const statusBar = `
+      <div class="status-bar">
+        <div class="status-segment ${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+        <div class="status-segment ${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+        <div class="status-segment ${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+        <div class="status-segment ${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+      </div>
+    `;
+
+    div.innerHTML = `
+      <div class="back-button" onclick="stepBack(${index})">↩️</div>
+      <h3>${projectMap[order.project] || order.project}</h3>
+      <p><strong>Supplier:</strong> ${order.supplier}</p>
+      <p><strong>Parts:</strong> ${order.partNumbers}</p>
+      ${extraDetails}
+      ${statusBar}
+      ${inputField}
+    `;
+    container.appendChild(div);
+  });
+
+  if (archived.length) {
+    const title = document.createElement("h3");
+    title.id = "archiveTitle";
+    title.textContent = "Recently Closed Orders";
+    archive.appendChild(title);
+
+    archived.slice(-10).reverse().forEach((order, index) => {
+      const p = document.createElement("p");
+      p.className = "archived-order";
+      p.innerHTML = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project}) <button onclick="restoreOrder(${archived.length - 1 - index})">♻️</button>`;
+      archive.appendChild(p);
+    });
+  }
+}
+async function loadOrdersFromSheet() {
+  console.log("📥 Loading orders from Google Sheet...");
+  try {
+    const res = await gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "Sheet1"
+    });
+
+    const rows = res.result.values;
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    orders.length = 0;
+    archived.length = 0;
+
+    dataRows.forEach(row => {
+      const order = {};
+      headers.forEach((key, i) => {
+        order[key.trim()] = row[i];
+      });
+      const formattedOrder = {
+        po: order["PO Number"] || "",
+        supplier: order["Supplier"] || "",
+        partNumbers: order["Part Numbers"] || "",
+        project: order["Project"] || "",
+        ackDate: order["Acknowledgement Date"] || "",
+        eta: order["Expected Delivery"] || "",
+        received: order["Received"] === "true" || order["Received"] === true,
+        status: order["Status"] || "Ready to Order"
+      };
+      if (formattedOrder.status === "Closed" || formattedOrder.received) {
+        archived.push(formattedOrder);
+      } else {
+        orders.push(formattedOrder);
+      }
+    });
+
+    console.log("✅ Orders loaded from sheet.");
+    console.log("📋 Active Orders:", JSON.parse(JSON.stringify(orders)));
+    console.log("📋 Archived Orders:", JSON.parse(JSON.stringify(archived)));
+    renderOrders();
+  } catch (err) {
+    console.error("❌ Failed to load from sheet:", err);
+  }
+}
+</script>
+<script>
+function renderOrders() {
+  const container = document.getElementById("ordersContainer");
+  const archive = document.getElementById("archiveContainer");
+  console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
+  container.innerHTML = "";
+  archive.innerHTML = "";
+
+  orders.forEach((order, index) => {
+    const div = document.createElement("div");
+    div.className = "order-card";
+
+    const status = order.status;
+    let inputField = "";
+
+    if (status === "Ready to Order") {
+      inputField = `<div class="inline-input"><label>PO Number</label><input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" /></div>`;
+    } else if (status === "Ordered") {
+      inputField = `<div class="inline-input"><label>Ack Date</label><input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" /></div>`;
+    } else if (status === "In Progress") {
+      inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
+    }
+
+    const extraDetails = `
+      ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
+      ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+      ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
+    `;
+
+    const statusBar = `
+      <div class="status-bar">
+        <div class="status-segment ${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+        <div class="status-segment ${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+        <div class="status-segment ${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+        <div class="status-segment ${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+      </div>
+    `;
+
+    div.innerHTML = `
+      <div class="back-button" onclick="stepBack(${index})">↩️</div>
+      <h3>${projectMap[order.project] || order.project}</h3>
+      <p><strong>Supplier:</strong> ${order.supplier}</p>
+      <p><strong>Parts:</strong> ${order.partNumbers}</p>
+      ${extraDetails}
+      ${statusBar}
+      ${inputField}
+    `;
+    container.appendChild(div);
+  });
+
+  if (archived.length) {
+    const title = document.createElement("h3");
+    title.id = "archiveTitle";
+    title.textContent = "Recently Closed Orders";
+    archive.appendChild(title);
+
+    archived.slice(-10).reverse().forEach((order, index) => {
+      const p = document.createElement("p");
+      p.className = "archived-order";
+      p.innerHTML = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project}) <button onclick="restoreOrder(${archived.length - 1 - index})">♻️</button>`;
+      archive.appendChild(p);
+    });
+  }
+}
+</script>
+</body>
+</html<script>
+document.getElementById("saveButton").addEventListener("click", function () {
+  if ((!window.orders || orders.length === 0) && (!window.archived || archived.length === 0)) {
+    alert("No orders to save.");
+    return;
+  }
+
+  const combined = [...orders, ...archived];
+
+  const formatted = combined.map(order => {
+    return {
+      po: order.po || "",
+      supplier: order.supplier || "",
+      partNumbers: order.partNumbers || "",
+      project: order.project || "",
+      ackDate: order.ackDate || "",
+      eta: order.eta || "",
+      received: order.received || false,
+      status: order.status || ""
+    };
+  });
+
+  fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(formatted)
+  })
+  .then(res => res.text())
+  .then(res => {
+    alert("✅ Orders saved to Google Sheets!");
+  })
+  .catch(err => {
+    console.error("❌ Failed to save:", err);
+    alert("❌ Error saving orders.");
+  });
+});
+</script>E html>
 
 <html lang="en">
 <head>
