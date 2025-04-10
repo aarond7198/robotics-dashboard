@@ -565,5 +565,71 @@ async function loadOrdersFromSheet() {
     console.error("❌ Failed to load from sheet:", err);
   }
 }
-</script></body>
+</script>
+<script>
+function renderOrders() {
+  const container = document.getElementById("ordersContainer");
+  const archive = document.getElementById("archiveContainer");
+  container.innerHTML = "";
+  archive.innerHTML = "";
+
+  orders.forEach((order, index) => {
+    const div = document.createElement("div");
+    div.className = "order-card";
+
+    const status = order.status;
+    let inputField = "";
+
+    if (status === "Ready to Order") {
+      inputField = `<div class="inline-input"><label>PO Number</label><input type="text" value="${order.po}" onchange="updateField(${index}, 'po', this.value)" /></div>`;
+    } else if (status === "Ordered") {
+      inputField = `<div class="inline-input"><label>Ack Date</label><input type="text" value="${order.ackDate}" onchange="updateField(${index}, 'ackDate', this.value)" /></div><div class="inline-input"><label>ETA</label><input type="text" value="${order.eta}" onchange="updateField(${index}, 'eta', this.value)" /></div>`;
+    } else if (status === "In Progress") {
+      inputField = `<button class="received-btn" onclick="markReceived(${index})">Mark as Received</button>`;
+    }
+
+    const extraDetails = `
+      ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
+      ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+      ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
+    `;
+
+    const statusBar = `
+      <div class="status-bar">
+        <div class="status-segment ${status === 'Ready to Order' ? 'status-current' : status !== 'Ready to Order' ? 'status-complete' : ''}">Ready</div>
+        <div class="status-segment ${status === 'Ordered' ? 'status-current' : status === 'In Progress' || status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+        <div class="status-segment ${status === 'In Progress' ? 'status-current' : status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
+        <div class="status-segment ${status === 'Closed' ? 'status-current' : ''}">Closed</div>
+      </div>
+    `;
+
+    div.innerHTML = `
+      <div class="back-button" onclick="stepBack(${index})">↩️</div>
+      <h3>${projectMap[order.project] || order.project}</h3>
+      <p><strong>Supplier:</strong> ${order.supplier}</p>
+      <p><strong>Parts:</strong> ${order.partNumbers}</p>
+      ${extraDetails}
+      ${statusBar}
+      ${inputField}
+    `;
+    container.appendChild(div);
+  });
+
+  if (archived.length) {
+    const title = document.createElement("h3");
+    title.id = "archiveTitle";
+    title.textContent = "Recently Closed Orders";
+    archive.appendChild(title);
+
+    archived.slice(-10).reverse().forEach((order, index) => {
+      const p = document.createElement("p");
+      p.className = "archived-order";
+      p.innerHTML = `${order.partNumbers} from ${order.supplier} (${projectMap[order.project] || order.project}) <button onclick="restoreOrder(${archived.length - 1 - index})">♻️</button>`;
+      archive.appendChild(p);
+    });
+  }
+}
+</script>
+
+</body>
 </html>
