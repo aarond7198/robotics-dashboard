@@ -289,10 +289,7 @@ window.onload = function () {
           opt.value = `${customerCode}-${projectCode}`;
           opt.textContent = label;
           projectSelect.appendChild(opt);
-          }
-        });
-        renderOrders(); // Render orders after projectMap is ready
-
+        renderOrders();  // Call renderOrders after dropdown is built
         }
       });
     })
@@ -530,6 +527,8 @@ function maybeEnableLogin() {
 function renderOrders() {
   const container = document.getElementById("ordersContainer");
   const archive = document.getElementById("archiveContainer");
+  console.log("📋 Active Orders:", orders);
+  console.log("📋 Archived Orders:", archived);
   container.innerHTML = "";
   archive.innerHTML = "";
 
