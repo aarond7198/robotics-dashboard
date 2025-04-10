@@ -456,101 +456,100 @@ document.getElementById("saveButton").addEventListener("click", function () {
   });
 });
 </script>
+
 <script>
-<script>
-  const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-  const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-  const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
 
-  let tokenClient;
-  let gapiInited = false;
-  let gisInited = false;
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = document.getElementById("loginBtn");
-    loginBtn.onclick = () => {
-      if (tokenClient) {
-        tokenClient.requestAccessToken();
-      } else {
-        console.log("Token client not initialized");
-      }
-    };
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("loginBtn");
+  loginBtn.onclick = () => {
+    if (tokenClient) {
+      tokenClient.requestAccessToken();
+    } else {
+      console.log("Token client not initialized");
+    }
+  };
 
-    const gapiScript = document.createElement("script");
-    gapiScript.src = "https://apis.google.com/js/api.js";
-    gapiScript.onload = () => {
-      gapi.load("client", async () => {
-        await gapi.client.init({});
-        gapiInited = true;
-        maybeEnableLogin();
-      });
-    };
-    document.body.appendChild(gapiScript);
-
-    const gisScript = document.createElement("script");
-    gisScript.src = "https://accounts.google.com/gsi/client";
-    gisScript.onload = () => {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
-        callback: (tokenResponse) => {
-          gapi.client.setToken(tokenResponse);
-          loadOrdersFromSheet();
-        },
-      });
-      gisInited = true;
+  const gapiScript = document.createElement("script");
+  gapiScript.src = "https://apis.google.com/js/api.js";
+  gapiScript.onload = () => {
+    gapi.load("client", async () => {
+      await gapi.client.init({});
+      gapiInited = true;
       maybeEnableLogin();
-    };
-    document.body.appendChild(gisScript);
-  });
+    });
+  };
+  document.body.appendChild(gapiScript);
 
-  function maybeEnableLogin() {
-    if (gapiInited && gisInited) {
-      document.getElementById("loginBtn").disabled = false;
-    }
+  const gisScript = document.createElement("script");
+  gisScript.src = "https://accounts.google.com/gsi/client";
+  gisScript.onload = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (tokenResponse) => {
+        gapi.client.setToken(tokenResponse);
+        loadOrdersFromSheet();
+      },
+    });
+    gisInited = true;
+    maybeEnableLogin();
+  };
+  document.body.appendChild(gisScript);
+});
+
+function maybeEnableLogin() {
+  if (gapiInited && gisInited) {
+    document.getElementById("loginBtn").disabled = false;
   }
+}
 
-  async function loadOrdersFromSheet() {
-    console.log("📥 Loading orders from Google Sheet...");
-    try {
-      const res = await gapi.client.request({
-        path: `/v4/spreadsheets/${SHEET_ID}/values/Sheet1`,
+async function loadOrdersFromSheet() {
+  console.log("📥 Loading orders from Google Sheet...");
+  try {
+    const res = await gapi.client.request({
+      path: `/v4/spreadsheets/${SHEET_ID}/values/Sheet1`,
+    });
+    const rows = res.result.values;
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    orders.length = 0;
+    archived.length = 0;
+
+    dataRows.forEach(row => {
+      const order = {};
+      headers.forEach((key, i) => {
+        order[key.trim()] = row[i];
       });
-      const rows = res.result.values;
-      const headers = rows[0];
-      const dataRows = rows.slice(1);
+      const formattedOrder = {
+        po: order["PO Number"] || "",
+        supplier: order["Supplier"] || "",
+        partNumbers: order["Part Numbers"] || "",
+        project: order["Project"] || "",
+        ackDate: order["Acknowledgement Date"] || "",
+        eta: order["Expected Delivery"] || "",
+        received: order["Received"] === "true" || order["Received"] === true,
+        status: order["Status"] || "Ready to Order"
+      };
+      if (formattedOrder.status === "Closed" || formattedOrder.received) {
+        archived.push(formattedOrder);
+      } else {
+        orders.push(formattedOrder);
+      }
+    });
 
-      orders.length = 0;
-      archived.length = 0;
-
-      dataRows.forEach(row => {
-        const order = {};
-        headers.forEach((key, i) => {
-          order[key.trim()] = row[i];
-        });
-        const formattedOrder = {
-          po: order["PO Number"] || "",
-          supplier: order["Supplier"] || "",
-          partNumbers: order["Part Numbers"] || "",
-          project: order["Project"] || "",
-          ackDate: order["Acknowledgement Date"] || "",
-          eta: order["Expected Delivery"] || "",
-          received: order["Received"] === "true" || order["Received"] === true,
-          status: order["Status"] || "Ready to Order"
-        };
-        if (formattedOrder.status === "Closed" || formattedOrder.received) {
-          archived.push(formattedOrder);
-        } else {
-          orders.push(formattedOrder);
-        }
-      });
-
-      console.log("✅ Orders loaded:", orders);
-      renderOrders();
-    } catch (err) {
-      console.error("❌ Failed to load from sheet:", err);
-    }
+    console.log("✅ Orders loaded:", orders);
+    renderOrders();
+  } catch (err) {
+    console.error("❌ Failed to load from sheet:", err);
   }
-</script>
-</body>
+}
+</script></body>
 </html>
