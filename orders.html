@@ -221,12 +221,13 @@
     archived.slice(-10).reverse().forEach(o => {
       archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})</div>`;
     });
-  }
+
 
   card.appendChild(input);
-}
 
 container.appendChild(card);
+      });
+    }
 
 
         ${o.status === "Ready to Order" ? `<input type="text" placeholder="Enter PO Number" />` :
