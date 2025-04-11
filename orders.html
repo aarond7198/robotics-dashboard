@@ -1,433 +1,266 @@
-<!DOCTYPE html>
 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Order Tracking</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Tracking Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
     body {
       font-family: 'Inter', sans-serif;
-      background: #f9f9f9;
+      background: #f4f4f4;
       margin: 0;
-      padding: 40px 20px;
-      max-width: 1100px;
-      margin: 40px auto;
+      padding: 30px 20px;
       color: #333;
-    }
-    nav {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 30px;
-      gap: 10px;
-    }
-    nav a {
-      text-decoration: none;
-      font-weight: 600;
-      padding: 10px 20px;
-      border-radius: 8px;
-      background-color: #e1ecf7;
-      color: #0078D4;
-      transition: background-color 0.3s, color 0.3s, transform 0.2s;
-    }
-    nav a.active {
-      background-color: #0078D4;
-      color: white;
     }
     h1 {
       text-align: center;
-      font-size: 2rem;
       margin-bottom: 20px;
-      color: #222;
     }
     .dashboard {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.07);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start;
     }
     .order-card, .archived-order {
-      border: 2px solid #d0d0d0;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 10px;
       background: #fff;
-      font-size: 0.78rem;
+      border-radius: 10px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      flex: 1 1 calc(33% - 20px);
+      box-sizing: border-box;
     }
     .status-bar {
       display: flex;
+      margin-top: 10px;
+      border-radius: 6px;
       overflow: hidden;
-      border-radius: 12px;
-      margin: 12px 0;
-      box-shadow: inset 0 0 0 1px #ccc;
     }
     .status-segment {
       flex: 1;
-      padding: 6px;
       text-align: center;
-      font-size: 0.8rem;
-      background: #eee;
+      padding: 6px;
+      font-size: 0.85rem;
+      background: #ddd;
     }
-    .status-complete { background: #4CAF50; color: white; }
-    .status-current { background: #004B9E; color: white; }
-    .received-btn {
+    .status-complete { background: #4CAF50; color: #fff; }
+    .status-current { background: #004B9E; color: #fff; }
+    .received-btn, .reopen-btn {
       margin-top: 10px;
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       background: #28a745;
       color: white;
-      font-weight: bold;
       border: none;
       border-radius: 6px;
+      font-weight: bold;
       cursor: pointer;
     }
-    .form-row { margin-bottom: 10px; }
-    label { font-weight: bold; display: block; margin-bottom: 4px; }
+    .reopen-btn {
+      background: #ff9800;
+    }
+    form {
+      margin-top: 30px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .form-row {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
     input, select {
-      padding: 6px;
       width: 100%;
+      padding: 8px;
+      border-radius: 5px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+    }
+    #archiveContainer {
+      margin-top: 40px;
     }
     #saveButton {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: #0078D4;
-      color: white;
-      padding: 10px 16px;
+      margin-top: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 10px 20px;
+      background: #0078D4;
+      color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-    }
-    #loginBtn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background-color: #555;
-      color: white;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .highlight { font-weight: bold; text-decoration: underline; color: #0078D4; }
-    #versionLabel {
-      position: fixed;
-      bottom: 10px;
-      right: 20px;
-      font-size: 1rem;
-      color: #999;
-      font-style: italic;
-      z-index: 9999;
     }
   </style>
 </head>
 <body>
-<nav>
-<a href="index.html">📦 Inventory Request</a>
-<a class="active" href="orders.html">🧾 Order Tracking</a>
-</nav>
-<button disabled="" id="loginBtn" title="Initializing Google Login...">🔐 Log in with Google</button>
-<button id="saveButton">💾 Save</button>
-<h1>Order Tracking Dashboard</h1>
-<div class="dashboard">
-<div id="ordersContainer"></div>
-<form id="orderForm">
-<div class="form-row">
-<label for="supplier">Supplier</label>
-<input id="supplier" required="" type="text"/>
-</div>
-<div class="form-row">
-<label for="partNumbers">Part Numbers</label>
-<input id="partNumbers" required="" type="text"/>
-</div>
-<div class="form-row">
-<label for="projectSelect">Project</label>
-<select id="projectSelect" required=""><option value="">Loading...</option></select>
-</div>
-<div class="form-row">
-<label for="description">Description</label>
-<input id="description" type="text"/>
-</div>
-<button type="submit">Add Order</button>
-</form>
-<div id="archiveContainer"></div>
-</div>
-<script>
-    // Reload if refreshed (avoid ghost state)
-    if (performance.navigation.type === 1) {
-      console.warn("🔄 Reload detected. Forcing clean reload...");
-      window.location.href = window.location.href;
-    }
+  <h1>Order Tracking Dashboard</h1>
+  <div class="dashboard" id="ordersContainer"></div>
 
-    const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-    const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+  <form id="orderForm">
+    <div class="form-row">
+      <label for="supplier">Supplier</label>
+      <input id="supplier" type="text" required />
+    </div>
+    <div class="form-row">
+      <label for="partNumbers">Part Numbers</label>
+      <input id="partNumbers" type="text" required />
+    </div>
+    <div class="form-row">
+      <label for="project">Project</label>
+      <input id="project" type="text" required />
+    </div>
+    <div class="form-row">
+      <label for="description">Description</label>
+      <input id="description" type="text" />
+    </div>
+    <button type="submit">Add Order</button>
+  </form>
 
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
+  <button id="saveButton">💾 Save Orders</button>
 
-    const orders = [], archived = [], projectMap = {};
+  <div id="archiveContainer">
+    <h2>Recently Closed Orders</h2>
+    <div class="dashboard" id="closedOrders"></div>
+  </div>
 
-    function maybeEnableLogin() {
-      console.log("🧪 gapiInited:", gapiInited);
-      console.log("🧪 gisInited:", gisInited);
-      if (gapiInited && gisInited) {
-        document.getElementById("loginBtn").disabled = false;
-        console.log("✅ Login button enabled");
-      }
-    }
-
-    
-function loadOrdersFromSheet() {
-  console.log("📥 Fetching CSV directly from GitHub...");
-  fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv")
-    .then(response => response.text())
-    .then(text => {
-      const lines = text.trim().split("\n");
-      const headers = lines[0].split(",");
-      lines.slice(1).forEach((line, idx) => {
-        const row = line.split(",");
-        const order = {};
-        headers.forEach((header, i) => {
-          order[header.trim()] = row[i] || "";
-        });
-        const o = {
-          po: order["PO Number"],
-          supplier: order["Supplier"],
-          partNumbers: order["Part Numbers"],
-          project: order["Project"],
-          ackDate: order["Acknowledgement Date"],
-          eta: order["Expected Delivery"],
-          received: order["Received"] === "true",
-          description: order["Description"],
-          status: order["Status"] || "Ready to Order"
-        };
-        (o.status === "Closed" || o.received ? archived : orders).push(o);
-      });
-      console.log("📦 Orders loaded:", orders);
-      console.log("📦 Archived orders:", archived);
-      renderOrders();
-    })
-    .catch(err => {
-      console.error("❌ Failed to fetch or parse CSV:", err);
-      alert("❌ Error loading CSV from GitHub. Check console.");
-    });
-}
-).then(response => {
-        try {
-          console.log("📤 Raw Sheets API response:", response);
-          if (!response || !response.result || !response.result.values) {
-            console.warn("⚠️ Response missing expected structure:", response);
-            alert("⚠️ Google Sheets response was received, but the data format was unexpected or empty. Please check: \n- Sheet name = 'Sheet1'\n- Headers are in row 1\n- Data starts on row 2\n- Sheet is shared as Viewer or public.");
-            return;
-          }
-          const rows = response.result.values;
-          if (!rows || rows.length < 2) {
-            console.warn("⚠️ No data rows found in Sheet1.", rows);
-            alert("⚠️ No rows found in Sheet1. You may need to enter at least 1 row of data under the headers.");
-            return;
-          }
-          console.log("✅ Data received:", rows);
-          const headers = rows[0];
-          rows.slice(1).forEach((row, idx) => {
-            const order = {};
-            headers.forEach((key, i) => {
-              order[key.trim()] = row[i];
-            });
-            const o = {
-              po: order["PO Number"] || "",
-              supplier: order["Supplier"] || "",
-              partNumbers: order["Part Numbers"] || "",
-              project: order["Project"] || "",
-              ackDate: order["Acknowledgement Date"] || "",
-              eta: order["Expected Delivery"] || "",
-              received: order["Received"] === "true",
-              description: order["Description"] || "",
-              status: order["Status"] || "Ready to Order"
-            };
-            console.log(`🔄 Row ${idx + 1} parsed:`, o);
-            (o.status === "Closed" || o.received ? archived : orders).push(o);
-          });
-          console.log("📦 Parsed active orders:", orders);
-          console.log("📦 Parsed archived orders:", archived);
-          renderOrders();
-        } catch (err) {
-          console.error("❌ Error during processing:", err);
-          alert("❌ Unexpected error occurred while processing sheet data. Check console.");
-        }
-      }).catch(err => {
-        console.error("❌ Failed to load from sheet:", err);
-        alert("❌ Error loading data from Google Sheets. See console for details.");
-      });
-    }
-
-    document.getElementById("loginBtn").onclick = () => {
-      tokenClient.requestAccessToken();
-    };
-
-    window.onload = () => {
-      const gapiScript = document.createElement("script");
-      gapiScript.src = "https://apis.google.com/js/api.js";
-      gapiScript.onload = () => {
-        gapi.load("client", async () => {
-          await gapi.client.init({});
-          gapiInited = true;
-          maybeEnableLogin();
-        });
-      };
-      document.body.appendChild(gapiScript);
-
-      const gisScript = document.createElement("script");
-      gisScript.src = "https://accounts.google.com/gsi/client";
-      gisScript.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          prompt: 'consent',
-          callback: (tokenResponse) => {
-            console.log("🔐 Token Response:", tokenResponse);
-            loadOrdersFromSheet();
-          }
-        });
-        gisInited = true;
-        maybeEnableLogin();
-      };
-      document.body.appendChild(gisScript);
-
-      fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
-        .then(res => res.text())
-        .then(text => {
-          const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
-          const select = document.getElementById("projectSelect");
-          select.innerHTML = '<option value="">-- Select Project --</option>';
-          rows.forEach(row => {
-            if (row[5].trim().toLowerCase() === "yes") {
-              const key = `${row[0]}-${row[1]}`;
-              const label = `${row[0]} - ${row[1]} - ${row[2]}`;
-              projectMap[key] = label;
-              const opt = document.createElement("option");
-              opt.value = key;
-              opt.textContent = label;
-              select.appendChild(opt);
-            }
-          });
-        });
-
-      document.getElementById("orderForm").onsubmit = e => {
-        e.preventDefault();
-        const order = {
-          supplier: supplier.value.trim(),
-          partNumbers: partNumbers.value.trim(),
-          project: projectSelect.value,
-          description: description.value.trim(),
-          status: "Ready to Order",
-          po: "",
-          ackDate: "",
-          eta: "",
-          received: false
-        };
-        orders.push(order);
-        renderOrders();
-        e.target.reset();
-      };
-
-      document.getElementById("saveButton").onclick = () => {
-        const combined = [...orders, ...archived];
-        if (combined.length === 0) return alert("No orders to save.");
-        fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(combined)
-        }).then(() => alert("✅ Orders submitted."))
-          .catch(() => alert("❌ Error submitting orders."));
-      };
-    };
+  <script>
+    const orders = [], archived = [];
 
     function renderOrders() {
       const container = document.getElementById("ordersContainer");
-      const archive = document.getElementById("archiveContainer");
+      const closed = document.getElementById("closedOrders");
       container.innerHTML = "";
-      archive.innerHTML = "";
+      closed.innerHTML = "";
 
       orders.forEach((order, i) => {
-        const div = document.createElement("div");
-        div.className = "order-card";
-        div.innerHTML = `
-          <h3>${projectMap[order.project] || order.project}</h3>
+        const card = document.createElement("div");
+        card.className = "order-card";
+        card.innerHTML = `
+          <h3>${order.project}</h3>
           <p><strong>Supplier:</strong> ${order.supplier}</p>
           <p><strong>Parts:</strong> ${order.partNumbers}</p>
-          ${order.description ? `<p><strong>Notes:</strong> ${order.description}</p>` : ''}
-          ${order.po ? `<p><strong>PO:</strong> ${order.po}</p>` : ''}
-          ${order.eta ? `<p class="highlight"><strong>Expected:</strong> ${order.eta}</p>` : ''}
+          <p><strong>Notes:</strong> ${order.description}</p>
+          <p><strong>PO:</strong> ${order.po || ""}</p>
+          <p><strong>Expected:</strong> ${order.eta || ""}</p>
           <div class="status-bar">
             <div class="status-segment ${order.status === 'Ready to Order' ? 'status-current' : 'status-complete'}">Ready</div>
-            <div class="status-segment ${order.status === 'Ordered' ? 'status-current' : order.status === 'In Progress' || order.status === 'Closed' ? 'status-complete' : ''}">Ordered</div>
+            <div class="status-segment ${order.status === 'Ordered' ? 'status-current' : order.status !== 'Ready to Order' ? 'status-complete' : ''}">Ordered</div>
             <div class="status-segment ${order.status === 'In Progress' ? 'status-current' : order.status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
             <div class="status-segment ${order.status === 'Closed' ? 'status-current' : ''}">Closed</div>
           </div>
-          ${getActionField(order, i)}
         `;
-        container.appendChild(div);
+
+        if (order.status === "Ready to Order") {
+          card.innerHTML += `<label>PO Number <input onchange="updateOrder(${i}, 'po', this.value)" /></label>`;
+        } else if (order.status === "Ordered") {
+          card.innerHTML += `<label>Ack Date <input onchange="updateOrder(${i}, 'ackDate', this.value)" /></label>
+                             <label>ETA <input onchange="updateOrder(${i}, 'eta', this.value)" /></label>`;
+        } else if (order.status === "In Progress") {
+          card.innerHTML += `<button class='received-btn' onclick='markReceived(${i})'>Mark as Received</button>`;
+        }
+
+        container.appendChild(card);
       });
 
-      if (archived.length) {
-        const h = document.createElement("h3");
-        h.textContent = "Recently Closed Orders";
-        archive.appendChild(h);
-        archived.slice(-5).reverse().forEach(o => {
-          const p = document.createElement("div");
-          p.className = "archived-order";
-          p.innerHTML = `${o.partNumbers} from ${o.supplier} (${projectMap[o.project] || o.project})`;
-          archive.appendChild(p);
-        });
-      }
+      archived.slice(-10).reverse().forEach((order, i) => {
+        const card = document.createElement("div");
+        card.className = "archived-order";
+        card.innerHTML = `
+          <h3>${order.project}</h3>
+          <p><strong>Supplier:</strong> ${order.supplier}</p>
+          <p><strong>Parts:</strong> ${order.partNumbers}</p>
+          <p><strong>Status:</strong> ${order.status}</p>
+          <button class='reopen-btn' onclick='reopenOrder(${archived.length - 1 - i})'>↩️ Reopen</button>
+        `;
+        closed.appendChild(card);
+      });
     }
 
-    function getActionField(order, index) {
-      if (order.status === "Ready to Order") {
-        return `<label>PO Number <input onchange="updateField(${index}, 'po', this.value)" /></label>`;
-      } else if (order.status === "Ordered") {
-        return `<label>Ack Date <input onchange="updateField(${index}, 'ackDate', this.value)" /></label>
-                <label>ETA <input onchange="updateField(${index}, 'eta', this.value)" /></label>`;
-      } else if (order.status === "In Progress") {
-        return `<button class='received-btn' onclick='markReceived(${index})'>Mark as Received</button>`;
-      }
-      return '';
-    }
-
-    function updateField(index, field, value) {
-      orders[index][field] = value;
-      const o = orders[index];
-      if (field === 'po' && value) o.status = 'Ordered';
-      if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) o.status = 'In Progress';
+    function updateOrder(index, field, value) {
+      const order = orders[index];
+      order[field] = value;
+      if (field === 'po' && value) order.status = 'Ordered';
+      if ((field === 'ackDate' || field === 'eta') && order.ackDate && order.eta) order.status = 'In Progress';
       renderOrders();
     }
 
     function markReceived(index) {
-      const closed = orders.splice(index, 1)[0];
-      closed.status = "Closed";
-      archived.push(closed);
+      const order = orders.splice(index, 1)[0];
+      order.status = "Closed";
+      archived.push(order);
       renderOrders();
     }
+
+    function reopenOrder(index) {
+      const order = archived.splice(index, 1)[0];
+      order.status = "Ready to Order";
+      orders.push(order);
+      renderOrders();
+    }
+
+    document.getElementById("orderForm").onsubmit = (e) => {
+      e.preventDefault();
+      const order = {
+        supplier: supplier.value.trim(),
+        partNumbers: partNumbers.value.trim(),
+        project: project.value.trim(),
+        description: description.value.trim(),
+        status: "Ready to Order",
+        po: "",
+        ackDate: "",
+        eta: "",
+        received: false
+      };
+      orders.push(order);
+      renderOrders();
+      e.target.reset();
+    };
+
+    document.getElementById("saveButton").onclick = () => {
+      const data = [...orders, ...archived];
+      fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      }).then(() => alert("✅ Orders saved."));
+    };
+
+    // Initial load of orders from CSV
+    fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv")
+      .then(res => res.text())
+      .then(text => {
+        const lines = text.trim().split("\n");
+        const headers = lines[0].split(",");
+        lines.slice(1).forEach(line => {
+          const row = line.split(",");
+          const order = {};
+          headers.forEach((header, i) => order[header.trim()] = row[i] || "");
+          const o = {
+            po: order["PO Number"],
+            supplier: order["Supplier"],
+            partNumbers: order["Part Numbers"],
+            project: order["Project"],
+            ackDate: order["Acknowledgement Date"],
+            eta: order["Expected Delivery"],
+            received: order["Received"] === "true",
+            description: order["Description"],
+            status: order["Status"] || "Ready to Order"
+          };
+          (o.status === "Closed" || o.received ? archived : orders).push(o);
+        });
+        renderOrders();
+      });
   </script>
-<div id="versionLabel">v1.7</div>
-<style>
-  #versionLabel {
-    position: fixed;
-    bottom: 10px;
-    right: 20px;
-    font-size: 1rem;
-    color: #999;
-    font-style: italic;
-    z-index: 9999;
-  }
-</style>
 </body>
 </html>
