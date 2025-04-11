@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sheets API Test</title>
+  <script>
+    const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+    const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+
+    let tokenClient;
+
+    function loadSheet() {
+      gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: "Sheet1"
+      }).then(response => {
+        console.log("✅ Success:", response.result.values);
+        alert("✅ Success! Check console for data.");
+      }).catch(error => {
+        console.error("❌ Error:", error);
+        alert("❌ Failed to load sheet. Check console.");
+      });
+    }
+
+    function init() {
+      gapi.load("client", async () => {
+        await gapi.client.init({});
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: () => loadSheet()
+        });
+        tokenClient.requestAccessToken();
+      });
+    }
+  </script>
+  <script src="https://apis.google.com/js/api.js" onload="init()"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <h1>Google Sheets Test</h1>
+  <p>Login will trigger automatically. Open the console to view data.</p>
+</body>
+</html>
