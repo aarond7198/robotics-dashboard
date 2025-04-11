@@ -147,63 +147,67 @@
     </form>
     <div id="archiveContainer"></div>
   </div>
-  <script>
-    const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-    const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
+<script>
+  const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+  const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+  const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
 
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
+  let tokenClient;
+  let gapiInited = false;
+  let gisInited = false;
 
-    const orders = [], archived = [], projectMap = {};
+  const orders = [], archived = [], projectMap = {};
 
-    function maybeEnableLogin() {
-      if (gapiInited && gisInited) {
-        document.getElementById("loginBtn").disabled = false;
-      }
-    }
+  function maybeEnableLogin() {
+  console.log("🧪 gapiInited:", gapiInited);
+  console.log("🧪 gisInited:", gisInited);
+  if (gapiInited && gisInited) {
+    document.getElementById("loginBtn").disabled = false;
+    console.log("✅ Login button enabled");
+  }
+}
+  }
 
   function loadOrdersFromSheet() {
-  console.log("📥 Requesting data from Google Sheets...");
-  gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: "Sheet1"
-  }).then(response => {
-    const rows = response.result.values;
-    if (!rows || rows.length < 2) {
-      console.warn("⚠️ No data rows found in Sheet1.");
-      return;
-    }
-    console.log("✅ Data received:", rows);
-    const headers = rows[0];
-    rows.slice(1).forEach((row, idx) => {
-      const order = {};
-      headers.forEach((key, i) => {
-        order[key.trim()] = row[i];
+    console.log("📥 Requesting data from Google Sheets...");
+    gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "Sheet1"
+    }).then(response => {
+      const rows = response.result.values;
+      if (!rows || rows.length < 2) {
+        console.warn("⚠️ No data rows found in Sheet1.");
+        return;
+      }
+      console.log("✅ Data received:", rows);
+      const headers = rows[0];
+      rows.slice(1).forEach((row, idx) => {
+        const order = {};
+        headers.forEach((key, i) => {
+          order[key.trim()] = row[i];
+        });
+        const o = {
+          po: order["PO Number"] || "",
+          supplier: order["Supplier"] || "",
+          partNumbers: order["Part Numbers"] || "",
+          project: order["Project"] || "",
+          ackDate: order["Acknowledgement Date"] || "",
+          eta: order["Expected Delivery"] || "",
+          received: order["Received"] === "true",
+          description: order["Description"] || "",
+          status: order["Status"] || "Ready to Order"
+        };
+        console.log(`🔄 Row ${idx + 1} parsed:`, o);
+        (o.status === "Closed" || o.received ? archived : orders).push(o);
       });
-      const o = {
-        po: order["PO Number"] || "",
-        supplier: order["Supplier"] || "",
-        partNumbers: order["Part Numbers"] || "",
-        project: order["Project"] || "",
-        ackDate: order["Acknowledgement Date"] || "",
-        eta: order["Expected Delivery"] || "",
-        received: order["Received"] === "true",
-        description: order["Description"] || "",
-        status: order["Status"] || "Ready to Order"
-      };
-      console.log(`🔄 Row ${idx + 1} parsed:`, o);
-      (o.status === "Closed" || o.received ? archived : orders).push(o);
+      console.log("📦 Parsed active orders:", orders);
+      console.log("📦 Parsed archived orders:", archived);
+      renderOrders();
+    }).catch(err => {
+      console.error("❌ Failed to load from sheet:", err);
     });
-    console.log("📦 Parsed active orders:", orders);
-    console.log("📦 Parsed archived orders:", archived);
-    renderOrders();
-  }).catch(err => {
-    console.error("❌ Failed to load from sheet:", err);
-    alert("Error loading data from Google Sheets. Check console for details.");
-  });
-}
+  }
+</script>
 
 
     document.getElementById("loginBtn").onclick = () => {
