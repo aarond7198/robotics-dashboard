@@ -292,7 +292,7 @@ window.onload = function () {
         };
           const opt = document.createElement("option");
           opt.value = `${customerCode}-${projectCode}`;
-          opt.textContent = projectMap[`${customerCode}-${projectCode}`].label;
+          opt.textContent = label;
           projectSelect.appendChild(opt);
         renderOrders();  // Call renderOrders after dropdown is built
         }
@@ -367,7 +367,7 @@ window.onload = function () {
 
       div.innerHTML = `
         ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
-        <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+        <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
         <p><strong>Supplier:</strong> ${order.supplier}</p>
         <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -576,7 +576,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -688,7 +688,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -1051,7 +1051,7 @@ window.onload = function () {
         };
           const opt = document.createElement("option");
           opt.value = `${customerCode}-${projectCode}`;
-          opt.textContent = projectMap[`${customerCode}-${projectCode}`].label;
+          opt.textContent = label;
           projectSelect.appendChild(opt);
         renderOrders();  // Call renderOrders after dropdown is built
         }
@@ -1126,7 +1126,7 @@ window.onload = function () {
 
       div.innerHTML = `
         ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
-        <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+        <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
         <p><strong>Supplier:</strong> ${order.supplier}</p>
         <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -1335,7 +1335,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -1447,7 +1447,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3><p><em>${projectMap[order.project]?.description || ""}</em></p>
+      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
