@@ -101,18 +101,6 @@
       font-weight: bold;
       cursor: pointer;
     }
-    #loginBtn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background-color: #555;
-      color: white;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-    }
     .highlight { font-weight: bold; text-decoration: underline; color: #0078D4; }
     #versionLabel {
       position: fixed;
@@ -130,7 +118,6 @@
     <a href="index.html">📦 Inventory Request</a>
     <a class="active" href="orders.html">🧾 Order Tracking</a>
   </nav>
-  <button id="loginBtn" disabled title="Initializing Google Login...">🔐 Log in with Google</button>
   <button id="saveButton">💾 Save</button>
   <h1>Order Tracking Dashboard</h1>
   <div class="dashboard">
@@ -158,166 +145,31 @@
   </div>
 
   <script>
-    // Reload if refreshed (avoid ghost state)
-    if (performance.navigation.type === 1) {
-      console.warn("🔄 Reload detected. Forcing clean reload...");
-      window.location.href = window.location.href;
-    }
-
-    const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
-    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
-    const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
-
-    let tokenClient;
-    let gapiInited = false;
-    let gisInited = false;
-
     const orders = [], archived = [], projectMap = {};
 
-    function maybeEnableLogin() {
-      console.log("🧪 gapiInited:", gapiInited);
-      console.log("🧪 gisInited:", gisInited);
-      if (gapiInited && gisInited) {
-        document.getElementById("loginBtn").disabled = false;
-        console.log("✅ Login button enabled");
-      }
-    }
-
-    function loadOrdersFromSheet() {
-      console.log("📥 Requesting data from Google Sheets...");
-      gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SHEET_ID,
-        range: "Sheet1"
-      }).then(response => {
-        try {
-          console.log("📤 Raw Sheets API response:", response);
-          if (!response || !response.result || !response.result.values) {
-            console.warn("⚠️ Response missing expected structure:", response);
-            alert("⚠️ Google Sheets response was received, but the data format was unexpected or empty. Please check: \n- Sheet name = 'Sheet1'\n- Headers are in row 1\n- Data starts on row 2\n- Sheet is shared as Viewer or public.");
-            return;
-          }
-          const rows = response.result.values;
-          if (!rows || rows.length < 2) {
-            console.warn("⚠️ No data rows found in Sheet1.", rows);
-            alert("⚠️ No rows found in Sheet1. You may need to enter at least 1 row of data under the headers.");
-            return;
-          }
-          console.log("✅ Data received:", rows);
-          const headers = rows[0];
-          rows.slice(1).forEach((row, idx) => {
-            const order = {};
-            headers.forEach((key, i) => {
-              order[key.trim()] = row[i];
-            });
-            const o = {
-              po: order["PO Number"] || "",
-              supplier: order["Supplier"] || "",
-              partNumbers: order["Part Numbers"] || "",
-              project: order["Project"] || "",
-              ackDate: order["Acknowledgement Date"] || "",
-              eta: order["Expected Delivery"] || "",
-              received: order["Received"] === "true",
-              description: order["Description"] || "",
-              status: order["Status"] || "Ready to Order"
-            };
-            console.log(`🔄 Row ${idx + 1} parsed:`, o);
-            (o.status === "Closed" || o.received ? archived : orders).push(o);
-          });
-          console.log("📦 Parsed active orders:", orders);
-          console.log("📦 Parsed archived orders:", archived);
-          renderOrders();
-        } catch (err) {
-          console.error("❌ Error during processing:", err);
-          alert("❌ Unexpected error occurred while processing sheet data. Check console.");
-        }
-      }).catch(err => {
-        console.error("❌ Failed to load from sheet:", err);
-        alert("❌ Error loading data from Google Sheets. See console for details.");
-      });
-    }
-
-    document.getElementById("loginBtn").onclick = () => {
-      tokenClient.requestAccessToken();
-    };
-
-    window.onload = () => {
-      const gapiScript = document.createElement("script");
-      gapiScript.src = "https://apis.google.com/js/api.js";
-      gapiScript.onload = () => {
-        gapi.load("client", async () => {
-          await gapi.client.init({});
-          gapiInited = true;
-          maybeEnableLogin();
-        });
-      };
-      document.body.appendChild(gapiScript);
-
-      const gisScript = document.createElement("script");
-      gisScript.src = "https://accounts.google.com/gsi/client";
-      gisScript.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          prompt: 'consent',
-          callback: (tokenResponse) => {
-            console.log("🔐 Token Response:", tokenResponse);
-            loadOrdersFromSheet();
-          }
-        });
-        gisInited = true;
-        maybeEnableLogin();
-      };
-      document.body.appendChild(gisScript);
-
-      fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
-        .then(res => res.text())
-        .then(text => {
-          const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
-          const select = document.getElementById("projectSelect");
-          select.innerHTML = '<option value="">-- Select Project --</option>';
-          rows.forEach(row => {
-            if (row[5].trim().toLowerCase() === "yes") {
-              const key = `${row[0]}-${row[1]}`;
-              const label = `${row[0]} - ${row[1]} - ${row[2]}`;
-              projectMap[key] = label;
-              const opt = document.createElement("option");
-              opt.value = key;
-              opt.textContent = label;
-              select.appendChild(opt);
-            }
-          });
-        });
-
-      document.getElementById("orderForm").onsubmit = e => {
-        e.preventDefault();
-        const order = {
-          supplier: supplier.value.trim(),
-          partNumbers: partNumbers.value.trim(),
-          project: projectSelect.value,
-          description: description.value.trim(),
-          status: "Ready to Order",
-          po: "",
-          ackDate: "",
-          eta: "",
-          received: false
+    async function loadOrdersFromCSV() {
+      const response = await fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv");
+      const text = await response.text();
+      const rows = text.trim().split("\n").map(r => r.split(","));
+      const headers = rows[0];
+      rows.slice(1).forEach(row => {
+        const order = {};
+        headers.forEach((h, i) => order[h.trim()] = row[i]);
+        const o = {
+          po: order["PO Number"] || "",
+          supplier: order["Supplier"] || "",
+          partNumbers: order["Part Numbers"] || "",
+          project: order["Project"] || "",
+          ackDate: order["Acknowledgement Date"] || "",
+          eta: order["Expected Delivery"] || "",
+          received: order["Received"] === "true",
+          description: order["Description"] || "",
+          status: order["Status"] || "Ready to Order"
         };
-        orders.push(order);
-        renderOrders();
-        e.target.reset();
-      };
-
-      document.getElementById("saveButton").onclick = () => {
-        const combined = [...orders, ...archived];
-        if (combined.length === 0) return alert("No orders to save.");
-        fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
-          method: "POST",
-          mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(combined)
-        }).then(() => alert("✅ Orders submitted."))
-          .catch(() => alert("❌ Error submitting orders."));
-      };
-    };
+        (o.status === "Closed" || o.received ? archived : orders).push(o);
+      });
+      renderOrders();
+    }
 
     function renderOrders() {
       const container = document.getElementById("ordersContainer");
@@ -341,7 +193,6 @@
             <div class="status-segment ${order.status === 'In Progress' ? 'status-current' : order.status === 'Closed' ? 'status-complete' : ''}">In Progress</div>
             <div class="status-segment ${order.status === 'Closed' ? 'status-current' : ''}">Closed</div>
           </div>
-          ${getActionField(order, i)}
         `;
         container.appendChild(div);
       });
@@ -359,47 +210,27 @@
       }
     }
 
-    function getActionField(order, index) {
-      if (order.status === "Ready to Order") {
-        return `<label>PO Number <input onchange="updateField(${index}, 'po', this.value)" /></label>`;
-      } else if (order.status === "Ordered") {
-        return `<label>Ack Date <input onchange="updateField(${index}, 'ackDate', this.value)" /></label>
-                <label>ETA <input onchange="updateField(${index}, 'eta', this.value)" /></label>`;
-      } else if (order.status === "In Progress") {
-        return `<button class='received-btn' onclick='markReceived(${index})'>Mark as Received</button>`;
-      }
-      return '';
-    }
-
-    function updateField(index, field, value) {
-      orders[index][field] = value;
-      const o = orders[index];
-      if (field === 'po' && value) o.status = 'Ordered';
-      if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) o.status = 'In Progress';
-      renderOrders();
-    }
-
-    function markReceived(index) {
-      const closed = orders.splice(index, 1)[0];
-      closed.status = "Closed";
-      archived.push(closed);
-      renderOrders();
-    }
+    window.onload = async () => {
+      const projectRes = await fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv");
+      const projectText = await projectRes.text();
+      const projectRows = projectText.trim().split("\n").slice(1).map(r => r.split(","));
+      const select = document.getElementById("projectSelect");
+      select.innerHTML = '<option value="">-- Select Project --</option>';
+      projectRows.forEach(row => {
+        if (row[5].trim().toLowerCase() === "yes") {
+          const key = `${row[0]}-${row[1]}`;
+          const label = `${row[0]} - ${row[1]} - ${row[2]}`;
+          projectMap[key] = label;
+          const opt = document.createElement("option");
+          opt.value = key;
+          opt.textContent = label;
+          select.appendChild(opt);
+        }
+      });
+      await loadOrdersFromCSV();
+    };
   </script>
 
-  <div id="versionLabel">v1.7</div>
-  <style>
-  #versionLabel {
-    position: fixed;
-    bottom: 10px;
-    right: 20px;
-    font-size: 1rem;
-    color: #999;
-    font-style: italic;
-    z-index: 9999;
-  }
-</style>
-
-  
+  <div id="versionLabel">v1.8</div>
 </body>
 </html>
