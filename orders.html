@@ -1,12 +1,13 @@
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Order Tracking Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Tracking Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
     body {
       font-family: 'Inter', sans-serif;
       background: #f4f4f4;
@@ -103,37 +104,33 @@
   </style>
 </head>
 <body>
-  <h1>Order Tracking Dashboard</h1>
-  <div class="dashboard" id="ordersContainer"></div>
-
-  <form id="orderForm">
-    <div class="form-row">
-      <label for="supplier">Supplier</label>
-      <input id="supplier" type="text" required />
-    </div>
-    <div class="form-row">
-      <label for="partNumbers">Part Numbers</label>
-      <input id="partNumbers" type="text" required />
-    </div>
-    <div class="form-row">
-      <label for="project">Project</label>
-      <input id="project" type="text" required />
-    </div>
-    <div class="form-row">
-      <label for="description">Description</label>
-      <input id="description" type="text" />
-    </div>
-    <button type="submit">Add Order</button>
-  </form>
-
-  <button id="saveButton">💾 Save Orders</button>
-
-  <div id="archiveContainer">
-    <h2>Recently Closed Orders</h2>
-    <div class="dashboard" id="closedOrders"></div>
-  </div>
-
-  <script>
+<h1>Order Tracking Dashboard</h1>
+<div class="dashboard" id="ordersContainer"></div>
+<form id="orderForm">
+<div class="form-row">
+<label for="supplier">Supplier</label>
+<input id="supplier" required="" type="text"/>
+</div>
+<div class="form-row">
+<label for="partNumbers">Part Numbers</label>
+<input id="partNumbers" required="" type="text"/>
+</div>
+<div class="form-row">
+<label for="project">Project</label>
+<input id="project" required="" type="text"/>
+</div>
+<div class="form-row">
+<label for="description">Description</label>
+<input id="description" type="text"/>
+</div>
+<button type="submit">Add Order</button>
+</form>
+<button id="saveButton">💾 Save Orders</button>
+<div id="archiveContainer">
+<h2>Recently Closed Orders</h2>
+<div class="dashboard" id="closedOrders"></div>
+</div>
+<script>
     const orders = [], archived = [];
 
     function renderOrders() {
@@ -308,5 +305,64 @@
         renderOrders();
       });
   </script>
+<script>
+  const orders = [], archived = [], loadedOrders = [], projectMap = {};
+
+  function fetchCSVData() {
+    // Load Orders from CSV
+    fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv")
+      .then(res => res.text())
+      .then(text => {
+        const rows = text.trim().split("\n").map(r => r.split(","));
+        const headers = rows[0].map(h => h.trim());
+        rows.slice(1).forEach(row => {
+          if (!row[2] || !row[1]) return;
+          const order = {};
+          headers.forEach((key, i) => {
+            order[key] = row[i] ? row[i].trim() : "";
+          });
+          const o = {
+            po: order["PO Number"] || "",
+            supplier: order["Supplier"] || "",
+            partNumbers: order["Part Numbers"] || "",
+            project: order["Project"] || "",
+            ackDate: order["Acknowledgement Date"] || "",
+            eta: order["Expected Delivery"] || "",
+            received: order["Received"] === "true",
+            description: order["Description"] || "",
+            status: order["Status"] || "Ready to Order"
+          };
+          loadedOrders.push(o);
+          (o.status === "Closed" || o.received ? archived : orders).push(o);
+        });
+        renderOrders();
+      });
+
+    // Load Project Dropdown
+    fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+      .then(res => res.text())
+      .then(text => {
+        const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
+        const select = document.getElementById("projectSelect");
+        select.innerHTML = '<option value="">-- Select Project --</option>';
+        rows.forEach(row => {
+          if (row[5] && row[5].trim().toLowerCase() === "yes") {
+            const key = `${row[0]}-${row[1]}`;
+            const label = `${row[0]} - ${row[1]} - ${row[2]}`;
+            projectMap[key] = label;
+            const opt = document.createElement("option");
+            opt.value = key;
+            opt.textContent = label;
+            select.appendChild(opt);
+          }
+        });
+      });
+  }
+
+  window.onload = () => {
+    fetchCSVData();
+  };
+</script>
+
 </body>
 </html>
