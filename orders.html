@@ -114,6 +114,15 @@
       cursor: pointer;
     }
     .highlight { font-weight: bold; text-decoration: underline; color: #0078D4; }
+    #versionLabel {
+      position: fixed;
+      bottom: 10px;
+      right: 20px;
+      font-size: 1rem;
+      color: #999;
+      font-style: italic;
+      z-index: 9999;
+    }
   </style>
 </head>
 <body>
@@ -147,11 +156,12 @@
     </form>
     <div id="archiveContainer"></div>
   </div>
+
   <script>
-    // 🔁 Reload if refreshed (to prevent partial load bugs)
+    // Reload if refreshed (avoid ghost state)
     if (performance.navigation.type === 1) {
-      console.warn("🔄 Page was refreshed — forcing clean reload...");
-      window.location.replace(window.location.href);
+      console.warn("🔄 Reload detected. Forcing clean reload...");
+      window.location.href = window.location.href;
     }
 
     const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
@@ -179,50 +189,50 @@
         spreadsheetId: SHEET_ID,
         range: "Sheet1"
       }).then(response => {
-  console.log("📤 Raw Sheets API response:", response);
-
-  if (!response || !response.result || !response.result.values) {
-    console.warn("⚠️ Response missing expected structure:", response);
-    alert("⚠️ Google Sheets response was received, but the data format was unexpected or empty. Please check: \n- Sheet name = 'Sheet1'\n- Headers are in row 1\n- Data starts on row 2\n- Sheet is shared as Viewer or public.");
-    return;
-  }
-
-  const rows = response.result.values;
-  if (!rows || rows.length < 2) {
-    console.warn("⚠️ No data rows found in Sheet1.", rows);
-    alert("⚠️ No rows found in Sheet1. You may need to enter at least 1 row of data under the headers.");
-    return;
-  }
-
-  console.log("✅ Data received:", rows);
-        const headers = rows[0];
-        rows.slice(1).forEach((row, idx) => {
-          const order = {};
-          headers.forEach((key, i) => {
-            order[key.trim()] = row[i];
+        try {
+          console.log("📤 Raw Sheets API response:", response);
+          if (!response || !response.result || !response.result.values) {
+            console.warn("⚠️ Response missing expected structure:", response);
+            alert("⚠️ Google Sheets response was received, but the data format was unexpected or empty. Please check: \n- Sheet name = 'Sheet1'\n- Headers are in row 1\n- Data starts on row 2\n- Sheet is shared as Viewer or public.");
+            return;
+          }
+          const rows = response.result.values;
+          if (!rows || rows.length < 2) {
+            console.warn("⚠️ No data rows found in Sheet1.", rows);
+            alert("⚠️ No rows found in Sheet1. You may need to enter at least 1 row of data under the headers.");
+            return;
+          }
+          console.log("✅ Data received:", rows);
+          const headers = rows[0];
+          rows.slice(1).forEach((row, idx) => {
+            const order = {};
+            headers.forEach((key, i) => {
+              order[key.trim()] = row[i];
+            });
+            const o = {
+              po: order["PO Number"] || "",
+              supplier: order["Supplier"] || "",
+              partNumbers: order["Part Numbers"] || "",
+              project: order["Project"] || "",
+              ackDate: order["Acknowledgement Date"] || "",
+              eta: order["Expected Delivery"] || "",
+              received: order["Received"] === "true",
+              description: order["Description"] || "",
+              status: order["Status"] || "Ready to Order"
+            };
+            console.log(`🔄 Row ${idx + 1} parsed:`, o);
+            (o.status === "Closed" || o.received ? archived : orders).push(o);
           });
-          const o = {
-            po: order["PO Number"] || "",
-            supplier: order["Supplier"] || "",
-            partNumbers: order["Part Numbers"] || "",
-            project: order["Project"] || "",
-            ackDate: order["Acknowledgement Date"] || "",
-            eta: order["Expected Delivery"] || "",
-            received: order["Received"] === "true",
-            description: order["Description"] || "",
-            status: order["Status"] || "Ready to Order"
-          };
-          console.log(`🔄 Row ${idx + 1} parsed:`, o);
-          (o.status === "Closed" || o.received ? archived : orders).push(o);
-        });
-        console.log("📦 Parsed active orders:", orders);
-        console.log("📦 Parsed archived orders:", archived);
-        renderOrders();
+          console.log("📦 Parsed active orders:", orders);
+          console.log("📦 Parsed archived orders:", archived);
+          renderOrders();
+        } catch (err) {
+          console.error("❌ Error during processing:", err);
+          alert("❌ Unexpected error occurred while processing sheet data. Check console.");
+        }
       }).catch(err => {
         console.error("❌ Failed to load from sheet:", err);
         alert("❌ Error loading data from Google Sheets. See console for details.");
-      }).finally(() => {
-        console.log("🧪 Finished Sheets API call");
       });
     }
 
@@ -245,16 +255,15 @@
       const gisScript = document.createElement("script");
       gisScript.src = "https://accounts.google.com/gsi/client";
       gisScript.onload = () => {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      prompt: 'consent',
-      callback: (tokenResponse) => {
-        console.log("🔐 Token Response:", tokenResponse);
-        loadOrdersFromSheet();
-        }
-});
-
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          prompt: 'consent',
+          callback: (tokenResponse) => {
+            console.log("🔐 Token Response:", tokenResponse);
+            loadOrdersFromSheet();
+          }
+        });
         gisInited = true;
         maybeEnableLogin();
       };
@@ -378,8 +387,8 @@
     }
   </script>
 
-<div id="versionLabel">v1.6</div>
-<style>
+  <div id="versionLabel">v1.7</div>
+  <style>
   #versionLabel {
     position: fixed;
     bottom: 10px;
