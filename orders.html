@@ -164,32 +164,46 @@
       }
     }
 
-    function loadOrdersFromSheet() {
-      gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SHEET_ID,
-        range: "Sheet1"
-      }).then(response => {
-        const rows = response.result.values;
-        const headers = rows[0];
-        rows.slice(1).forEach(row => {
-          const order = {};
-          headers.forEach((key, i) => order[key.trim()] = row[i]);
-          const o = {
-            po: order["PO Number"] || "",
-            supplier: order["Supplier"] || "",
-            partNumbers: order["Part Numbers"] || "",
-            project: order["Project"] || "",
-            ackDate: order["Acknowledgement Date"] || "",
-            eta: order["Expected Delivery"] || "",
-            received: order["Received"] === "true",
-            description: order["Description"] || "",
-            status: order["Status"] || "Ready to Order"
-          };
-          (o.status === "Closed" || o.received ? archived : orders).push(o);
-        });
-        renderOrders();
-      });
+  function loadOrdersFromSheet() {
+  console.log("📥 Requesting data from Google Sheets...");
+  gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "Sheet1"
+  }).then(response => {
+    const rows = response.result.values;
+    if (!rows || rows.length < 2) {
+      console.warn("⚠️ No data rows found in Sheet1.");
+      return;
     }
+    console.log("✅ Data received:", rows);
+    const headers = rows[0];
+    rows.slice(1).forEach((row, idx) => {
+      const order = {};
+      headers.forEach((key, i) => {
+        order[key.trim()] = row[i];
+      });
+      const o = {
+        po: order["PO Number"] || "",
+        supplier: order["Supplier"] || "",
+        partNumbers: order["Part Numbers"] || "",
+        project: order["Project"] || "",
+        ackDate: order["Acknowledgement Date"] || "",
+        eta: order["Expected Delivery"] || "",
+        received: order["Received"] === "true",
+        description: order["Description"] || "",
+        status: order["Status"] || "Ready to Order"
+      };
+      console.log(`🔄 Row ${idx + 1} parsed:`, o);
+      (o.status === "Closed" || o.received ? archived : orders).push(o);
+    });
+    console.log("📦 Parsed active orders:", orders);
+    console.log("📦 Parsed archived orders:", archived);
+    renderOrders();
+  }).catch(err => {
+    console.error("❌ Failed to load from sheet:", err);
+  });
+}
+
 
     document.getElementById("loginBtn").onclick = () => {
       tokenClient.requestAccessToken();
