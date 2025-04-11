@@ -132,95 +132,94 @@
     );
   }
 
-  function render() {
-    const container = document.getElementById("ordersContainer");
-    const archive = document.getElementById("archiveContainer");
-    container.innerHTML = "";
-    archive.innerHTML = "";
+function render() {
+  const container = document.getElementById("ordersContainer");
+  const archive = document.getElementById("archiveContainer");
+  container.innerHTML = "";
+  archive.innerHTML = "";
 
-    orders.forEach((o, i) => {
-      const card = document.createElement("div");
-      card.className = "order-card";
+  orders.forEach((o, i) => {
+    const card = document.createElement("div");
+    card.className = "order-card";
 
-      card.innerHTML = `
-        <strong>${projectMap[o.project] || o.project}</strong><br/>
-        Supplier: ${o.supplier}<br/>
-        Parts: ${o.partNumbers}<br/>
-        ${o.description ? "Notes: " + o.description + "<br/>" : ""}
-        ${o.po ? "PO: " + o.po + "<br/>" : ""}
-        ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
-        ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
-        <div class="status-bar">
-          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
-          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
-          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
-          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
-        </div>
-      `;
+    card.innerHTML = `
+      <strong>${projectMap[o.project] || o.project}</strong><br/>
+      Supplier: ${o.supplier}<br/>
+      Parts: ${o.partNumbers}<br/>
+      ${o.description ? "Notes: " + o.description + "<br/>" : ""}
+      ${o.po ? "PO: " + o.po + "<br/>" : ""}
+      ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
+      ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
+      <div class="status-bar">
+        <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
+        <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
+        <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
+        <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
+      </div>
+    `;
 
-      // Status-based inputs
-      if (o.status === "Ready to Order") {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = "Enter PO Number";
-        input.value = o.po;
-        input.addEventListener("change", e => {
-          o.po = e.target.value;
-          if (o.po.trim()) {
-            o.status = "Ordered";
-            render();
-          }
-        });
-        card.appendChild(input);
-      } else if (o.status === "Ordered") {
-        const ackInput = document.createElement("input");
-        ackInput.type = "date";
-        ackInput.placeholder = "Acknowledgement Date";
-        ackInput.value = o.ackDate;
-        ackInput.addEventListener("change", e => {
-          o.ackDate = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
-        });
-
-        const etaInput = document.createElement("input");
-        etaInput.type = "date";
-        etaInput.placeholder = "Expected Delivery";
-        etaInput.value = o.eta;
-        etaInput.addEventListener("change", e => {
-          o.eta = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
-        });
-
-        card.appendChild(ackInput);
-        card.appendChild(etaInput);
-      } else if (o.status === "In Progress") {
-        const recvBtn = document.createElement("button");
-        recvBtn.className = "received-btn";
-        recvBtn.textContent = "Mark as Received";
-        recvBtn.onclick = () => {
-          o.status = "Closed";
-          o.received = true;
-          orders.splice(i, 1);
-          archived.push(o);
+    if (o.status === "Ready to Order") {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Enter PO Number";
+      input.value = o.po;
+      input.addEventListener("change", e => {
+        o.po = e.target.value;
+        if (o.po.trim()) {
+          o.status = "Ordered";
           render();
-        };
-        card.appendChild(recvBtn);
-      }
+        }
+      });
+      card.appendChild(input);
+    } else if (o.status === "Ordered") {
+      const ackInput = document.createElement("input");
+      ackInput.type = "date";
+      ackInput.placeholder = "Acknowledgement Date";
+      ackInput.value = o.ackDate;
+      ackInput.addEventListener("change", e => {
+        o.ackDate = e.target.value;
+        if (o.ackDate && o.eta) {
+          o.status = "In Progress";
+          render();
+        }
+      });
 
-      container.appendChild(card);
-    });
+      const etaInput = document.createElement("input");
+      etaInput.type = "date";
+      etaInput.placeholder = "Expected Delivery";
+      etaInput.value = o.eta;
+      etaInput.addEventListener("change", e => {
+        o.eta = e.target.value;
+        if (o.ackDate && o.eta) {
+          o.status = "In Progress";
+          render();
+        }
+      });
 
-    // Archived orders
-    archive.innerHTML = "";
-    archived.slice(-10).reverse().forEach(o => {
-      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})</div>`;
-    });
+      card.appendChild(ackInput);
+      card.appendChild(etaInput);
+    } else if (o.status === "In Progress") {
+      const recvBtn = document.createElement("button");
+      recvBtn.className = "received-btn";
+      recvBtn.textContent = "Mark as Received";
+      recvBtn.onclick = () => {
+        o.status = "Closed";
+        o.received = true;
+        orders.splice(i, 1);
+        archived.push(o);
+        render();
+      };
+      card.appendChild(recvBtn);
+    }
+
+    container.appendChild(card);
+  });
+
+  archive.innerHTML = "";
+  archived.slice(-10).reverse().forEach(o => {
+    archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})</div>`;
+  });
+}
 
 
   card.appendChild(input);
@@ -327,7 +326,7 @@ console.log("Archived orders:", archived);
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-<div id="versionLabel">v1.26</div><style>
+<div id="versionLabel">v1.29</div><style>
 #versionLabel {
   position: fixed;
   bottom: 10px;
