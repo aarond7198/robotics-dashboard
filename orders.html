@@ -90,6 +90,7 @@
 </head>
 <body>
 <nav>
+<a href="index.html">📦 Inventory Request</a>
 <a class="active" href="#">🧾 Order Dashboard</a>
 </nav>
 <div class="dashboard">
@@ -152,11 +153,15 @@
             <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
             <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
           </div>
-        </div>`;
+        ${o.status === "Ready to Order" ? `<input type="text" placeholder="Enter PO Number" />` :
+(o.status === "Ordered" ? `<input type="date" placeholder="Acknowledgement Date" />` :
+(o.status === "In Progress" ? `<input type="date" placeholder="Expected Delivery" />` : ``))}</div>`;
     });
 
     archived.slice(-10).reverse().forEach((o, i) => {
-      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier}</div>`;
+      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier}${o.status === "Ready to Order" ? `<input type="text" placeholder="Enter PO Number" />` :
+(o.status === "Ordered" ? `<input type="date" placeholder="Acknowledgement Date" />` :
+(o.status === "In Progress" ? `<input type="date" placeholder="Expected Delivery" />` : ``))}</div>`;
     });
   }
 
