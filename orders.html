@@ -256,20 +256,29 @@ function saveData() {
     const headers = orderRows[0];
     orderRows.slice(1).forEach(row => {
       const o = {};
-      headers.forEach((key, i) => o[key.trim()] = row[i]);
-      const order = {
-        po: o["PO Number"] || "",
-        supplier: o["Supplier"] || "",
-        partNumbers: o["Part Numbers"] || "",
-        project: o["Project"] || "",
-        ackDate: o["Acknowledgement Date"] || "",
-        eta: o["Expected Delivery"] || "",
-        received: o["Received"] === "true",
-        description: o["Description"] || "",
-        status: o["Status"] || "Ready to Order"
-      };
-      loadedOrders.push(order);
-      (order.status === "Closed" || order.received ? archived : orders).push(order);
+            headers.forEach((key, i) => {
+              const cleanKey = key.replace(/^"+|"+$/g, '').trim();      // remove wrapping quotes
+              const cleanValue = row[i]?.replace(/^"+|"+$/g, '').trim(); // remove wrapping quotes from data too
+              o[cleanKey] = cleanValue;
+            });
+            
+            const order = {
+              po: o["PO Number"] || "",
+              supplier: o["Supplier"] || "",
+              partNumbers: o["Part Numbers"] || "",
+              project: o["Project"] || "",
+              ackDate: o["Acknowledgement Date"] || "",
+              eta: o["Expected Delivery"] || "",
+              received: o["Received"] === "true",
+              description: o["Description"] || "",
+              status: o["Status"] || "Ready to Order"
+            };
+
+console.log("✅ Parsed order:", order);
+
+loadedOrders.push(order);
+(order.status === "Closed" || order.received ? archived : orders).push(order);
+
     });
 
     console.log("📦 Headers from CSV:", headers);
