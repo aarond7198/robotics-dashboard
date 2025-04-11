@@ -272,6 +272,13 @@ function saveData() {
       (order.status === "Closed" || order.received ? archived : orders).push(order);
     });
 
+    console.log("📦 Headers from CSV:", headers);
+console.log("📄 Raw rows (excluding headers):", orderRows.slice(1));
+console.log("🧠 Parsed orders (loadedOrders):", loadedOrders);
+console.log("🟢 Active orders:", orders);
+console.log("📁 Archived orders:", archived);
+
+      
     render();
   }
 
