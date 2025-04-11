@@ -240,6 +240,52 @@
     fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv")
       .then(res => res.text())
       .then(text => {
+        const rows = text.trim().split("\n").map(r => r.split(","));
+        const headers = rows[0].map(h => h.trim());
+        rows.slice(1).forEach((row, idx) => {
+          if (!row[2] || !row[1]) return; // Skip if missing part number or supplier
+          const order = {};
+          headers.forEach((key, i) => {
+            order[key] = row[i] ? row[i].trim() : "";
+          });
+          const o = {
+            po: order["PO Number"] || "",
+            supplier: order["Supplier"] || "",
+            partNumbers: order["Part Numbers"] || "",
+            project: order["Project"] || "",
+            ackDate: order["Acknowledgement Date"] || "",
+            eta: order["Expected Delivery"] || "",
+            received: order["Received"] === "true",
+            description: order["Description"] || "",
+            status: order["Status"] || "Ready to Order"
+          };
+          (o.status === "Closed" || o.received ? archived : orders).push(o);
+        });
+        renderOrders();
+      });
+
+    // Load project dropdown from project_data.csv
+    fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+      .then(res => res.text())
+      .then(text => {
+        const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
+        const select = document.getElementById("projectSelect");
+        select.innerHTML = '<option value="">-- Select Project --</option>';
+        rows.forEach(row => {
+          if (row[5].trim().toLowerCase() === "yes") {
+            const key = \`\${row[0]}-\${row[1]}\`;
+            const label = \`\${row[0]} - \${row[1]} - \${row[2]}\`;
+            projectMap[key] = label;
+            const opt = document.createElement("option");
+            opt.value = key;
+            opt.textContent = label;
+            select.appendChild(opt);
+          }
+        });
+      });
+    fetch("https://aarond7198.github.io/robotics-dashboard/orders_data.csv")
+      .then(res => res.text())
+      .then(text => {
         const lines = text.trim().split("\n");
         const headers = lines[0].split(",");
         lines.slice(1).forEach(line => {
