@@ -177,6 +177,8 @@
         spreadsheetId: SHEET_ID,
         range: "Sheet1"
       }).then(response => {
+        console.log("📤 Raw Sheets API response:", response);
+
         const rows = response.result.values;
         if (!rows || rows.length < 2) {
           console.warn("⚠️ No data rows found in Sheet1.");
