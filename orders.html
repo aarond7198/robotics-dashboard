@@ -238,11 +238,16 @@
       const gisScript = document.createElement("script");
       gisScript.src = "https://accounts.google.com/gsi/client";
       gisScript.onload = () => {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: () => loadOrdersFromSheet()
-        });
+      tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      prompt: 'consent',
+      callback: (tokenResponse) => {
+        console.log("🔐 Token Response:", tokenResponse);
+        loadOrdersFromSheet();
+        }
+});
+
         gisInited = true;
         maybeEnableLogin();
       };
@@ -366,7 +371,7 @@
     }
   </script>
 
-<div id="versionLabel">v1.2</div>
+<div id="versionLabel">v1.3</div>
 <style>
   #versionLabel {
     position: fixed;
