@@ -147,6 +147,13 @@
     </form>
     <div id="archiveContainer"></div>
   </div>
+  <script>
+    // 🔁 Reload if refreshed (to prevent partial load bugs)
+    if (performance.navigation.type === 1) {
+      console.warn("🔄 Page was refreshed — forcing clean reload...");
+      window.location.replace(window.location.href);
+    }
+  </script>
 
     <script>
     const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
@@ -373,13 +380,13 @@
     }
   </script>
 
-<div id="versionLabel">v1.4</div>
+<div id="versionLabel">v1.5</div>
 <style>
   #versionLabel {
     position: fixed;
     bottom: 10px;
     right: 20px;
-    font-size: 1.5rem;
+    font-size: 1rem;
     color: #999;
     font-style: italic;
     z-index: 9999;
