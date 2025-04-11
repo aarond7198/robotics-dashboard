@@ -174,20 +174,22 @@
         spreadsheetId: SHEET_ID,
         range: "Sheet1"
       }).then(response => {
-        console.log("📤 Raw Sheets API response:", response);
+  console.log("📤 Raw Sheets API response:", response);
 
-        if (!response || !response.result) {
-          console.warn("⚠️ No response.result from API.", response);
-          return;
-        }
+  if (!response || !response.result || !response.result.values) {
+    console.warn("⚠️ Response missing expected structure:", response);
+    alert("⚠️ Google Sheets response was received, but the data format was unexpected or empty. Please check: \n- Sheet name = 'Sheet1'\n- Headers are in row 1\n- Data starts on row 2\n- Sheet is shared as Viewer or public.");
+    return;
+  }
 
-        const rows = response.result.values;
-        if (!rows || rows.length < 2) {
-          console.warn("⚠️ No data rows found in Sheet1.", rows);
-          return;
-        }
+  const rows = response.result.values;
+  if (!rows || rows.length < 2) {
+    console.warn("⚠️ No data rows found in Sheet1.", rows);
+    alert("⚠️ No rows found in Sheet1. You may need to enter at least 1 row of data under the headers.");
+    return;
+  }
 
-        console.log("✅ Data received:", rows);
+  console.log("✅ Data received:", rows);
         const headers = rows[0];
         rows.slice(1).forEach((row, idx) => {
           const order = {};
@@ -371,13 +373,13 @@
     }
   </script>
 
-<div id="versionLabel">v1.3</div>
+<div id="versionLabel">v1.4</div>
 <style>
   #versionLabel {
     position: fixed;
     bottom: 10px;
     right: 20px;
-    font-size: 0.75rem;
+    font-size: 1.5rem;
     color: #999;
     font-style: italic;
     z-index: 9999;
