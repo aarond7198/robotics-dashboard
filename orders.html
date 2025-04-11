@@ -220,7 +220,11 @@
   });
 }
 
-function saveData( {
+
+
+
+    
+function saveData() {
     const combined = [...orders, ...archived];
     const newEntries = combined.filter(o => !loadedOrders.some(lo =>
       lo.supplier === o.supplier && lo.partNumbers === o.partNumbers && lo.project === o.project
