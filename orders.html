@@ -201,6 +201,7 @@
     renderOrders();
   }).catch(err => {
     console.error("❌ Failed to load from sheet:", err);
+    alert("Error loading data from Google Sheets. Check console for details.");
   });
 }
 
