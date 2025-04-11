@@ -203,7 +203,12 @@
     console.log("Headers loaded from Google Sheets:", headers);
     orderRows.slice(1).forEach(row => {
       const o = {};
-      headers.forEach((key, i) => o[key.trim()] = row[i]);
+headers.forEach((key, i) => {
+  const cleanKey = key.replace(/^"+|"+$/g, '').trim();
+  const cleanValue = row[i]?.replace(/^"+|"+$/g, '').trim();
+  o[cleanKey] = cleanValue;
+});
+
       const order = {
         po: o["PO Number"] || "",
         supplier: o["Supplier"] || "",
@@ -245,7 +250,7 @@ console.log("Archived orders:", archived);
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-<div id="versionLabel">v1.99</div><style>
+<div id="versionLabel">v1.22</div><style>
 #versionLabel {
   position: fixed;
   bottom: 10px;
