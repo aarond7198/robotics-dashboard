@@ -709,13 +709,13 @@ function renderOrders() {
   }
 }
 </script>
-</body>
-</html<script>
+<div style="text-align:right; font-size:0.8rem; color:#888; margin-top:20px;">Version: v1.3 — Updated Apr 11</div></body>
+
 
 document.getElementById("saveButton").addEventListener("click", function () {
   const activeOrders = window.orders || [];
   const archivedOrders = window.archived || [];
-  const newOrdersOnly = activeOrders.filter(order => !order._loaded); // only save new orders
+  const newOrdersOnly = activeOrders.filter(order =&gt; !order._loaded); // only save new orders
   const combined = [...newOrdersOnly, ...archivedOrders];
 
   if (combined.length === 0) {
@@ -723,7 +723,7 @@ document.getElementById("saveButton").addEventListener("click", function () {
     return;
   }
 
-  const formatted = combined.map(order => {
+  const formatted = combined.map(order =&gt; {
     return {
       po: order.po || "",
       supplier: order.supplier || "",
@@ -744,15 +744,15 @@ document.getElementById("saveButton").addEventListener("click", function () {
     },
     body: JSON.stringify(formatted)
   })
-  .then(() => {
+  .then(() =&gt; {
     alert("✅ Orders submitted (but response not visible due to no-cors).");
   })
-  .catch(err => {
+  .catch(err =&gt; {
     console.error("❌ Failed to save:", err);
     alert("❌ Error saving orders.");
   });
 });
-</script>E html>
+E html&gt;
 
 <html lang="en">
 <head>
@@ -1471,4 +1471,4 @@ window.restoreOrder = function(index) {
 };
 </script>
 </body>
-</html>
+</html></html>
