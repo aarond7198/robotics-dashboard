@@ -195,6 +195,7 @@
 
     const orderRows = await loadCSV(ORDERS_CSV_URL);
     const headers = orderRows[0];
+    console.log("Headers loaded from Google Sheets:", headers);
     orderRows.slice(1).forEach(row => {
       const o = {};
       headers.forEach((key, i) => o[key.trim()] = row[i]);
