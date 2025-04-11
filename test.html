@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Google Sheets API Test v1.0</title>
+  <title>Google Sheets API Debug Test</title>
   <script>
+    console.log("🧪 Script loaded...");
+
     const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
     const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
     const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
@@ -10,32 +12,40 @@
     let tokenClient;
 
     function loadSheet() {
+      console.log("📥 Attempting to fetch Google Sheet...");
       gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: SHEET_ID,
         range: "Sheet1"
       }).then(response => {
-        console.log("✅ Success:", response.result.values);
-        alert("✅ Sheet data loaded — check the console!");
+        console.log("✅ Sheet loaded:", response.result.values);
+        alert("✅ Sheet loaded! Check console.");
       }).catch(error => {
-        console.error("❌ Failed to load sheet:", error);
-        alert("❌ Error loading sheet. See console.");
+        console.error("❌ Error loading sheet:", error);
+        alert("❌ Error loading sheet. Check console.");
       });
     }
 
     function init() {
+      console.log("🚀 gapi loaded, initializing...");
       gapi.load("client", async () => {
         await gapi.client.init({});
+        console.log("✅ gapi client initialized");
+
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          prompt: 'consent',
-          callback: () => loadSheet()
+          callback: (tokenResponse) => {
+            console.log("🔐 Token received:", tokenResponse);
+            loadSheet();
+          }
         });
+
         document.getElementById("loginBtn").disabled = false;
       });
     }
 
     function requestAccess() {
+      console.log("🔓 Requesting access token...");
       tokenClient.requestAccessToken();
     }
   </script>
@@ -43,8 +53,8 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h1>🧪 Google Sheets API Test</h1>
-  <p>Click the button below to test reading your sheet.</p>
+  <h1>🔍 Sheets API Debug Test</h1>
+  <p>If you see nothing in the console, the scripts aren't running!</p>
   <button id="loginBtn" onclick="requestAccess()" disabled>🔐 Login and Load Sheet</button>
 
   <style>
