@@ -254,7 +254,7 @@
 </form>
 <div id="archiveContainer"></div>
 </div>
-<script>const orders = [];
+<script>window.orders = [];
 window.archived = [];
 
 
@@ -317,7 +317,7 @@ window.onload = function () {
       received: false
     };
 
-    orders.push(order);
+    window.orders.push(order);
     renderOrders();
     e.target.reset();
   });
@@ -388,8 +388,8 @@ window.onload = function () {
   }
 
   window.updateField = function(index, field, value) {
-    orders[index][field] = value;
-    const o = orders[index];
+    window.orders[index][field] = value;
+    const o = window.orders[index];
     if (field === 'po' && value) o.status = 'Ordered';
     if ((field === 'ackDate' || field === 'eta') && o.ackDate && o.eta) {
       o.status = 'In Progress';
@@ -399,7 +399,7 @@ window.onload = function () {
 
   
 window.markReceived = function(index) {
-  const closedOrder = orders.splice(index, 1)[0];
+  const closedOrder = window.orders.splice(index, 1)[0];
   closedOrder.status = 'Closed';
   archived.push(closedOrder);
   renderOrders();
@@ -407,7 +407,7 @@ window.markReceived = function(index) {
 
 
   window.stepBack = function(index) {
-    const o = orders[index];
+    const o = window.orders[index];
     if (o.status === 'In Progress') {
       o.status = 'Ordered';
       o.eta = '';
@@ -416,7 +416,7 @@ window.markReceived = function(index) {
       o.status = 'Ready to Order';
       o.po = '';
     } else if (o.status === 'Ready to Order') {
-      orders.splice(index, 1);
+      window.orders.splice(index, 1);
     }
     renderOrders();
   }
@@ -626,7 +626,7 @@ async function loadOrdersFromSheet() {
       if (formattedOrder.status === "Closed" || formattedOrder.received) {
         archived.push(formattedOrder);
       } else {
-        orders.push(formattedOrder);
+        window.orders.push(formattedOrder);
       }
     });
 
