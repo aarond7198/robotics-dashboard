@@ -101,6 +101,18 @@
       font-weight: bold;
       cursor: pointer;
     }
+    #loginBtn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #555;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
     .highlight { font-weight: bold; text-decoration: underline; color: #0078D4; }
   </style>
 </head>
@@ -109,6 +121,7 @@
     <a href="index.html">📦 Inventory Request</a>
     <a class="active" href="orders.html">🧾 Order Tracking</a>
   </nav>
+  <button id="loginBtn">🔐 Log in with Google</button>
   <button id="saveButton">💾 Save</button>
   <h1>Order Tracking Dashboard</h1>
   <div class="dashboard">
@@ -135,44 +148,126 @@
     <div id="archiveContainer"></div>
   </div>
   <script>
-    const projectSelect = document.getElementById("projectSelect");
-    const orders = [], archived = [];
-    const projectMap = {};
+    const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
+    const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+    const SHEET_ID = "1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M";
 
-    fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
-      .then(res => res.text())
-      .then(text => {
-        const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
-        projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
-        rows.forEach(row => {
-          if (row[5].trim().toLowerCase() === "yes") {
-            const key = `${row[0]}-${row[1]}`;
-            const label = `${row[0]} - ${row[1]} - ${row[2]}`;
-            projectMap[key] = label;
-            const opt = document.createElement("option");
-            opt.value = key;
-            opt.textContent = label;
-            projectSelect.appendChild(opt);
-          }
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
+
+    const orders = [], archived = [], projectMap = {};
+
+    function maybeEnableLogin() {
+      if (gapiInited && gisInited) {
+        document.getElementById("loginBtn").disabled = false;
+      }
+    }
+
+    function loadOrdersFromSheet() {
+      gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: SHEET_ID,
+        range: "Sheet1"
+      }).then(response => {
+        const rows = response.result.values;
+        const headers = rows[0];
+        rows.slice(1).forEach(row => {
+          const order = {};
+          headers.forEach((key, i) => order[key.trim()] = row[i]);
+          const o = {
+            po: order["PO Number"] || "",
+            supplier: order["Supplier"] || "",
+            partNumbers: order["Part Numbers"] || "",
+            project: order["Project"] || "",
+            ackDate: order["Acknowledgement Date"] || "",
+            eta: order["Expected Delivery"] || "",
+            received: order["Received"] === "true",
+            description: order["Description"] || "",
+            status: order["Status"] || "Ready to Order"
+          };
+          (o.status === "Closed" || o.received ? archived : orders).push(o);
         });
+        renderOrders();
       });
+    }
 
-    document.getElementById("orderForm").onsubmit = e => {
-      e.preventDefault();
-      const order = {
-        supplier: supplier.value.trim(),
-        partNumbers: partNumbers.value.trim(),
-        project: projectSelect.value,
-        description: description.value.trim(),
-        status: "Ready to Order",
-        po: "",
-        ackDate: "",
-        eta: "",
-        received: false
+    document.getElementById("loginBtn").onclick = () => {
+      tokenClient.requestAccessToken();
+    };
+
+    window.onload = () => {
+      const gapiScript = document.createElement("script");
+      gapiScript.src = "https://apis.google.com/js/api.js";
+      gapiScript.onload = () => {
+        gapi.load("client", async () => {
+          await gapi.client.init({});
+          gapiInited = true;
+          maybeEnableLogin();
+        });
       };
-      orders.push(order);
-      renderOrders();
-      e.target.reset();
+      document.body.appendChild(gapiScript);
+
+      const gisScript = document.createElement("script");
+      gisScript.src = "https://accounts.google.com/gsi/client";
+      gisScript.onload = () => {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: () => loadOrdersFromSheet()
+        });
+        gisInited = true;
+        maybeEnableLogin();
+      };
+      document.body.appendChild(gisScript);
+
+      fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+        .then(res => res.text())
+        .then(text => {
+          const rows = text.trim().split("\n").slice(1).map(r => r.split(","));
+          const select = document.getElementById("projectSelect");
+          select.innerHTML = '<option value="">-- Select Project --</option>';
+          rows.forEach(row => {
+            if (row[5].trim().toLowerCase() === "yes") {
+              const key = `${row[0]}-${row[1]}`;
+              const label = `${row[0]} - ${row[1]} - ${row[2]}`;
+              projectMap[key] = label;
+              const opt = document.createElement("option");
+              opt.value = key;
+              opt.textContent = label;
+              select.appendChild(opt);
+            }
+          });
+        });
+
+      document.getElementById("orderForm").onsubmit = e => {
+        e.preventDefault();
+        const order = {
+          supplier: supplier.value.trim(),
+          partNumbers: partNumbers.value.trim(),
+          project: projectSelect.value,
+          description: description.value.trim(),
+          status: "Ready to Order",
+          po: "",
+          ackDate: "",
+          eta: "",
+          received: false
+        };
+        orders.push(order);
+        renderOrders();
+        e.target.reset();
+      };
+
+      document.getElementById("saveButton").onclick = () => {
+        const combined = [...orders, ...archived];
+        if (combined.length === 0) return alert("No orders to save.");
+        fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(combined)
+        }).then(() => alert("✅ Orders submitted."))
+          .catch(() => alert("❌ Error submitting orders."));
+      };
     };
 
     function renderOrders() {
@@ -241,18 +336,6 @@
       archived.push(closed);
       renderOrders();
     }
-
-    document.getElementById("saveButton").onclick = () => {
-      const combined = [...orders, ...archived];
-      if (combined.length === 0) return alert("No orders to save.");
-      fetch("https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(combined)
-      }).then(() => alert("✅ Orders submitted."))
-        .catch(() => alert("❌ Error submitting orders."));
-    };
   </script>
 </body>
 </html>
