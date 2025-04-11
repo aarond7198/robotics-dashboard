@@ -225,17 +225,15 @@
 
     
 function saveData() {
-    const combined = [...orders, ...archived];
-    const newEntries = combined.filter(o => !loadedOrders.some(lo =>
-      lo.supplier === o.supplier && lo.partNumbers === o.partNumbers && lo.project === o.project
-    ));
-    fetch(SAVE_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newEntries)
-    }).then(() => alert("✅ Orders saved."));
-  }
+  const toSave = [...orders, ...archived.slice(-10)]; // keep active + 10 most recent closed
+  fetch(SAVE_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(toSave)
+  }).then(() => alert("✅ Orders saved."));
+}
+
 
   async function init() {
     const projectRows = await loadCSV(PROJECTS_CSV_URL);
