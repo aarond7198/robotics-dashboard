@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sheets API Test</title>
+  <title>Google Sheets API Test v1.0</title>
   <script>
     const CLIENT_ID = "714659777422-2sal3s5etmbins8qqull5019mn9e7tnl.apps.googleusercontent.com";
     const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
@@ -15,10 +15,10 @@
         range: "Sheet1"
       }).then(response => {
         console.log("✅ Success:", response.result.values);
-        alert("✅ Success! Check console for data.");
+        alert("✅ Sheet data loaded — check the console!");
       }).catch(error => {
-        console.error("❌ Error:", error);
-        alert("❌ Failed to load sheet. Check console.");
+        console.error("❌ Failed to load sheet:", error);
+        alert("❌ Error loading sheet. See console.");
       });
     }
 
@@ -28,17 +28,28 @@
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
+          prompt: 'consent',
           callback: () => loadSheet()
         });
-        tokenClient.requestAccessToken();
+        document.getElementById("loginBtn").disabled = false;
       });
+    }
+
+    function requestAccess() {
+      tokenClient.requestAccessToken();
     }
   </script>
   <script src="https://apis.google.com/js/api.js" onload="init()"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h1>Google Sheets Test</h1>
-  <p>Login will trigger automatically. Open the console to view data.</p>
+  <h1>🧪 Google Sheets API Test</h1>
+  <p>Click the button below to test reading your sheet.</p>
+  <button id="loginBtn" onclick="requestAccess()" disabled>🔐 Login and Load Sheet</button>
+
+  <style>
+    body { font-family: sans-serif; padding: 40px; }
+    button { font-size: 1.2rem; padding: 10px 20px; }
+  </style>
 </body>
 </html>
