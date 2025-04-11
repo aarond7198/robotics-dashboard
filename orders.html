@@ -215,6 +215,12 @@
     });
 
     render();
+    console.log("Headers loaded from Google Sheets:", headers);
+console.log("Raw rows (excluding header):", orderRows.slice(1));
+console.log("Parsed and loaded orders:", loadedOrders);
+console.log("Active orders:", orders);
+console.log("Archived orders:", archived);
+
   }
 
   document.getElementById("orderForm").onsubmit = e => {
