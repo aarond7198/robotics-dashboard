@@ -1,12 +1,13 @@
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Order Tracking Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Tracking Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
     body {
       font-family: 'Inter', sans-serif;
       background: #f9f9f9;
@@ -88,38 +89,37 @@
   </style>
 </head>
 <body>
-  <nav>
-    <a class="active" href="#">🧾 Order Dashboard</a>
-  </nav>
-  <div class="dashboard">
-    <form id="orderForm">
-      <div class="form-row">
-        <label for="projectSelect">Project</label>
-        <select id="projectSelect" required><option value="">Loading...</option></select>
-      </div>
-      <div class="form-row">
-        <label for="supplier">Supplier</label>
-        <input id="supplier" required />
-      </div>
-      <div class="form-row">
-        <label for="partNumbers">Part Numbers</label>
-        <input id="partNumbers" required />
-      </div>
-      <div class="form-row">
-        <label for="description">Description</label>
-        <input id="description" />
-      </div>
-      <button type="submit">Add Order</button>
-    </form>
-    <hr />
-    <div id="ordersContainer" class="order-grid"></div>
-    <h3>Recently Closed Orders</h3>
-    <div id="archiveContainer" class="order-grid"></div>
-    <button id="saveButton">💾 Save</button>
-  </div>
-
+<nav>
+<a class="active" href="#">🧾 Order Dashboard</a>
+</nav>
+<div class="dashboard">
+<form id="orderForm">
+<div class="form-row">
+<label for="projectSelect">Project</label>
+<select id="projectSelect" required=""><option value="">-- Select Project --</option></select>
+</div>
+<div class="form-row">
+<label for="supplier">Supplier</label>
+<input id="supplier" required=""/>
+</div>
+<div class="form-row">
+<label for="partNumbers">Part Numbers</label>
+<input id="partNumbers" required=""/>
+</div>
+<div class="form-row">
+<label for="description">Description</label>
+<input id="description"/>
+</div>
+<button type="submit">Add Order</button>
+</form>
+<hr/>
+<div class="order-grid" id="ordersContainer"></div>
+<h3>Recently Closed Orders</h3>
+<div class="order-grid" id="archiveContainer"></div>
+<button id="saveButton">💾 Save</button>
+</div>
 <script>
-  const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
+  const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/YOUR_SHEET_ID/pub?output=csv";
   const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
   const SAVE_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
@@ -228,5 +228,15 @@
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-</body>
+<div id="versionLabel">v1.1</div><style>
+#versionLabel {
+  position: fixed;
+  bottom: 10px;
+  right: 20px;
+  font-size: 1rem;
+  color: #999;
+  font-style: italic;
+  z-index: 9999;
+}
+</style></body>
 </html>
