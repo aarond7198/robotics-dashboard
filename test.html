@@ -11,19 +11,27 @@
 
     let tokenClient;
 
-    function loadSheet() {
-      console.log("📥 Attempting to fetch Google Sheet...");
-      gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SHEET_ID,
-        range: "Sheet1"
-      }).then(response => {
-        console.log("✅ Sheet loaded:", response.result.values);
-        alert("✅ Sheet loaded! Check console.");
-      }).catch(error => {
-        console.error("❌ Error loading sheet:", error);
-        alert("❌ Error loading sheet. Check console.");
-      });
+function loadSheet() {
+  console.log("📥 Attempting to fetch Google Sheet...");
+  gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "Sheet1"
+  }).then(response => {
+    console.log("✅ Raw response object:", response);
+    const data = response.result?.values;
+    if (data && data.length) {
+      console.log("📊 Sheet rows:", data);
+      alert(`✅ Loaded ${data.length - 1} rows.`);
+    } else {
+      console.warn("⚠️ Sheet returned no values.");
+      alert("⚠️ Sheet is connected but contains no visible data.");
     }
+  }).catch(error => {
+    console.error("❌ Error loading sheet:", error);
+    alert("❌ Error loading sheet. Check console.");
+  });
+}
+
 
     function init() {
       console.log("🚀 gapi loaded, initializing...");
