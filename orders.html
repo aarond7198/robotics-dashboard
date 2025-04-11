@@ -68,7 +68,6 @@
     }
 
     .order-card {
-  font-family: inherit;
       border: 2px solid #d0d0d0;
       border-radius: 12px;
       padding: 12px;
@@ -285,11 +284,7 @@ window.onload = function () {
         const isActive = row[5]?.trim().toLowerCase() === "yes";
         if (isActive) {
           const label = `${customerCode} - ${projectCode}`;
-        const fullLabel = `${label}\n${description}`;
-        projectMap[`${customerCode}-${projectCode}`] = {
-          label: label,
-          description: description
-        };
+          projectMap[`${customerCode}-${projectCode}`] = label;
           const opt = document.createElement("option");
           opt.value = `${customerCode}-${projectCode}`;
           opt.textContent = label;
@@ -367,7 +362,7 @@ window.onload = function () {
 
       div.innerHTML = `
         ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
-        <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+        <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
         <p><strong>Supplier:</strong> ${order.supplier}</p>
         <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -576,7 +571,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+      <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -688,7 +683,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+      <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -827,7 +822,6 @@ document.getElementById("saveButton").addEventListener("click", function () {
     }
 
     .order-card {
-  font-family: inherit;
       border: 2px solid #d0d0d0;
       border-radius: 12px;
       padding: 12px;
@@ -1044,11 +1038,7 @@ window.onload = function () {
         const isActive = row[5]?.trim().toLowerCase() === "yes";
         if (isActive) {
           const label = `${customerCode} - ${projectCode}`;
-        const fullLabel = `${label}\n${description}`;
-        projectMap[`${customerCode}-${projectCode}`] = {
-          label: label,
-          description: description
-        };
+          projectMap[`${customerCode}-${projectCode}`] = label;
           const opt = document.createElement("option");
           opt.value = `${customerCode}-${projectCode}`;
           opt.textContent = label;
@@ -1126,7 +1116,7 @@ window.onload = function () {
 
       div.innerHTML = `
         ${order.status !== "Closed" ? `<div class="back-button" onclick="stepBack(${index})">↩️</div>` : ""}
-        <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+        <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
         <p><strong>Supplier:</strong> ${order.supplier}</p>
         <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -1335,7 +1325,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+      <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
@@ -1447,7 +1437,7 @@ function renderOrders() {
 
     div.innerHTML = `
       <div class="back-button" onclick="stepBack(${index})">↩️</div>
-      <h3>${(projectMap[order.project]?.label || order.project)}</h3>
+      <h3>${projectMap[order.project] || order.project}</h3>
 <p><em>${order.description}</em></p>
       <p><strong>Supplier:</strong> ${order.supplier}</p>
       <p><strong>Parts:</strong> ${order.partNumbers}</p>
