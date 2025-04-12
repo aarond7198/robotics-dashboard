@@ -295,7 +295,7 @@ console.log("📁 Archived orders:", archived);
       supplier: supplier.value,
       partNumbers: partNumbers.value,
       project: projectSelect.value,
-      description: description.value,
+      description: description.value || "",
       status: "Ready to Order",
       po: "", ackDate: "", eta: "", received: false
     });
