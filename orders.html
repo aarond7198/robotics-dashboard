@@ -259,18 +259,20 @@ function saveData() {
               const cleanValue = row[i]?.replace(/^"+|"+$/g, '').trim(); // remove wrapping quotes from data too
               o[cleanKey] = cleanValue;
             });
-            
-            const order = {
-              po: o["PO Number"] || "",
-              supplier: o["Supplier"] || "",
-              partNumbers: o["Part Numbers"] || "",
-              project: o["Project"] || "",
-              ackDate: o["Acknowledgement Date"] || "",
-              eta: o["Expected Delivery"] || "",
-              received: o["Received"] === "true",
-              description: "Description" in o ? o["Description"] : "",
-              status: o["Status"] || "Ready to Order"
-            };
+
+        
+const order = {
+  po: o["PO Number"] || "",
+  supplier: o["Supplier"] || "",
+  manufacturer: o["Manufacturer"] || "",
+  partNumbers: o["Part Numbers"] || "",
+  project: o["Project"] || "",
+  ackDate: o["Acknowledgement Date"] || "",
+  eta: o["Expected Delivery"] || "",
+  received: o["Received"] === "true",
+  status: o["Status"] || "Ready to Order"
+};
+
 
 console.log("✅ Parsed order:", order);
 
@@ -291,14 +293,18 @@ console.log("📁 Archived orders:", archived);
 
   document.getElementById("orderForm").onsubmit = e => {
     e.preventDefault();
-    orders.push({
-      supplier: supplier.value,
-      partNumbers: partNumbers.value,
-      project: projectSelect.value,
-      description: description.value || "",
-      status: "Ready to Order",
-      po: "", ackDate: "", eta: "", received: false
-    });
+orders.push({
+  po: "",
+  supplier: supplier.value,
+  manufacturer: "", // ← optional input if you plan to support it later
+  partNumbers: partNumbers.value,
+  project: projectSelect.value,
+  ackDate: "",
+  eta: "",
+  received: false,
+  status: "Ready to Order"
+});
+
     render();
     e.target.reset();
   };
@@ -306,7 +312,7 @@ console.log("📁 Archived orders:", archived);
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-<div id="versionLabel">v1.3</div><style>
+<div id="versionLabel">v1.4</div><style>
 #versionLabel {
   position: fixed;
   bottom: 10px;
