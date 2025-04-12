@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
@@ -119,7 +118,7 @@
 <button id="saveButton">💾 Save</button>
 </div>
 <script>
-  const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
+ const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
   const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
   const SAVE_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
 
@@ -259,20 +258,18 @@ function saveData() {
               const cleanValue = row[i]?.replace(/^"+|"+$/g, '').trim(); // remove wrapping quotes from data too
               o[cleanKey] = cleanValue;
             });
-
-        
-const order = {
-  po: o["PO Number"] || "",
-  supplier: o["Supplier"] || "",
-  manufacturer: o["Manufacturer"] || "",
-  partNumbers: o["Part Numbers"] || "",
-  project: o["Project"] || "",
-  ackDate: o["Acknowledgement Date"] || "",
-  eta: o["Expected Delivery"] || "",
-  received: o["Received"] === "true",
-  status: o["Status"] || "Ready to Order"
-};
-
+            
+            const order = {
+              po: o["PO Number"] || "",
+              supplier: o["Supplier"] || "",
+              partNumbers: o["Part Numbers"] || "",
+              project: o["Project"] || "",
+              ackDate: o["Acknowledgement Date"] || "",
+              eta: o["Expected Delivery"] || "",
+              received: o["Received"] === "true",
+              description: o["Description"] || "",
+              status: o["Status"] || "Ready to Order"
+            };
 
 console.log("✅ Parsed order:", order);
 
@@ -293,18 +290,14 @@ console.log("📁 Archived orders:", archived);
 
   document.getElementById("orderForm").onsubmit = e => {
     e.preventDefault();
-orders.push({
-  po: "",
-  supplier: supplier.value,
-  manufacturer: "", // ← optional input if you plan to support it later
-  partNumbers: partNumbers.value,
-  project: projectSelect.value,
-  ackDate: "",
-  eta: "",
-  received: false,
-  status: "Ready to Order"
-});
-
+    orders.push({
+      supplier: supplier.value,
+      partNumbers: partNumbers.value,
+      project: projectSelect.value,
+      description: description.value,
+      status: "Ready to Order",
+      po: "", ackDate: "", eta: "", received: false
+    });
     render();
     e.target.reset();
   };
@@ -312,6 +305,7 @@ orders.push({
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
+
 <div id="versionLabel">v1.4</div><style>
 #versionLabel {
   position: fixed;
