@@ -213,6 +213,7 @@
 
   function saveData() {
     const toSave = [...orders, ...archived.slice(-10)];
+    console.log("📤 Saving to Google Sheet:", JSON.stringify(toSave, null, 2));
     fetch(SAVE_URL, {
       method: "POST",
       mode: "no-cors",
@@ -258,6 +259,14 @@
       };
       loadedOrders.push(order);
       (order.status === "Closed" || order.received ? archived : orders).push(order);
+
+      console.log("✅ Headers from sheet:", headers);
+console.log("✅ Loaded Orders:", loadedOrders);
+console.log("✅ Active Orders:", orders);
+console.log("✅ Archived Orders:", archived);
+
+
+      
     });
     render();
   }
@@ -276,13 +285,15 @@
       status: "Ready to Order"
     });
     render();
+    console.log("🆕 New Order Added:", orders[orders.length - 1]);
+
     e.target.reset();
   };
 
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-<div id="versionLabel">v1.3</div>
+<div id="versionLabel">v1.5</div>
 <style>
 #versionLabel {
   position: fixed;
