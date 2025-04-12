@@ -268,7 +268,7 @@ function saveData() {
               ackDate: o["Acknowledgement Date"] || "",
               eta: o["Expected Delivery"] || "",
               received: o["Received"] === "true",
-              description: o["Description"] || "",
+              description: "Description" in o ? o["Description"] : "",
               status: o["Status"] || "Ready to Order"
             };
 
@@ -306,7 +306,7 @@ console.log("📁 Archived orders:", archived);
   document.getElementById("saveButton").onclick = saveData;
   init();
 </script>
-<div id="versionLabel">v1.2</div><style>
+<div id="versionLabel">v1.3</div><style>
 #versionLabel {
   position: fixed;
   bottom: 10px;
