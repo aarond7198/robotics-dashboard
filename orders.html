@@ -33,7 +33,14 @@
     background-color: #0078D4;
     color: white;
   }
-  .dashboard {
+  .form-wrapper {
+      background: #f0f4f8;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .dashboard {
     background: white;
     padding: 15px;
     border-radius: 10px;
@@ -91,7 +98,7 @@
 <a class="active" href="#">🧾 Order Dashboard</a>
 </nav>
 <div class="dashboard">
-<form id="orderForm">
+<div class="form-wrapper"><form id="orderForm">
   <div class="form-row">
     <label for="projectSelect">Project</label>
     <select id="projectSelect" required><option value="">-- Select Project --</option></select>
@@ -109,7 +116,7 @@
     <input id="partNumbers" required />
   </div>
   <button type="submit">Add Order</button>
-</form>
+</form></div>
 <hr/>
 <div class="order-grid" id="ordersContainer"></div>
 <h3>Recently Closed Orders</h3>
@@ -225,6 +232,12 @@
   async function init() {
     const projectRows = await loadCSV(PROJECTS_CSV_URL);
     const projectSelect = document.getElementById("projectSelect");
+    // Add manual option for Inventory/Stock
+    const manualOpt = document.createElement("option");
+    manualOpt.value = "INVENTORY-STOCK";
+    manualOpt.textContent = "INVENTORY-STOCK - Inventory/Stock";
+    projectSelect.appendChild(manualOpt);
+
     projectRows.slice(1).forEach(row => {
       if (row[5]?.trim().toLowerCase() === "yes") {
         const key = `${row[0]}-${row[1]}`;
@@ -291,6 +304,16 @@ console.log("✅ Archived Orders:", archived);
   };
 
   document.getElementById("saveButton").onclick = saveData;
+  
+function restoreOrder(indexFromEnd) {
+  const index = archived.length - 1 - indexFromEnd;
+  const order = archived.splice(index, 1)[0];
+  order.status = "In Progress";
+  order.received = false;
+  orders.push(order);
+  render();
+}
+
   init();
 </script>
 <div id="versionLabel">v1.5</div>
