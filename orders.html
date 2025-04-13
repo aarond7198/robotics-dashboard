@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -100,23 +99,23 @@
 </nav>
 <div class="dashboard">
 <div class="form-wrapper"><form id="orderForm">
-<div class="form-row">
-<label for="projectSelect">Project</label>
-<select id="projectSelect" required=""><option value="">-- Select Project --</option></select>
-</div>
-<div class="form-row">
-<label for="supplier">Supplier</label>
-<input id="supplier" required=""/>
-</div>
-<div class="form-row">
-<label for="manufacturer">Manufacturer</label>
-<input id="manufacturer" required=""/>
-</div>
-<div class="form-row">
-<label for="partNumbers">Part Numbers</label>
-<input id="partNumbers" required=""/>
-</div>
-<button type="submit">Add Order</button>
+  <div class="form-row">
+    <label for="projectSelect">Project</label>
+    <select id="projectSelect" required><option value="">-- Select Project --</option></select>
+  </div>
+  <div class="form-row">
+    <label for="supplier">Supplier</label>
+    <input id="supplier" required />
+  </div>
+  <div class="form-row">
+    <label for="manufacturer">Manufacturer</label>
+    <input id="manufacturer" required />
+  </div>
+  <div class="form-row">
+    <label for="partNumbers">Part Numbers</label>
+    <input id="partNumbers" required />
+  </div>
+  <button type="submit">Add Order</button>
 </form></div>
 <hr/>
 <div class="order-grid" id="ordersContainer"></div>
@@ -126,228 +125,6 @@
 </div>
 <script>
   const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
-  const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
-  const SAVE_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
-
-  let orders = [], archived = [], loadedOrders = [], projectMap = {};
-
-  function loadCSV(url) {
-    return fetch(url).then(r => r.text()).then(text =>
-      text.trim().split("\n").map(row => row.split(","))
-    );
-  }
-
-  function render() {
-    const container = document.getElementById("ordersContainer");
-    const archive = document.getElementById("archiveContainer");
-    container.innerHTML = "";
-    archive.innerHTML = "";
-
-    orders.forEach((o, i) => {
-      const card = document.createElement("div");
-      card.className = "order-card";
-      card.innerHTML = `
-        <strong>${projectMap[o.project] || o.project}</strong><br/>
-        Supplier: ${o.supplier}<br/>
-        Manufacturer: ${o.manufacturer}<br/>
-        Parts: ${o.partNumbers}<br/>
-        ${o.po ? "PO: " + o.po + "<br/>" : ""}
-        ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
-        ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
-        <div class="status-bar">
-          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
-          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
-          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
-          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
-        </div>
-      `;
-      if (o.status === "Ready to Order") {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = "Enter PO Number";
-        input.value = o.po;
-        input.addEventListener("change", e => {
-          o.po = e.target.value;
-          if (o.po.trim()) {
-            o.status = "Ordered";
-            render();
-          }
-        });
-        card.appendChild(input);
-      } else if (o.status === "Ordered") {
-        const ackInput = document.createElement("input");
-        const etaInput = document.createElement("input");
-        ackInput.type = etaInput.type = "date";
-        ackInput.placeholder = "Acknowledgement Date";
-        etaInput.placeholder = "Expected Delivery";
-        ackInput.value = o.ackDate;
-        etaInput.value = o.eta;
-        ackInput.addEventListener("change", e => {
-          o.ackDate = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
-        });
-        etaInput.addEventListener("change", e => {
-          o.eta = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
-        });
-        card.appendChild(ackInput);
-        card.appendChild(etaInput);
-      } else if (o.status === "In Progress") {
-        const recvBtn = document.createElement("button");
-        recvBtn.className = "received-btn";
-        recvBtn.textContent = "Mark as Received";
-        recvBtn.onclick = () => {
-          o.status = "Closed";
-          o.received = true;
-          orders.splice(i, 1);
-          archived.push(o);
-          render();
-        };
-        card.appendChild(recvBtn);
-      }
-      container.appendChild(card);
-    });
-
-    archived.slice(-10).reverse().forEach(o => {
-      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})<br/>Manufacturer: ${o.manufacturer}</div>`;
-    });
-  }
-
-  function saveData() {
-    const toSave = [...orders, ...archived.slice(-10)];
-    console.log("📤 Saving to Google Sheet:", JSON.stringify(toSave, null, 2));
-    fetch(SAVE_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toSave)
-    }).then(() => alert("✅ Orders saved."));
-  }
-
-  async function init() {
-    const projectRows = await loadCSV(PROJECTS_CSV_URL);
-    const projectSelect = document.getElementById("projectSelect");
-    // Add manual option for Inventory/Stock
-    const manualOpt = document.createElement("option");
-    manualOpt.value = "INVENTORY-STOCK";
-    manualOpt.textContent = "INVENTORY/STOCK";
-    projectSelect.appendChild(manualOpt);
-
-    projectRows.slice(1).forEach(row => {
-      if (row[5]?.trim().toLowerCase() === "yes") {
-        const key = `${row[0]}-${row[1]}`;
-        const label = `${row[0]}-${row[1]} - ${row[2]}`;
-        projectMap[key] = label;
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = label;
-        projectSelect.appendChild(opt);
-      }
-    });
-
-    const orderRows = await loadCSV(ORDERS_CSV_URL);
-    const headers = orderRows[0];
-    orderRows.slice(1).forEach(row => {
-      const o = {};
-      headers.forEach((key, i) => {
-        const cleanKey = key.replace(/^"+|"+$/g, '').trim();
-        const cleanValue = row[i]?.replace(/^"+|"+$/g, '').trim();
-        o[cleanKey] = cleanValue;
-      });
-      const order = {
-        po: o["PO Number"] || "",
-        supplier: o["Supplier"] || "",
-        manufacturer: o["Manufacturer"] || "",
-        partNumbers: o["Part Numbers"] || "",
-        project: o["Project"] || "",
-        ackDate: o["Acknowledgement Date"] || "",
-        eta: o["Expected Delivery"] || "",
-        received: o["Received"] === "true",
-        status: o["Status"] || "Ready to Order"
-      };
-      loadedOrders.push(order);
-      (order.status === "Closed" || order.received ? archived : orders).push(order);
-
-      console.log("✅ Headers from sheet:", headers);
-console.log("✅ Loaded Orders:", loadedOrders);
-console.log("✅ Active Orders:", orders);
-console.log("✅ Archived Orders:", archived);
-
-
-      
-    });
-    render();
-  }
-
-  document.getElementById("orderForm").onsubmit = e => {
-    e.preventDefault();
-    orders.push({
-      po: "",
-      supplier: supplier.value,
-      manufacturer: manufacturer.value,
-      partNumbers: partNumbers.value,
-      project: projectSelect.value,
-      ackDate: "",
-      eta: "",
-      received: false,
-      status: "Ready to Order"
-    });
-    render();
-    console.log("🆕 New Order Added:", orders[orders.length - 1]);
-
-    e.target.reset();
-  };
-
-  document.getElementById("saveButton").onclick = saveData;
-  
-function restoreOrder(indexFromEnd) {
-  const index = archived.length - 1 - indexFromEnd;
-  const order = archived.splice(index, 1)[0];
-  order.status = "In Progress";
-  order.received = false;
-  orders.push(order);
-  render();
-}
-
-  init();
-  const archiveTable = document.createElement("table");
-  archiveTable.style.width = "100%";
-  archiveTable.style.borderCollapse = "collapse";
-  archiveTable.innerHTML = `
-    <thead>
-      <tr>
-        <th>Project</th>
-        <th>Supplier</th>
-        <th>Manufacturer</th>
-        <th>Parts</th>
-        <th>Ack Date</th>
-        <th>ETA</th>
-        <th>Return</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${archived.slice(-10).reverse().map((o, i) => `
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td>${projectMap[o.project] || o.project}</td>
-          <td>${o.supplier}</td>
-          <td>${o.manufacturer}</td>
-          <td>${o.partNumbers}</td>
-          <td>${o.ackDate || ""}</td>
-          <td>${o.eta || ""}</td>
-          <td><button class="received-btn" onclick="restoreOrder(${archived.length - 1 - i})">↩️</button></td>
-        </tr>
-      `).join("")}
-    </tbody>
-  `;
-  archive.innerHTML = "";
-  archive.appendChild(archiveTable);
- const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
   const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
   const SAVE_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
 
@@ -553,3 +330,4 @@ function restoreOrder(indexFromEnd) {
 </style>
 </body>
 </html>
+ 
