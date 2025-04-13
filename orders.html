@@ -316,7 +316,8 @@ function restoreOrder(indexFromEnd) {
 }
 
   init();
-archive.innerHTML = `
+
+let archiveHTML = `
   <table style="width:100%; border-collapse:collapse;">
     <thead>
       <tr style="background:#f0f0f0;">
@@ -330,21 +331,27 @@ archive.innerHTML = `
       </tr>
     </thead>
     <tbody>
-      ${archived.slice(-10).reverse().map((o, i) => `
-        <tr style="border-bottom:1px solid #ccc;">
-          <td>${projectMap[o.project] || o.project}</td>
-          <td>${o.supplier}</td>
-          <td>${o.manufacturer}</td>
-          <td>${o.partNumbers}</td>
-          <td>${o.ackDate || ""}</td>
-          <td>${o.eta || ""}</td>
-          <td>
-            <button class="received-btn" style="padding:4px 8px;" onclick="restoreOrder(${archived.length - 1 - i})">↩️</button>
-          </td>
-        </tr>
-      `).join("")}
-    </tbody>
-  </table>`;
+`;
+
+archived.slice(-10).reverse().forEach((o, i) => {
+  archiveHTML += `
+    <tr style="border-bottom:1px solid #ccc;">
+      <td>${projectMap[o.project] || o.project}</td>
+      <td>${o.supplier}</td>
+      <td>${o.manufacturer}</td>
+      <td>${o.partNumbers}</td>
+      <td>${o.ackDate || ""}</td>
+      <td>${o.eta || ""}</td>
+      <td>
+        <button class="received-btn" style="padding:4px 8px;" onclick="restoreOrder(${archived.length - 1 - i})">↩️</button>
+      </td>
+    </tr>
+  `;
+});
+
+archiveHTML += `</tbody></table>`;
+archive.innerHTML = archiveHTML;
+
  const ORDERS_CSV_URL = "https://docs.google.com/spreadsheets/d/1tlG9DzmSRHmPu8Qo4Xd6TFStIhbeM4dTsFb7OvycR3M/gviz/tq?tqx=out:csv&sheet=Sheet1";
   const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
   const SAVE_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
@@ -537,7 +544,7 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.7</div>
+<div id="versionLabel">v1.5</div>
 <style>
 #versionLabel {
   position: fixed;
