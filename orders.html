@@ -95,7 +95,7 @@
 </style>
 </head>
 <body>
-<nav>
+<nav><a href="index.html">📦 Inventory Management</a>
 <a class="active" href="#">🧾 Order Dashboard</a>
 </nav>
 <div class="dashboard">
@@ -146,21 +146,23 @@
     orders.forEach((o, i) => {
       const card = document.createElement("div");
       card.className = "order-card";
-      card.innerHTML = `
-        <strong>${projectMap[o.project] || o.project}</strong><br/>
-        Supplier: ${o.supplier}<br/>
-        Manufacturer: ${o.manufacturer}<br/>
-        Parts: ${o.partNumbers}<br/>
-        ${o.po ? "PO: " + o.po + "<br/>" : ""}
-        ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
-        ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
-        <div class="status-bar">
-          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
-          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
-          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
-          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
-        </div>
-      `;
+      
+card.innerHTML = `
+  <div class="status-bar">
+    <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
+    <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
+    <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
+    <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
+  </div>
+  <strong>${projectMap[o.project] || o.project}</strong><br/>
+  Supplier: ${o.supplier}<br/>
+  Manufacturer: ${o.manufacturer}<br/>
+  Parts: ${o.partNumbers}<br/>
+  ${o.po ? "PO: " + o.po + "<br/>" : ""}
+  ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
+  ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
+`;
+
       if (o.status === "Ready to Order") {
         const input = document.createElement("input");
         input.type = "text";
@@ -223,10 +225,11 @@ archived.slice(-10).reverse().forEach((o, i) => {
   card.innerHTML = `
     <div style="position: relative;">
       <div style="position: absolute; top: 8px; right: 8px;">
-        <button class="received-btn" title="Restore to active"
-          style="padding: 2px 6px; font-size: 12px; background-color: #fff; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
-          ←
-        </button>
+        
+<button class="received-btn" title="Restore to active"
+  style="padding: 2px 5px; font-size: 10px; background-color: #0078D4; color: white; border: none; border-radius: 4px; cursor: pointer; position:absolute; top:6px; right:6px;">
+  ←
+</button>
       </div>
       ${o.partNumbers} from ${o.supplier} (${o.project})<br/>
       Manufacturer: ${o.manufacturer}
@@ -338,9 +341,9 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.14</div>
+<div id="versionLabel">v1.16</div>
 <style>
-versionLabel {
+#versionLabel {
   position: fixed;
   bottom: 10px;
   right: 20px;
