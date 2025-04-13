@@ -215,22 +215,25 @@
     });
 
     
+
 archived.slice(-10).reverse().forEach((o, i) => {
   const card = document.createElement("div");
   card.className = "order-card";
-  card.innerHTML = `${o.partNumbers} from ${o.supplier} (${o.project})<br/>Manufacturer: ${o.manufacturer}`;
-  
-  const restoreBtn = document.createElement("button");
-  restoreBtn.className = "received-btn";
-  restoreBtn.style.width = "auto";
-  restoreBtn.style.marginTop = "10px";
-  restoreBtn.style.background = "#ffc107";
-  restoreBtn.textContent = "↩️";
-  restoreBtn.onclick = () => restoreOrder(archived.length - 1 - i);
-  
-  card.appendChild(restoreBtn);
+  card.innerHTML = `
+    <div style="position: relative;">
+      <div style="position: absolute; top: 8px; right: 8px;">
+        <button class="received-btn" title="Restore to active" style="padding: 4px 8px; font-size: 14px; background-color: #ffc107; color: black; border: none; border-radius: 6px; cursor: pointer;">
+          ↩️
+        </button>
+      </div>
+      ${o.partNumbers} from ${o.supplier} (${o.project})<br/>
+      Manufacturer: ${o.manufacturer}
+    </div>
+  `;
+  card.querySelector("button").onclick = () => restoreOrder(archived.length - 1 - i);
   archive.appendChild(card);
 });
+
 
   }
 
@@ -332,7 +335,7 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.9</div>
+<div id="versionLabel">v1.5</div>
 <style>
 #versionLabel {
   position: fixed;
