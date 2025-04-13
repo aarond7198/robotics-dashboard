@@ -216,14 +216,16 @@
 
     
 
+
 archived.slice(-10).reverse().forEach((o, i) => {
   const card = document.createElement("div");
   card.className = "order-card";
   card.innerHTML = `
     <div style="position: relative;">
       <div style="position: absolute; top: 8px; right: 8px;">
-        <button class="received-btn" title="Restore to active" style="padding: 4px 8px; font-size: 14px; background-color: #ffc107; color: black; border: none; border-radius: 6px; cursor: pointer;">
-          ↩️
+        <button class="received-btn" title="Restore to active"
+          style="padding: 2px 6px; font-size: 12px; background-color: #fff; color: #333; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+          ←
         </button>
       </div>
       ${o.partNumbers} from ${o.supplier} (${o.project})<br/>
@@ -233,6 +235,7 @@ archived.slice(-10).reverse().forEach((o, i) => {
   card.querySelector("button").onclick = () => restoreOrder(archived.length - 1 - i);
   archive.appendChild(card);
 });
+
 
 
   }
