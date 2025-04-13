@@ -97,8 +97,7 @@
 <body>
 <nav>
 <a class="active" href="#">🧾 Order Dashboard</a>
-<a href="index.html">📦 Inventory Tracking</a>
-</nav>
+<a href="index.html">📦 Inventory Tracking</a></nav>
 <div class="dashboard">
 <div class="form-wrapper"><form id="orderForm">
 <div class="form-row">
@@ -148,6 +147,12 @@
       const card = document.createElement("div");
       card.className = "order-card";
       card.innerHTML = `
+        <div class="status-bar">
+          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
+          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
+          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
+          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
+        </div>
         <strong>${projectMap[o.project] || o.project}</strong><br/>
         Supplier: ${o.supplier}<br/>
         Manufacturer: ${o.manufacturer}<br/>
@@ -155,12 +160,6 @@
         ${o.po ? "PO: " + o.po + "<br/>" : ""}
         ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
         ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
-        <div class="status-bar">
-          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
-          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
-          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
-          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
-        </div>
       `;
       if (o.status === "Ready to Order") {
         const input = document.createElement("input");
