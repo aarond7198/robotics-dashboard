@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -99,23 +100,23 @@
 </nav>
 <div class="dashboard">
 <div class="form-wrapper"><form id="orderForm">
-  <div class="form-row">
-    <label for="projectSelect">Project</label>
-    <select id="projectSelect" required><option value="">-- Select Project --</option></select>
-  </div>
-  <div class="form-row">
-    <label for="supplier">Supplier</label>
-    <input id="supplier" required />
-  </div>
-  <div class="form-row">
-    <label for="manufacturer">Manufacturer</label>
-    <input id="manufacturer" required />
-  </div>
-  <div class="form-row">
-    <label for="partNumbers">Part Numbers</label>
-    <input id="partNumbers" required />
-  </div>
-  <button type="submit">Add Order</button>
+<div class="form-row">
+<label for="projectSelect">Project</label>
+<select id="projectSelect" required=""><option value="">-- Select Project --</option></select>
+</div>
+<div class="form-row">
+<label for="supplier">Supplier</label>
+<input id="supplier" required=""/>
+</div>
+<div class="form-row">
+<label for="manufacturer">Manufacturer</label>
+<input id="manufacturer" required=""/>
+</div>
+<div class="form-row">
+<label for="partNumbers">Part Numbers</label>
+<input id="partNumbers" required=""/>
+</div>
+<button type="submit">Add Order</button>
 </form></div>
 <hr/>
 <div class="order-grid" id="ordersContainer"></div>
@@ -213,9 +214,24 @@
       container.appendChild(card);
     });
 
-    archived.slice(-10).reverse().forEach(o => {
-      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})<br/>Manufacturer: ${o.manufacturer}</div>`;
-    });
+    
+archived.slice(-10).reverse().forEach((o, i) => {
+  const card = document.createElement("div");
+  card.className = "order-card";
+  card.innerHTML = `${o.partNumbers} from ${o.supplier} (${o.project})<br/>Manufacturer: ${o.manufacturer}`;
+  
+  const restoreBtn = document.createElement("button");
+  restoreBtn.className = "received-btn";
+  restoreBtn.style.width = "auto";
+  restoreBtn.style.marginTop = "10px";
+  restoreBtn.style.background = "#ffc107";
+  restoreBtn.textContent = "↩️";
+  restoreBtn.onclick = () => restoreOrder(archived.length - 1 - i);
+  
+  card.appendChild(restoreBtn);
+  archive.appendChild(card);
+});
+
   }
 
   function saveData() {
@@ -316,7 +332,7 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.5</div>
+<div id="versionLabel">v1.9</div>
 <style>
 #versionLabel {
   position: fixed;
@@ -330,4 +346,3 @@ function restoreOrder(indexFromEnd) {
 </style>
 </body>
 </html>
- 
