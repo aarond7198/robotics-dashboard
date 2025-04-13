@@ -92,6 +92,21 @@
     border: 1px solid #ccc;
     border-radius: 4px;
   }
+
+    .status-segment {
+      flex: 1;
+      padding: 6px;
+      text-align: center;
+      font-size: 0.8rem;
+      background: #eee;
+      position: relative;
+      clip-path: polygon(0% 0%, 90% 0%, 100% 50%, 90% 100%, 0% 100%);
+      margin-right: 2px;
+    }
+    .status-segment:last-child {
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+      margin-right: 0;
+    }
 </style>
 </head>
 <body>
@@ -146,21 +161,24 @@
     orders.forEach((o, i) => {
       const card = document.createElement("div");
       card.className = "order-card";
-      card.innerHTML = `
-        <strong>${projectMap[o.project] || o.project}</strong><br/>
-        Supplier: ${o.supplier}<br/>
-        Manufacturer: ${o.manufacturer}<br/>
-        Parts: ${o.partNumbers}<br/>
-        ${o.po ? "PO: " + o.po + "<br/>" : ""}
-        ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
-        ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
-        <div class="status-bar">
-          <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
-          <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
-          <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
-          <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
-        </div>
-      `;
+      
+    card.innerHTML = `
+      <div class="status-bar">
+        <div class="status-segment ${o.status === "Ready to Order" ? "status-current" : "status-complete"}">Ready</div>
+        <div class="status-segment ${o.status === "Ordered" ? "status-current" : o.status === "In Progress" || o.status === "Closed" ? "status-complete" : ""}">Ordered</div>
+        <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
+        <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
+      </div>
+      <strong>${projectMap[o.project] || o.project}</strong><br/>
+      Supplier: ${o.supplier}<br/>
+      Manufacturer: ${o.manufacturer}<br/>
+      Parts: ${o.partNumbers}<br/>
+      ${o.description ? "Notes: " + o.description + "<br/>" : ""}
+      ${o.po ? "PO: " + o.po + "<br/>" : ""}
+      ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
+      ${o.eta ? "<strong>Expected:</strong> " + o.eta + "<br/>" : ""}
+    `;
+
       if (o.status === "Ready to Order") {
         const input = document.createElement("input");
         input.type = "text";
