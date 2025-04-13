@@ -180,8 +180,8 @@ card.innerHTML = `
         const ackInput = document.createElement("input");
         const etaInput = document.createElement("input");
         ackInput.type = etaInput.type = "date";
-        ackInput.placeholder = "Acknowledgement Date";
-        etaInput.placeholder = "Expected Delivery";
+        ackInput.placeholder = "ACK mm/dd/yy";
+        etaInput.placeholder = "ETA mm/dd/yy";
         ackInput.value = o.ackDate;
         etaInput.value = o.eta;
         ackInput.addEventListener("change", e => {
@@ -342,7 +342,7 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.19</div>
+<div id="versionLabel">v1.21</div>
 <style>
 #versionLabel {
   position: fixed;
