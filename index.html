@@ -134,7 +134,7 @@
 
     <label for="project">Select Project</label>
     <select id="project" name="Project" required>
-      <option>Loading...</option>
+      <option>Loading projects...</option>
     </select>
 
     <input type="hidden" id="bomPath" name="BOM Path" />
@@ -173,12 +173,61 @@
   </form>
 
   
+
+
+
+
 <script>
   const parts = [];
   const projectDropdown = document.getElementById("project");
   const bomPathField = document.getElementById("bomPath");
   const salesOrderField = document.getElementById("salesOrder");
   const messageField = document.getElementById("message");
+
+  // Load project list
+  fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
+    .then(res => res.text())
+    .then(text => {
+      const lines = text.trim().split(/\r?\n/);
+      const headers = lines[0].split(",");
+      const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
+      const projects = [];
+
+      rows.forEach(row => {
+        const partA = row[0]?.trim();
+        const partB = row[1]?.trim();
+        const description = row[2]?.trim();
+        const bomPath = row[3]?.trim();
+        const salesOrder = row[4]?.trim();
+        const dashboardActive = row[5]?.trim().toLowerCase();
+
+        if (dashboardActive === "yes") {
+          const key = `${partA}-${partB}`;
+          const label = `${key} – ${description}`;
+          projects.push({ label, bomPath, salesOrder });
+        }
+      });
+
+      projectDropdown.innerHTML = '<option value="">-- Select Project --</option>';
+      projects.forEach(project => {
+        const opt = document.createElement("option");
+        opt.value = project.label;
+        opt.textContent = project.label;
+        opt.dataset.bom = project.bomPath;
+        opt.dataset.so = project.salesOrder;
+        projectDropdown.appendChild(opt);
+      });
+
+      projectDropdown.addEventListener("change", () => {
+        const selected = projectDropdown.selectedOptions[0];
+        bomPathField.value = selected?.dataset.bom || "";
+        salesOrderField.value = selected?.dataset.so || "";
+      });
+    })
+    .catch(err => {
+      console.error("CSV load error:", err);
+      alert("Error loading project list.");
+    });
 
   function updatePartsTable() {
     const table = document.getElementById("partTable");
@@ -189,11 +238,9 @@
       tbody.insertAdjacentHTML("beforeend", row);
     });
     table.style.display = parts.length > 0 ? "table" : "none";
-
     document.getElementById("partListData").value = parts.map(p =>
       `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
-    ).join("
-");
+    ).join("\n");
   }
 
   function addPart() {
@@ -208,7 +255,6 @@
 
     parts.push({ part, qty, notes });
     updatePartsTable();
-
     document.getElementById("partNumber").value = "";
     document.getElementById("quantity").value = "";
     document.getElementById("notes").value = "";
@@ -228,21 +274,13 @@
 
     const form = e.target;
     const formData = new FormData(form);
-
     const bom = formData.get("BOM Path");
     const so = formData.get("Sales Order");
     const partsList = formData.get("Part List");
     const submittedBy = formData.get("Submitted By");
     const project = formData.get("Project");
 
-    const customMessage = `Submitted by: ${submittedBy}
-Project: ${project}
-
-SO: ${so}
-BOM Path: ${bom}
-
-Parts:
-${partsList}`;
+    const customMessage = `Submitted by: ${submittedBy}\nProject: ${project}\n\nSO: ${so}\nBOM Path: ${bom}\n\nParts:\n${partsList}`;
     messageField.value = customMessage;
 
     const response = await fetch("https://formspree.io/f/mkgjpqgj", {
