@@ -229,9 +229,26 @@
       container.appendChild(card);
     });
 
-    archived.slice(-10).reverse().forEach(o => {
-      archive.innerHTML += `<div class="order-card">${o.partNumbers} from ${o.supplier} (${o.project})<br/>Manufacturer: ${o.manufacturer}</div>`;
-    });
+    
+archived.slice(-10).reverse().forEach((o, i) => {
+  const card = document.createElement("div");
+  card.className = "order-card";
+  card.style.fontSize = "0.85rem";
+  card.style.padding = "10px";
+  card.style.position = "relative";
+  card.innerHTML = `
+    <div style="position:absolute; top:6px; right:6px;">
+      <button class="received-btn" title="Restore to active"
+        style="padding: 2px 5px; font-size: 10px; background-color: #0078D4; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        ⟳
+      </button>
+    </div>
+    ${o.partNumbers} [${o.manufacturer}] from ${o.supplier} for ${projectMap[o.project] || o.project}
+  `;
+  card.querySelector("button").onclick = () => restoreOrder(i);
+  archive.appendChild(card);
+});
+
   }
 
   function saveData() {
@@ -332,7 +349,7 @@ function restoreOrder(indexFromEnd) {
 
   init();
 </script>
-<div id="versionLabel">v1.23</div>
+<div id="versionLabel">v1.25</div>
 <style>
 #versionLabel {
   position: fixed;
