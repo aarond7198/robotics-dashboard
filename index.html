@@ -184,15 +184,14 @@
   const salesOrderField = document.getElementById("salesOrder");
   const messageField = document.getElementById("message");
 
-  // Load project list
   fetch("https://aarond7198.github.io/robotics-dashboard/project_data.csv")
     .then(res => res.text())
     .then(text => {
       const lines = text.trim().split(/\r?\n/);
       const headers = lines[0].split(",");
       const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
-      const projects = [];
 
+      const projects = [];
       rows.forEach(row => {
         const partA = row[0]?.trim();
         const partB = row[1]?.trim();
@@ -208,7 +207,7 @@
         }
       });
 
-      projectDropdown.innerHTML = '<option value="">-- Select Project --</option>';
+      projectDropdown.innerHTML = '<option value="">-- Select a Project --</option>';
       projects.forEach(project => {
         const opt = document.createElement("option");
         opt.value = project.label;
@@ -238,6 +237,7 @@
       tbody.insertAdjacentHTML("beforeend", row);
     });
     table.style.display = parts.length > 0 ? "table" : "none";
+
     document.getElementById("partListData").value = parts.map(p =>
       `Part: ${p.part}, Qty: ${p.qty}, Notes: ${p.notes}`
     ).join("\n");
@@ -255,6 +255,7 @@
 
     parts.push({ part, qty, notes });
     updatePartsTable();
+
     document.getElementById("partNumber").value = "";
     document.getElementById("quantity").value = "";
     document.getElementById("notes").value = "";
