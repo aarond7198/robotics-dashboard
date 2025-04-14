@@ -284,6 +284,10 @@
     const customMessage = `Submitted by: ${submittedBy}\nProject: ${project}\n\nSO: ${so}\nBOM Path: ${bom}\n\nParts:\n${partsList}`;
     messageField.value = customMessage;
 
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = "Submitting...";
+
     const response = await fetch("https://formspree.io/f/mkgjpqgj", {
       method: "POST",
       body: formData,
@@ -298,6 +302,8 @@
       bomPathField.value = "";
       salesOrderField.value = "";
       setTimeout(() => {
+      submitButton.disabled = false;
+      submitButton.textContent = "📨 Submit Request";
         document.getElementById("overlay").style.display = "none";
       }, 3000);
     } else {
