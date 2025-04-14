@@ -134,7 +134,7 @@
 
     <label for="project">Select Project</label>
     <select id="project" name="Project" required>
-      <option>Loading projects...</option>
+      <option>Loading...</option>
     </select>
 
     <input type="hidden" id="bomPath" name="BOM Path" />
@@ -202,7 +202,7 @@
           }
         });
 
-        projectDropdown.innerHTML = `<option value=\"\">-- Select a Project --</option>`;
+        projectDropdown.innerHTML = `<option value="">-- Select Project --</option>`;
         projects.forEach(project => {
           const opt = document.createElement("option");
           opt.value = project.label;
@@ -323,8 +323,7 @@ window.onload = function () {
       return res.text();
     })
     .then(text => {
-      alert("✅ Project CSV loaded!");
-      const lines = text.trim().split(/\r?\n/);
+            const lines = text.trim().split(/\r?\n/);
       console.log("CSV Raw Lines:", lines);
       const headers = lines[0].split(",");
       const rows = lines.slice(1).map(row => row.split(/,(?=(?:(?:[^\"]*\"){2})*[^\"]*$)/));
