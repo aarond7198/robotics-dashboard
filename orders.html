@@ -311,6 +311,12 @@ archived.slice(-10).reverse().forEach((o, i) => {
     manualOpt.textContent = "INVENTORY/STOCK";
     projectSelect.appendChild(manualOpt);
 
+    // Add manual option for Customer Direct Order
+    const custDirectOrder = document.createElement("option");
+    custDirectOrder.value = "Customer_Direct_Order";
+    custDirectOrder.textContent = "Customer Direct ORder";
+    projectSelect.appendChild(custDirectOrder);
+
     projectRows.slice(1).forEach(row => {
       if (row[5]?.trim().toLowerCase() === "yes") {
         const key = `${row[0]}-${row[1]}`;
