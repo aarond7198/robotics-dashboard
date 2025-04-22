@@ -94,34 +94,52 @@
   }
 </style>
 </head>
+  
 <body>
 <nav>
-<a class="active" href="#">🧾 Order Dashboard</a>
-<a href="index.html">📦 Inventory Tracking</a></nav>
+  <a class="active" href="#">🧾 Order Dashboard</a>
+  <a href="index.html">📦 Inventory Tracking</a>
+</nav>
+  
 <div class="dashboard">
-<div class="form-wrapper"><form id="orderForm">
-<div class="form-row">
-<label for="projectSelect">Project</label>
-<select id="projectSelect" required=""><option value="">-- Select Project --</option></select>
-</div>
-<div class="form-row">
-<label for="supplier">Supplier</label>
-<input id="supplier" required=""/>
-</div>
-<div class="form-row">
-<label for="manufacturer">Manufacturer</label>
-<input id="manufacturer" required=""/>
-</div>
-<div class="form-row">
-<label for="partNumbers">Part Numbers</label>
-<input id="partNumbers" required=""/>
-</div>
-<button type="submit">Add Order</button>
-</form></div>
+
+<div id="form-section">
+  <div class="form-wrapper">
+      <form id="orderForm">
+        <div class="form-row">
+          <label for="projectSelect">Project</label>
+          <select id="projectSelect" required="">
+            <option value="">-- Select Project --</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="supplier">Supplier</label>
+          <input id="supplier" required=""/>
+        </div>
+        <div class="form-row">
+          <label for="manufacturer">Manufacturer</label>
+          <input id="manufacturer" required=""/>
+        </div>
+        <div class="form-row">
+          <label for="partNumbers">Part Numbers</label>
+          <input id="partNumbers" required=""/>
+        </div>
+        <button type="submit">Add Order
+        </button>
+      </form>
+    </div>
+</div>  
 <hr/>
+
+<div id="open-orders-section">  
 <div class="order-grid" id="ordersContainer"></div>
+</div>
+
+<div id="closed-orders-section">  
 <h3>Recently Closed Orders</h3>
 <div class="order-grid" id="archiveContainer"></div>
+</div>
+  
 <button id="saveButton">💾 Save</button>
 </div>
 <script>
