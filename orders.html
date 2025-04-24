@@ -193,9 +193,9 @@
           <div class="status-segment ${o.status === "In Progress" ? "status-current" : o.status === "Closed" ? "status-complete" : ""}">In Progress</div>
           <div class="status-segment ${o.status === "Closed" ? "status-current" : ""}">Closed</div>
         </div>
-        <strong>${projectMap[o.project] || o.project}</strong><br/>
+        <strong style="font-weight: 900;">${projectMap[o.project] || o.project}</strong><br/>       
         Supplier: ${o.supplier}<br/>
-        <strong>Manufacturer: ${o.manufacturer}</strong><br/>
+        <strong style="font-weight: 900;">Manufacturer: ${o.manufacturer}</strong><br/>
         Parts: ${o.partNumbers}<br/>
         ${o.po ? "PO: " + o.po + "<br/>" : ""}
         ${o.ackDate ? "Ack: " + o.ackDate + "<br/>" : ""}
