@@ -29,8 +29,9 @@ MRP,2302,,,,No
 MRP,2303,Largo Palletizing Line,,,No
 MRP,2401,Quick Reteach Project,,,No
 KMC,2401,Dipping Automation,,,No
-MAT,2401,Washer Press Loading,I:\Departments\PCC Robotics\Customer Files\Matenaer\BOMs\Matenaer Washer Feeding simple BOM Dec 2024.xlsx,10112833,Yes
+MAT,2401,Washer Press Loading,I:\Departments\PCC Robotics\Customer Files\Matenaer\BOMs\Matenaer Washer Feeding simple BOM Dec 2024.xlsx,10112833,No
 KAD,,,,,No
-FAF,2501,CT Header Automation,I:\Departments\PCC Robotics\Customer Files\Fastenal\BOMs\Wallingford\Fastenal HoloKrome Induction Cell BOM Nov 2024.xlsx,10087475,Yes
+FAF,2501,CT Header Automation,I:\Departments\PCC Robotics\Customer Files\Fastenal\BOMs\Wallingford\Fastenal HoloKrome Induction Cell BOM Nov 2024.xlsx,10087475,No
 MCF,2501,Dual Lane Palletizing,I:\Departments\PCC Robotics\Customer Files\McClancy\BOMs\McClancy Palletizer Apr 2024.xlsx,10138831,Yes
-ARP,2501,AirPro Welding System,I:\Departments\PCC Robotics\Customer Files\AirPro Fan\BOMs\AirPro Fan welding cobot BOM Jan 2025.xlsx,TBD,Yes
+ARP,2501,AirPro Welding System,I:\Departments\PCC Robotics\Customer Files\AirPro Fan\BOMs\AirPro Fan welding cobot BOM Jan 2025.xlsx,10146183,Yes
+MTC,2501,Metal Craft 4th Haas System,I:\Departments\PCC Robotics\Customer Files\Metal Craft\BOMs\Metal Craft - 4th Haas BOM May 2025.xlsx,10166143,Yes
