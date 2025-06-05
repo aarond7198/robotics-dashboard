@@ -299,25 +299,30 @@ archived.slice(-10).reverse().forEach((o, i) => {
   }
 
   
+  
   function saveData() {
-    const toSave = [...orders, ...archived.slice(-10)];
-    const headers = ["PO Number", "Supplier", "Manufacturer", "Part Numbers", "Project", "Acknowledgement Date", "Expected Delivery", "Received", "Status"];
-    const csvRows = [headers.map(escapeCSV).join(",")];
+    const toSave = [...orders, ...archived.slice(-10)].map(o => ({
+      po: escapeCSV(o.po),
+      supplier: escapeCSV(o.supplier),
+      manufacturer: escapeCSV(o.manufacturer),
+      partNumbers: escapeCSV(o.partNumbers),
+      project: escapeCSV(o.project),
+      ackDate: escapeCSV(o.ackDate),
+      eta: escapeCSV(o.eta),
+      received: o.received,
+      status: escapeCSV(o.status)
+    }));
 
-    for (const o of toSave) {
-      const row = [
-        escapeCSV(o.po),
-        escapeCSV(o.supplier),
-        escapeCSV(o.manufacturer),
-        escapeCSV(o.partNumbers),
-        escapeCSV(o.project),
-        escapeCSV(o.ackDate),
-        escapeCSV(o.eta),
-        escapeCSV(String(o.received)),
-        escapeCSV(o.status)
-      ];
-      csvRows.push(row.join(","));
-    }
+    console.log("📤 Saving to Google Sheet (JSON w/escaped values):", JSON.stringify(toSave, null, 2));
+
+    fetch(SAVE_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toSave)
+    }).then(() => alert("✅ Orders saved.")).finally(() => isDirty = false);
+  }
+
 
     console.log("📤 Saving to Google Sheet (CSV safe):", csvRows.join("
 "));
