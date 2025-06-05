@@ -153,6 +153,13 @@
 </div>
 <script>
 
+  
+  function escapeCSV(value) {
+    if (value == null) return "";
+    return '"' + String(value).replace(/"/g, '""') + '"';
+  }
+
+
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("mirror") === "true") {
     document.body.classList.add("mirror-mode");
@@ -291,16 +298,39 @@ archived.slice(-10).reverse().forEach((o, i) => {
 
   }
 
+  
   function saveData() {
     const toSave = [...orders, ...archived.slice(-10)];
-    console.log("📤 Saving to Google Sheet:", JSON.stringify(toSave, null, 2));
+    const headers = ["PO Number", "Supplier", "Manufacturer", "Part Numbers", "Project", "Acknowledgement Date", "Expected Delivery", "Received", "Status"];
+    const csvRows = [headers.map(escapeCSV).join(",")];
+
+    for (const o of toSave) {
+      const row = [
+        escapeCSV(o.po),
+        escapeCSV(o.supplier),
+        escapeCSV(o.manufacturer),
+        escapeCSV(o.partNumbers),
+        escapeCSV(o.project),
+        escapeCSV(o.ackDate),
+        escapeCSV(o.eta),
+        escapeCSV(String(o.received)),
+        escapeCSV(o.status)
+      ];
+      csvRows.push(row.join(","));
+    }
+
+    console.log("📤 Saving to Google Sheet (CSV safe):", csvRows.join("
+"));
+
     fetch(SAVE_URL, {
       method: "POST",
       mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toSave)
-    }).then(() => alert("✅ Orders saved."));
+      headers: { "Content-Type": "text/plain" },
+      body: csvRows.join("
+")
+    }).then(() => alert("✅ Orders saved.")).finally(() => isDirty = false);
   }
+
 
   async function init() {
     const projectRows = await loadCSV(PROJECTS_CSV_URL);
@@ -392,6 +422,23 @@ function restoreOrder(indexFromEnd) {
   orders.push(order);
   render();
 }
+
+
+  let isDirty = false;
+
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    el.addEventListener("input", () => {
+      isDirty = true;
+    });
+  });
+
+  window.addEventListener("beforeunload", function (e) {
+    if (isDirty) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
 
   init();
 </script>
