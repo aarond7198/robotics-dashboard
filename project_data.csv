@@ -1,1 +1,37 @@
-<!DOCTYPE html><html><head><title>Google Drive - Virus scan warning</title><meta http-equiv="content-type" content="text/html; charset=utf-8"/><style nonce="YcSwWxZhY_KYP_kSdzzDCA">.goog-link-button{position:relative;color:#15c;text-decoration:underline;cursor:pointer}.goog-link-button-disabled{color:#ccc;text-decoration:none;cursor:default}body{color:#222;font:normal 13px/1.4 arial,sans-serif;margin:0}.grecaptcha-badge{visibility:hidden}.uc-main{padding-top:50px;text-align:center}#uc-dl-icon{display:inline-block;margin-top:16px;padding-right:1em;vertical-align:top}#uc-text{display:inline-block;max-width:68ex;text-align:left}.uc-error-caption,.uc-warning-caption{color:#222;font-size:16px}#uc-download-link{text-decoration:none}.uc-name-size a{color:#15c;text-decoration:none}.uc-name-size a:visited{color:#61c;text-decoration:none}.uc-name-size a:active{color:#d14836;text-decoration:none}.uc-footer{color:#777;font-size:11px;padding-bottom:5ex;padding-top:5ex;text-align:center}.uc-footer a{color:#15c}.uc-footer a:visited{color:#61c}.uc-footer a:active{color:#d14836}.uc-footer-divider{color:#ccc;width:100%}.goog-inline-block{position:relative;display:-moz-inline-box;display:inline-block}* html .goog-inline-block{display:inline}*:first-child+html .goog-inline-block{display:inline}sentinel{}</style><link rel="icon" href="//ssl.gstatic.com/docs/doclist/images/drive_2022q3_32dp.png"/></head><body><div class="uc-main"><div id="uc-dl-icon" class="image-container"><div class="drive-sprite-aux-download-file"></div></div><div id="uc-text"><p class="uc-warning-caption">Google Drive can't scan this file for viruses.</p><p class="uc-warning-subcaption">We are experiencing technical difficulties. Would you still like to download this file? <span class="uc-name-size"><a href="/open?id=1ojSU4sCrXsiz8unyc34Q_yGKSB4eXJ7J">project_data.csv</a> (2.0k)</span></p><form id="download-form" action="https://drive.usercontent.google.com/download" method="get"><input type="submit" id="uc-download-link" class="goog-inline-block jfk-button jfk-button-action" value="Download anyway"/><input type="hidden" name="id" value="1ojSU4sCrXsiz8unyc34Q_yGKSB4eXJ7J"><input type="hidden" name="export" value="download"><input type="hidden" name="confirm" value="t"><input type="hidden" name="uuid" value="ee0a0e52-4977-43e4-8541-10f215904db2"></form></div></div><div class="uc-footer"><hr class="uc-footer-divider"></div></body></html>
+Customer Code,Project Code,Project Description,BOM Path,sales Order,Dashboard Active?
+PCC,2401,UR20 Pedestal Project,,,No
+PCC,2402,Welding General Stuff,,,No
+MRP,2101,HiPot Vision Combo Cell,,,No
+MRP,2102,HipPot Standalone,,,No
+ULT,2101,Ultra Tool Spot Welder,,,No
+MCP,2101,Micro Precision Hardinge Lathe,,,No
+RHN,2101,Rhine Smart Lathe Implementation,,,No
+WST,2101,Smart Machine Rod Loading,,,No
+TLP,2101,Plastic Extrusion Line/Punching,,,No
+MTC,2201,Metal Craft 2nd Haas Machine ,,,No
+FLS,2101,Shaft Punch Loading and Unloading,,,No
+FLS,2201,Lathe Tending,,,No
+RBS,2201,"Heat Treat, Ball Screws",,,No
+WNG,2201,"Mori Automation, Yokes",,,No
+MDK,2201,"Leak Test, Automation Cell",,,No
+KPC,2201,Bystronic Press Forming x2,,,No
+AND,2201,Lineal Door Frame Press/Punch ,,,No
+JSC,2201,"Pipe Loading, Mazak lathe",,,No
+MRP,2201,New Hampshire Book Loading,,,No
+MRP,2202,Wisconsin Table Project,,,No
+JBC,2201,JBC Hardinge Mill Tending,,,No
+FLS,2202,Felss Laser Marking Cell,,,No
+MRP,2301,Wisconsin Dual Vision HiPot Cell,,,No
+KPC,2301,Grafton Press 05 & Bin Picking,,,No
+UNO,2301,"Mazak Lathe, Rods and Pucks",,,No
+ANS,2301,"Hardinge VMC Tending, Large Plates",,,No
+MRP,2302,,,,No
+MRP,2303,Largo Palletizing Line,,,No
+MRP,2401,Quick Reteach Project,,,No
+KMC,2401,Dipping Automation,,,No
+MAT,2401,Washer Press Loading,I:\Departments\PCC Robotics\Customer Files\Matenaer\BOMs\Matenaer Washer Feeding simple BOM Dec 2024.xlsx,10112833,No
+KAD,,,,,No
+FAF,2501,CT Header Automation,I:\Departments\PCC Robotics\Customer Files\Fastenal\BOMs\Wallingford\Fastenal HoloKrome Induction Cell BOM Nov 2024.xlsx,10087475,No
+MCF,2501,Dual Lane Palletizing,I:\Departments\PCC Robotics\Customer Files\McClancy\BOMs\McClancy Palletizer Apr 2024.xlsx,10138831,Yes
+ARP,2501,AirPro Welding System,I:\Departments\PCC Robotics\Customer Files\AirPro Fan\BOMs\AirPro Fan welding cobot BOM Jan 2025.xlsx,10146183,Yes
+MTC,2501,Metal Craft 4th Haas System,I:\Departments\PCC Robotics\Customer Files\Metal Craft\BOMs\Metal Craft - 4th Haas BOM May 2025.xlsx,10166143,Yes
