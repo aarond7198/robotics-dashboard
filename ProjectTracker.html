@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Project Tracker</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+  .topbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .topbar .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; background: #e8eef9; color: #0b5ed7; }
+  .project { margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
+  .project-header { font-weight: bold; font-size: 18px; margin-bottom: 8px; }
+  .project-subheader { font-size: 13px; color: #666; margin-bottom: 12px; }
+  .timeline { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; background: #eee; border-radius: 6px; padding: 6px; position: relative; font-size: 10px; min-height: 120px; }
+  .timeline-item { background: white; padding: 8px 8px 6px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); min-width: 110px; text-align: center; position: relative; cursor: pointer; transition: opacity 0.2s ease; }
+  .timeline-item.completed { opacity: 0.5; }
+  .timeline-item span.icon { font-size: 16px; display: block; margin-bottom: 4px; }
+  .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .timeline-label { font-size: 10px; line-height: 1.2; }
+  .total-hours { margin-top: 8px; font-weight: bold; font-size: 13px; }
+  .green { color: green; } .blue { color: blue; } .orange { color: orange; }
+  #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
+  .edit-btn { float: right; font-size: 11px; background: none; border: none; color: #007BFF; cursor: pointer; }
+  #context-menu { position: absolute; display: none; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 1000; padding: 5px; border-radius: 4px; }
+  #context-menu div { padding: 5px 10px; cursor: pointer; }
+  #context-menu div:hover { background: #f0f0f0; }
+
+  .current-tag { position: absolute; left: -6px; top: 6px; bottom: 6px; width: 4px; background: #007BFF; border-radius: 4px; }
+  .current-text { position: absolute; left: -26px; top: 6px; font-size: 9px; writing-mode: vertical-rl; text-orientation: mixed; color: #007BFF; font-weight: 700; letter-spacing: 0.5px; user-select: none; }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 2000; }
+  .modal { background: #fff; width: 560px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
+  .modal-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
+  .modal-body { padding: 12px 16px; max-height: 60vh; overflow: auto; }
+  .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; }
+  .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
+  .btn-primary { background: #007BFF; color: #fff; }
+  .btn-ghost { background: transparent; color: #007BFF; }
+  .btn-icon { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; cursor: pointer; }
+
+  .subtask-list { display: flex; flex-direction: column; gap: 8px; }
+  .subtask-chip { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .chip-bar-wrap { background: #f3f3f3; border-radius: 999px; height: 14px; position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 8px; }
+  .chip-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #d0e3ff; }
+  .chip-label { position: relative; z-index: 1; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip-actions { display: flex; gap: 6px; align-items: center; }
+  .summary-hours { font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
+  .summary-hours b { font-weight: 700; }
+
+  /* Loading overlay (blocks all interactions) */
+  #loadingOverlay {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.95); z-index: 3000; font-size: 16px; font-weight: 700; color: #333;
+    pointer-events: all;
+  }
+  .spinner { width: 18px; height: 18px; border: 3px solid #cfd4e0; border-top-color: #007BFF; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Subtask dashes at bottom of each task card */
+  .subtask-dashes { display:flex; justify-content:center; align-items:center; gap:4px; margin-top:6px; min-height: 6px; }
+  .subtask-dashes .dash { width:10px; height:2px; background:#bbb; border-radius:1px; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="saveGoogleBtn" class="btn">💾 Save (Google)</button>
+    <button id="loadGoogleBtn" class="btn">⟳ Load (Google)</button>
+  </div>
+
+  <button id="new-project-btn">+ New Project</button>
+  <div id="project-container"></div>
+  <div id="context-menu"></div>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay"><div class="spinner"></div>Loading from Google…</div>
+
+  <!-- Subtask Modal -->
+  <div id="subtask-modal-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="subtask-modal-title">
+      <div class="modal-header">
+        <div id="subtask-modal-title">Subtasks</div>
+        <button id="subtask-modal-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="subtask-rows" class="subtask-list"></div>
+        <div style="margin-top:12px;">
+          <button id="add-subtask-btn" class="btn btn-ghost">+ Add Subtask</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="summary-hours" id="modal-summary">
+          <span><b>Base:</b> 0</span>
+          <span><b>Subtasks:</b> 0</span>
+          <span><b>Total:</b> 0</span>
+        </div>
+        <div>
+          <button id="subtask-modal-done" class="btn btn-primary">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* Your working Web App URL */
+const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbws6zd3ifawAHUR3equN29KD5dULQ0blgUmekwycLibEJHg4MjO_V_BAMX0DbIv8P3lWg/exec';
+
+/* Flags */
+let hasLocalEdits = false;  // true after any user edit
+
+const contextMenu = document.getElementById('context-menu');
+const loadingOverlay = document.getElementById('loadingOverlay');
+
+const showLoading = (on)=> { loadingOverlay.style.display = on ? 'flex' : 'none'; };
+const markDirty   = ()=> { hasLocalEdits = true; };
+
+/* ---- UI + Data helpers ---- */
+let dragged = null;
+document.addEventListener('click', (e) => {
+  if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none';
+});
+
+function normalizeCategory(c){ if(!c) return 'Task'; const v=String(c).trim().toLowerCase(); if(v==='customer'||v==='external') return 'External'; if(v==='invoice') return 'Invoice'; return 'Task'; }
+function categoryIcon(category){ const c=normalizeCategory(category); switch(c.toLowerCase()){ case 'invoice': return ['$', 'green']; case 'external': return ['⚑', 'orange']; default: return ['■', 'blue']; } }
+
+/* ---- Subtask "dashes" renderer ---- */
+function updateSubtaskDashes(taskElem){
+  let wrap = taskElem.querySelector('.subtask-dashes');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'subtask-dashes';
+    taskElem.appendChild(wrap);
+  }
+  wrap.innerHTML = '';
+  const count = (taskElem._subtasks || []).length;
+  if (count <= 0) return;
+
+  // scale down slightly if many dashes
+  const scale = count > 12 ? Math.max(0.55, 12 / count) : 1;
+  wrap.style.transform = `scale(${scale})`;
+
+  for (let i = 0; i < count; i++) {
+    const d = document.createElement('div');
+    d.className = 'dash';
+    wrap.appendChild(d);
+  }
+}
+
+function addTaskToTimeline(timelineElem, insertBefore=null){
+  const name=prompt("Task Name:","New Task"); if(!name) return;
+  const hoursRaw=prompt("Estimated Base Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
+  const catRaw=prompt("Category (Task, Invoice, External):","Task")||"Task"; const category=normalizeCategory(catRaw);
+  const div=buildTask({name, baseHours:hours, category, subtasks:[], completed:false});
+  if(insertBefore&&insertBefore.parentNode===timelineElem) timelineElem.insertBefore(div,insertBefore); else timelineElem.appendChild(div);
+  updateSubtaskHours(div); applyCompletionStyle(div); updateCurrentIndicator(timelineElem); updateSubtaskDashes(div);
+  markDirty();
+  requestAnimationFrame(()=>{ timelineElem.scrollLeft = timelineElem.scrollWidth; });
+}
+function buildTask(data){
+  const [icon,color]=categoryIcon(data.category||'Task');
+  const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',true);
+  div.innerHTML=`<span class="icon ${color}">${icon}</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
+  const base=Number.isFinite(Number(data.baseHours))?Number(data.baseHours):0;
+  div.dataset.baseHours=base; div.dataset.category=normalizeCategory(data.category||'Task'); div.dataset.completed=data.completed?'true':'false';
+  div._subtasks=Array.isArray(data.subtasks)?data.subtasks.map(s=>({ name:(s&&s.name)?s.name:'Subtask', hours:Number.isFinite(Number(s&&s.hours))?Number(s.hours):0, done:!!(s&&s.done) })):[];
+  div.addEventListener('click',()=>openSubtaskModal(div)); addTaskContextMenu(div); enableDragAndDrop(div);
+  updateSubtaskHours(div); updateSubtaskDashes(div); return div;
+}
+function addProject({name,salesOrder,poNumber,estDate,tasks}){ const container=document.getElementById('project-container'); const div=document.createElement('div'); div.className='project';
+  div.innerHTML=`<div class="project-header">${name}<button class="edit-btn" onclick="editProject(event,this)">Edit</button></div>
+    <div class="project-subheader">PO: ${poNumber||''} | Est. Completion: ${estDate||''} | Sales Order: ${salesOrder||''}</div>
+    <div class="timeline"></div><div class="total-hours">Total Hours: 0</div>`;
+  const timeline=div.querySelector('.timeline');
+
+  // Right-click: only add task when clicking blank area (not on a task)
+  timeline.addEventListener('contextmenu',e=>{
+    e.preventDefault();
+    if (e.target.closest('.timeline-item')) return;
+    addTaskToTimeline(timeline);
+  });
+
+  timeline.addEventListener('dblclick',()=>addTaskToTimeline(timeline));
+  container.appendChild(div);
+  (tasks||[]).forEach(t=>{
+    const el = buildTask(t);
+    timeline.appendChild(el);
+  });
+  [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ applyCompletionStyle(el); updateSubtaskHours(el); updateSubtaskDashes(el); });
+  updateTotalHours(timeline); updateCurrentIndicator(timeline); return div; }
+
+/* Modal */
+const modalBackdrop=document.getElementById('subtask-modal-backdrop');
+const modalClose=document.getElementById('subtask-modal-close');
+const modalDone=document.getElementById('subtask-modal-done');
+const modalTitle=document.getElementById('subtask-modal-title');
+const subtaskRows=document.getElementById('subtask-rows');
+const addSubtaskBtn=document.getElementById('add-subtask-btn');
+const modalSummary=document.getElementById('modal-summary');
+let currentTask=null;
+
+function openSubtaskModal(taskElem){ currentTask=taskElem; const taskName=taskElem.querySelector('.task-name')?.textContent||'Task';
+  modalTitle.textContent=`Subtasks – ${taskName}`; renderSubtaskRows(); modalBackdrop.style.display='flex'; }
+function closeSubtaskModal(){ modalBackdrop.style.display='none'; currentTask=null; }
+modalClose.addEventListener('click',closeSubtaskModal); modalDone.addEventListener('click',closeSubtaskModal);
+modalBackdrop.addEventListener('click',e=>{ if(e.target===modalBackdrop) closeSubtaskModal(); });
+
+addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
+  const hoursRaw=prompt("Starting Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
+  currentTask._subtasks.push({name, hours, done:false}); renderSubtaskRows(); markDirty(); });
+
+function renderSubtaskRows(){ subtaskRows.innerHTML=''; if(!currentTask) return;
+  const rows=currentTask._subtasks||[]; const maxHours=Math.max(1,...rows.map(r=>Number(r.hours)||0));
+  rows.forEach((st,idx)=>{ const wrap=document.createElement('div'); wrap.className='subtask-chip'; wrap.title='Click bar to add hours';
+    const barWrap=document.createElement('div'); barWrap.className='chip-bar-wrap';
+    const bar=document.createElement('div'); bar.className='chip-bar'; bar.style.width=`${(Math.min(Number(st.hours)||0,maxHours)/maxHours)*100}%`;
+    const label=document.createElement('div'); label.className='chip-label'; label.textContent=`${st.name} — ${st.hours}h${st.done?" (Complete)":""}`;
+    barWrap.appendChild(bar); barWrap.appendChild(label);
+    barWrap.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+    const actions=document.createElement('div'); actions.className='chip-actions';
+    const completeBox=document.createElement('input'); completeBox.type='checkbox'; completeBox.checked=!!st.done; completeBox.title='Complete';
+    completeBox.onchange=()=>{ st.done=completeBox.checked; renderSubtaskRows(); markDirty(); };
+    const completeLabel=document.createElement('label'); completeLabel.textContent='Complete'; completeLabel.style.fontSize='12px';
+    const addBtn=document.createElement('button'); addBtn.className='btn-icon'; addBtn.textContent='+ Hours';
+    addBtn.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+    const renameBtn=document.createElement('button'); renameBtn.className='btn-icon'; renameBtn.textContent='Rename';
+    renameBtn.onclick=()=>{ const nn=prompt('New subtask name:',st.name); if(nn&&nn.trim()){ st.name=nn.trim(); renderSubtaskRows(); markDirty(); } };
+    const delBtn=document.createElement('button'); delBtn.className='btn-icon'; delBtn.textContent='Delete';
+    delBtn.onclick=()=>{ currentTask._subtasks.splice(idx,1); renderSubtaskRows(); markDirty(); };
+    actions.appendChild(completeBox); actions.appendChild(completeLabel); actions.appendChild(addBtn); actions.appendChild(renameBtn); actions.appendChild(delBtn);
+    wrap.appendChild(barWrap); wrap.appendChild(actions); subtaskRows.appendChild(wrap); });
+  updateSubtaskHours(currentTask); updateModalSummary(); updateCurrentIndicator(currentTask.closest('.timeline')); applyCompletionStyle(currentTask); updateSubtaskDashes(currentTask);
+}
+function updateModalSummary(){ if(!currentTask) return; const base=Number(currentTask.dataset.baseHours||0);
+  const subs=(currentTask._subtasks||[]).reduce((s,x)=>s+(Number(x.hours)||0),0); const total=base+subs;
+  modalSummary.innerHTML=`<span><b>Base:</b> ${base}</span><span><b>Subtasks:</b> ${subs}</span><span><b>Total:</b> ${total}</span>`; }
+
+function openSubTimeline(taskElem){ openSubtaskModal(taskElem); } function addSubtask(subTimeline,parentTask){ openSubtaskModal(parentTask); }
+function isTaskComplete(taskElem){ const subs=taskElem._subtasks||[]; if(subs.length>0) return subs.every(st=>!!st.done); return taskElem.dataset.completed==='true'; }
+function setTaskComplete(taskElem,val){ taskElem.dataset.completed=val?'true':'false'; applyCompletionStyle(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); markDirty(); }
+function applyCompletionStyle(taskElem){ if(isTaskComplete(taskElem)) taskElem.classList.add('completed'); else taskElem.classList.remove('completed'); }
+
+function updateSubtaskHours(taskElem){ const subHours=(taskElem._subtasks||[]).reduce((sum,st)=>sum+(Number(st.hours)||0),0);
+  const baseHours=Number(taskElem.dataset.baseHours||0); const total=baseHours+subHours;
+  const totalLabel=taskElem.querySelector('.task-total'); if(totalLabel) totalLabel.textContent=total; taskElem.dataset.totalHours=total;
+  const tl=taskElem.closest('.timeline'); updateTotalHours(tl); applyCompletionStyle(taskElem); }
+function updateTotalHours(timelineElem){ if(!timelineElem) return;
+  const total=[...timelineElem.querySelectorAll('.timeline-item')].reduce((sum,el)=>sum+Number(el.dataset.totalHours||el.dataset.baseHours||0),0);
+  const totalHoursElem=timelineElem.closest('.project')?.querySelector('.total-hours'); if(totalHoursElem) totalHoursElem.textContent=`Total Hours: ${total}`; }
+function updateCurrentIndicator(timelineElem){ if(!timelineElem) return; const tasks=[...timelineElem.querySelectorAll('.timeline-item')];
+  tasks.forEach(t=>{ t.querySelector('.current-tag')?.remove(); t.querySelector('.current-text')?.remove(); applyCompletionStyle(t); });
+  const firstIncomplete=tasks.find(t=>!isTaskComplete(t)); if(!firstIncomplete) return; const tag=document.createElement('div'); tag.className='current-tag';
+  const text=document.createElement('div'); text.className='current-text'; text.textContent='CURRENT'; firstIncomplete.appendChild(tag); firstIncomplete.appendChild(text); }
+
+function addTaskContextMenu(taskElem){
+  taskElem.addEventListener('contextmenu',function(e){
+    e.preventDefault();
+    contextMenu.innerHTML='';
+    addContextItem('Edit Task',()=>{ const nameEl=taskElem.querySelector('.task-name');
+      const newName=prompt('Edit Task Name:',nameEl.textContent);
+      const newHoursRaw=prompt('Edit Base Hours:',taskElem.dataset.baseHours||'0'); const newHours=Number.isFinite(Number(newHoursRaw))?Number(newHoursRaw):0;
+      const newCategory=normalizeCategory(prompt('Edit Category (Task, Invoice, External):',taskElem.dataset.category||'Task')||'Task');
+      const [icon,color]=categoryIcon(newCategory); if(newName) nameEl.textContent=newName;
+      taskElem.dataset.baseHours=newHours; taskElem.dataset.category=newCategory; const iconSpan=taskElem.querySelector('span.icon'); iconSpan.textContent=icon; iconSpan.className=`icon ${color}`;
+      updateSubtaskHours(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); updateSubtaskDashes(taskElem); markDirty(); });
+    addContextItem(isTaskComplete(taskElem)?'Mark Task Incomplete':'Mark Task Complete',()=>{ if((taskElem._subtasks||[]).length===0) setTaskComplete(taskElem,!isTaskComplete(taskElem)); else alert('Task completion is controlled by its subtasks.'); });
+    addContextItem('Delete Task',()=>{ const parent=taskElem.closest('.timeline'); taskElem.remove(); updateTotalHours(parent); updateCurrentIndicator(parent); markDirty(); });
+    addContextItem('Add Task Before',()=>{ addTaskToTimeline(taskElem.parentElement,taskElem); });
+    addContextItem('Add Subtask',()=>{ openSubtaskModal(taskElem); });
+    contextMenu.style.top=e.pageY+'px'; contextMenu.style.left=e.pageX+'px'; contextMenu.style.display='block';
+  });
+}
+function addContextItem(label,action){ const div=document.createElement('div'); div.textContent=label;
+  div.addEventListener('mousedown',(e)=>{ e.preventDefault(); e.stopPropagation(); contextMenu.style.display='none'; setTimeout(action,0); });
+  contextMenu.appendChild(div); }
+function enableDragAndDrop(elem){ elem.addEventListener('dragstart',e=>{ dragged=elem; e.dataTransfer.setData('text/plain',''); });
+  elem.addEventListener('dragover',e=>e.preventDefault());
+  elem.addEventListener('drop',e=>{ e.preventDefault(); const target=e.currentTarget;
+    if(dragged&&dragged!==target){ const parent=dragged.parentNode; parent.insertBefore(dragged,target.nextSibling); updateTotalHours(parent); updateCurrentIndicator(parent); markDirty(); } }); }
+
+document.getElementById('new-project-btn').addEventListener('click',()=>{
+  const projectName=prompt("Project Name:"); if(!projectName) return;
+  const salesOrder=prompt("Sales Order:"); const poNumber=prompt("PO Number:"); const estDate=prompt("Estimated Completion Date:");
+  const project = addProject({ name:projectName, salesOrder, poNumber, estDate, tasks:[] });
+  markDirty();
+
+  // Default template (with Manufacture)
+  const addTemplate = confirm("Add default timeline template to this project?");
+  if (addTemplate) {
+    const template = [
+      { name: 'DP Invoice', category: 'Invoice' },
+      { name: 'Kickoff', category: 'Task' },
+      { name: 'Design', category: 'Task' },
+      { name: 'Manufacture', category: 'External' },
+      { name: 'Assy & Prep', category: 'Task' },
+      { name: 'PreInstall Prep', category: 'External' },
+      { name: 'Pre Ship Invoice', category: 'Invoice' },
+      { name: 'Ship', category: 'Task' },
+      { name: 'Install', category: 'Task' },
+      { name: 'Risk Assessment', category: 'Task' },
+      { name: 'Final Invoice', category: 'Invoice' },
+    ];
+    const timeline = project.querySelector('.timeline');
+    template.forEach(t => {
+      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false });
+      timeline.appendChild(card);
+    });
+    [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ updateSubtaskHours(el); updateSubtaskDashes(el); });
+    updateTotalHours(timeline); updateCurrentIndicator(timeline);
+    markDirty();
+  }
+});
+
+function editProject(ev, btn){
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const project=btn.closest('.project');
+  const header=project.querySelector('.project-header');
+  const subheader=project.querySelector('.project-subheader');
+
+  const rect = btn.getBoundingClientRect();
+  contextMenu.innerHTML='';
+  addContextItem('Edit Project Details', ()=>{
+    const currentTitle=header.childNodes[0].textContent.trim();
+    const currentDetails=subheader.textContent;
+    const projectName=prompt("Edit Project Name:",currentTitle);
+    const salesOrder=prompt("Edit Sales Order:",currentDetails.match(/Sales Order: (.*?)$/)?.[1]||'');
+    const poNumber=prompt("Edit PO Number:",currentDetails.match(/PO: (.*?) \|/)?.[1]||'');
+    const estDate=prompt("Edit Estimated Completion Date:",currentDetails.match(/Est. Completion: (.*?) \|/)?.[1]||'');
+    header.childNodes[0].textContent=projectName;
+    subheader.textContent=`PO: ${poNumber} | Est. Completion: ${estDate} | Sales Order: ${salesOrder}`;
+    markDirty();
+  });
+  addContextItem('Delete Project', ()=>{
+    if (confirm('Delete this project and all its tasks? This cannot be undone.')) {
+      project.remove();
+      markDirty();
+    }
+  });
+  contextMenu.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+  contextMenu.style.left = (window.scrollX + rect.left) + 'px';
+  contextMenu.style.display='block';
+}
+
+/* --- Google Save/Load --- */
+function serializeState(){ const projects=[...document.querySelectorAll('.project')].map(project=>{
+    const title=project.querySelector('.project-header').childNodes[0].textContent.trim();
+    const sub=project.querySelector('.project-subheader').textContent;
+    const poMatch=sub.match(/PO:\s(.*?)\s\|/); const estMatch=sub.match(/Est\. Completion:\s(.*?)\s\|/); const soMatch=sub.match(/Sales Order:\s(.*)$/);
+    const timeline=project.querySelector('.timeline');
+    const tasks=[...timeline.querySelectorAll('.timeline-item')].map((t,idx)=>({ name:t.querySelector('.task-name').textContent, baseHours:Number(t.dataset.baseHours||0), category:t.dataset.category||'Task', completed:isTaskComplete(t), order:idx, subtasks:(t._subtasks||[]).map(st=>({ name:st.name, hours:Number(st.hours||0), done:!!st.done })) }));
+    return { name:title, poNumber: poMatch?poMatch[1]:'', estDate: estMatch?estMatch[1]:'', salesOrder: soMatch?soMatch[1]:'', tasks };
+  }); return { projects }; }
+function clearAllProjects(){ document.getElementById('project-container').innerHTML=''; }
+function loadState(state){ if(!state||!state.projects) return; clearAllProjects(); state.projects.forEach(p=>addProject(p)); }
+
+async function saveToGoogle({silent=false} = {}){
+  const payload=serializeState();
+  // Guard fields so server knows this is intentional
+  payload.kind = 'ProjectTracker';
+  payload.allowEmpty = (payload.projects && payload.projects.length === 0);
+
+  try{
+    const res=await fetch(GOOGLE_URL,{ method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
+    const text=await res.text();
+    let data=null; try{ data=JSON.parse(text); }catch{}
+    if(!silent){
+      if(data && data.ok){ alert(`✅ Saved ${data.saved} project(s) to Google.`); hasLocalEdits = false; }
+      else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Use Save after adding a project, or confirm a full wipe in code.'); }
+      else { alert('⚠️ Save response not recognized.'); }
+    }
+  } catch(e){
+    if(!silent) alert('❌ Save failed: ' + e.message);
+  }
+}
+
+async function loadFromGoogle({forceApply=true} = {}){
+  try{
+    const res=await fetch(GOOGLE_URL,{ mode:'cors' });
+    const text=await res.text();
+    const data=JSON.parse(text);
+    if (forceApply) {
+      loadState(data);
+      hasLocalEdits = false;
+    }
+  } catch(e){
+    try{
+      const cb='PT_JSONP_'+Date.now();
+      window[cb]=(data)=>{ try{ if (forceApply){ loadState(data); hasLocalEdits=false; } } finally{ delete window[cb]; } };
+      const s=document.createElement('script'); s.src=GOOGLE_URL+'?callback='+cb; s.onerror=()=>{}; document.body.appendChild(s);
+    }catch(err){ /* noop */ }
+  }
+}
+
+/* Buttons */
+document.getElementById('saveGoogleBtn').addEventListener('click', ()=> saveToGoogle({silent:false}));
+document.getElementById('loadGoogleBtn').addEventListener('click', async ()=>{
+  if (hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
+  showLoading(true);
+  await loadFromGoogle({forceApply:true});
+  showLoading(false);
+});
+
+/* Prompt when leaving with unsaved changes */
+window.addEventListener('beforeunload', (e)=>{
+  if (!hasLocalEdits) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+/* Initial BLOCKING load */
+(async function init(){
+  showLoading(true);
+  await loadFromGoogle({forceApply:true}); // always apply cloud at startup
+  showLoading(false);
+})();
+</script>
+</body>
+</html>
