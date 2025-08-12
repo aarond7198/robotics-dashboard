@@ -8,6 +8,7 @@
   body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
   .topbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
   .topbar .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; background: #e8eef9; color: #0b5ed7; }
+  .spacer { flex: 1; }
   .project { margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
   .project-header { font-weight: bold; font-size: 18px; margin-bottom: 8px; }
   .project-subheader { font-size: 13px; color: #666; margin-bottom: 12px; }
@@ -17,6 +18,8 @@
   .timeline-item span.icon { font-size: 16px; display: block; margin-bottom: 4px; }
   .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .timeline-label { font-size: 10px; line-height: 1.2; }
+  .task-meta { font-size: 9px; color: #666; margin-top: 2px; min-height: 12px; }
+  .timeline-item.final-invoice .timeline-label { display: none; }
   .total-hours { margin-top: 8px; font-weight: bold; font-size: 13px; }
   .green { color: green; } .blue { color: blue; } .orange { color: orange; }
   #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
@@ -32,7 +35,7 @@
   .modal { background: #fff; width: 560px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
   .modal-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
   .modal-body { padding: 12px 16px; max-height: 60vh; overflow: auto; }
-  .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
   .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; }
   .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
   .btn-primary { background: #007BFF; color: #fff; }
@@ -48,31 +51,46 @@
   .summary-hours { font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
   .summary-hours b { font-weight: 700; }
 
-  /* Loading overlay (blocks all interactions) */
-  #loadingOverlay {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.95); z-index: 3000; font-size: 16px; font-weight: 700; color: #333;
-    pointer-events: all;
-  }
+  .subtask-dashes { display:flex; justify-content:center; align-items:center; gap:4px; margin-top:6px; min-height: 6px; }
+  .subtask-dashes .dash { width:10px; height:2px; background:#bbb; border-radius:1px; }
+
+  .invoice-badge { display:inline-block; margin-top:4px; padding:2px 6px; font-size:10px; border-radius:10px; background:#fff4d6; color:#8a5a00; border:1px solid #f0d28a; }
+
+  #loadingOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.95); z-index: 3000; font-size: 16px; font-weight: 700; color: #333; pointer-events: all; }
   .spinner { width: 18px; height: 18px; border: 3px solid #cfd4e0; border-top-color: #007BFF; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Subtask dashes at bottom of each task card */
-  .subtask-dashes { display:flex; justify-content:center; align-items:center; gap:4px; margin-top:6px; min-height: 6px; }
-  .subtask-dashes .dash { width:10px; height:2px; background:#bbb; border-radius:1px; }
+  #viewBadge { position: fixed; top: 10px; right: 12px; background:#222; color:#fff; font-size:11px; padding:6px 8px; border-radius: 6px; opacity: .85; z-index: 4000; display:none; }
+
+  /* Date editor modal tweaks */
+  .mini-input { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; }
+  .hint { font-size: 11px; color:#666; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .topbar, #context-menu, #loadingOverlay, #viewBadge, .modal-backdrop { display: none !important; }
+    #new-project-btn { display: none !important; }
+    .project { page-break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    @page { size: 11in 8.5in; margin: 0.5in; }
+  }
 </style>
 </head>
 <body>
   <div class="topbar">
     <button id="saveGoogleBtn" class="btn">💾 Save (Google)</button>
     <button id="loadGoogleBtn" class="btn">⟳ Load (Google)</button>
+    <button id="printBtn" class="btn">🖨️ Export PDF (Letter, Fit)</button>
+    <button id="printTabloidBtn" class="btn">🖨️ Export PDF 11×17 (Fit)</button>
+    <span class="spacer"></span>
+    <button id="settingsBtn" class="btn">⚙️ Settings</button>
   </div>
 
   <button id="new-project-btn">+ New Project</button>
   <div id="project-container"></div>
   <div id="context-menu"></div>
+  <div id="viewBadge">VIEW ONLY</div>
 
-  <!-- Loading overlay -->
   <div id="loadingOverlay"><div class="spinner"></div>Loading from Google…</div>
 
   <!-- Subtask Modal -->
@@ -84,7 +102,7 @@
       </div>
       <div class="modal-body">
         <div id="subtask-rows" class="subtask-list"></div>
-        <div style="margin-top:12px;">
+        <div id="add-subtask-wrap" style="margin-top:12px;">
           <button id="add-subtask-btn" class="btn btn-ghost">+ Add Subtask</button>
         </div>
       </div>
@@ -94,176 +112,518 @@
           <span><b>Subtasks:</b> 0</span>
           <span><b>Total:</b> 0</span>
         </div>
-        <div>
-          <button id="subtask-modal-done" class="btn btn-primary">Done</button>
+        <button id="ready-invoice-btn" class="btn" style="display:none;">Ready to Invoice…</button>
+        <button id="subtask-modal-done" class="btn btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice Email Modal -->
+  <div id="invoice-modal-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="invoice-modal-title">
+      <div class="modal-header">
+        <div id="invoice-modal-title">Ready to Invoice</div>
+        <button id="invoice-modal-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid; gap:8px;">
+          <label>Subject
+            <input id="invoice-subject" class="mini-input">
+          </label>
+          <label>Body
+            <textarea id="invoice-body" rows="10" class="mini-input"></textarea>
+          </label>
         </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:auto auto auto;">
+        <button id="invoice-copy" class="btn">Copy Body</button>
+        <button id="invoice-open-mail" class="btn">Open Email</button>
+        <button id="invoice-complete" class="btn btn-primary">Mark Sent & Complete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-header">
+        <div id="settings-title">Settings</div>
+        <button id="settings-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid; gap:10px;">
+          <div style="font-weight:700; margin-bottom:4px;">Invoice Contacts</div>
+          <label>Primary Invoice Name
+            <input id="set-primary-name" class="mini-input">
+          </label>
+          <label>Primary Invoice Email
+            <input id="set-primary-email" type="email" class="mini-input">
+          </label>
+          <label>Final/Closeout Name
+            <input id="set-final-name" class="mini-input">
+          </label>
+          <label>Final/Closeout Email
+            <input id="set-final-email" type="email" class="mini-input">
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:1fr auto;">
+        <div></div>
+        <button id="settings-save" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date/Duration Editor Modal -->
+  <div id="date-modal-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="date-modal-title">
+      <div class="modal-header">
+        <div id="date-modal-title">Set Date / Duration</div>
+        <button id="date-modal-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid; gap:10px;">
+          <label>Pick a Date
+            <input id="date-input" type="date" class="mini-input">
+          </label>
+          <div style="text-align:center; color:#888; font-size:12px;">— or —</div>
+          <label>Duration (optional)
+            <input id="dur-input" class="mini-input" placeholder="e.g., 10d, 2w, 1mo">
+            <div class="hint">Use <b>d</b>=days, <b>w</b>=weeks, <b>mo</b>=months.</div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:auto auto auto;">
+        <button id="date-clear" class="btn">Clear</button>
+        <button id="date-cancel" class="btn">Cancel</button>
+        <button id="date-save" class="btn btn-primary">Save</button>
       </div>
     </div>
   </div>
 
 <script>
-/* Your working Web App URL */
+/* Google URL */
 const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbws6zd3ifawAHUR3equN29KD5dULQ0blgUmekwycLibEJHg4MjO_V_BAMX0DbIv8P3lWg/exec';
 
-/* Flags */
-let hasLocalEdits = false;  // true after any user edit
+/* View-only flag via URL */
+const READ_ONLY = (() => {
+  const q = new URLSearchParams(location.search);
+  const v = (q.get('view') || q.get('readonly') || q.get('ro') || '').toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+})();
+
+/* Settings (persisted) */
+const SETTINGS_KEY = 'pt_settings_v1';
+const Settings = {
+  data: {
+    primaryName: 'Katie',
+    primaryEmail: '',
+    finalName: 'Zach',
+    finalEmail: 'zschuchardt@gogcg.com'
+  },
+  load() { try { const raw = localStorage.getItem(SETTINGS_KEY); if (raw) this.data = Object.assign(this.data, JSON.parse(raw)); } catch {} },
+  save() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.data)); }
+};
+Settings.load();
+
+let hasLocalEdits = false;
+const markDirty = ()=> { if (!READ_ONLY) hasLocalEdits = true; };
 
 const contextMenu = document.getElementById('context-menu');
 const loadingOverlay = document.getElementById('loadingOverlay');
-
+const viewBadge = document.getElementById('viewBadge');
 const showLoading = (on)=> { loadingOverlay.style.display = on ? 'flex' : 'none'; };
-const markDirty   = ()=> { hasLocalEdits = true; };
 
-/* ---- UI + Data helpers ---- */
 let dragged = null;
-document.addEventListener('click', (e) => {
-  if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none';
-});
+document.addEventListener('click', (e) => { if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none'; });
 
 function normalizeCategory(c){ if(!c) return 'Task'; const v=String(c).trim().toLowerCase(); if(v==='customer'||v==='external') return 'External'; if(v==='invoice') return 'Invoice'; return 'Task'; }
 function categoryIcon(category){ const c=normalizeCategory(category); switch(c.toLowerCase()){ case 'invoice': return ['$', 'green']; case 'external': return ['⚑', 'orange']; default: return ['■', 'blue']; } }
 
-/* ---- Subtask "dashes" renderer ---- */
+/* ---------- Header helpers ---------- */
+function formatSubheader({customer='', application='', salesOrder='', poNumber='', estDate=''}) {
+  return `Customer: ${customer} | Application: ${application} | Sales Order: ${salesOrder} | PO: ${poNumber} | Est. Completion: ${estDate}`;
+}
+function parseSubheaderText(text) {
+  const obj = { customer:'', application:'', salesOrder:'', poNumber:'', estDate:'' };
+  const parts = String(text||'').split('|').map(s=>s.trim());
+  parts.forEach(seg=>{
+    const m = seg.match(/^([^:]+):\s*(.*)$/);
+    if (!m) return;
+    const key = m[1].toLowerCase();
+    const val = m[2] || '';
+    if (key.startsWith('customer')) obj.customer = val;
+    else if (key.startsWith('application')) obj.application = val;
+    else if (key.startsWith('sales order')) obj.salesOrder = val;
+    else if (key === 'po' || key.startsWith('po ')) obj.poNumber = val;
+    else if (key.startsWith('est. completion')) obj.estDate = val;
+  });
+  return obj;
+}
+
+/* ---------- Date helpers ---------- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function formatDateShort(iso){
+  if (!iso) return ''; const p = String(iso).split('-'); if (p.length!==3) return '';
+  return `${p[1]}/${p[2]}`;
+}
+function parseDateOrDuration(input){
+  const s = String(input||'').trim();
+  if (!s) return { iso:'', label:'', days:null };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return { iso:s, label:formatDateShort(s), days:null };
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?$/);
+  if (m){
+    const mm = Math.max(1, Math.min(12, parseInt(m[1],10)));
+    const dd = Math.max(1, Math.min(31, parseInt(m[2],10)));
+    const year = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
+    const yyyy = year < 100 ? 2000 + year : year;
+    const d = new Date(yyyy, mm-1, dd); // local date (avoids TZ shift)
+    if (!isNaN(d)) {
+      const iso = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+      return { iso, label:`${pad2(mm)}/${pad2(dd)}`, days:null };
+    }
+  }
+  m = s.match(/^\s*(\d+)\s*(d|w|mo)\s*$/i);
+  if (m){
+    const n = parseInt(m[1],10);
+    const unit = m[2].toLowerCase();
+    const days = unit==='d' ? n : unit==='w' ? n*7 : n*30;
+    const label = unit==='d' ? `${n}d` : unit==='w' ? `${n}w` : `${n}mo`;
+    return { iso:'', label, days };
+  }
+  return { iso:'', label:s, days:null };
+}
+function isoToMillisLocal(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return NaN;
+  const y = +m[1], mo = +m[2]-1, d=+m[3];
+  return new Date(y, mo, d).getTime(); // local midnight
+}
+function subtaskLabel(st){ return st.date ? formatDateShort(st.date) : (st.dateText||''); }
+function bestTaskDateLabel(taskElem){
+  const selfLabel = taskElem.dataset.date ? formatDateShort(taskElem.dataset.date)
+                   : (taskElem.dataset.dateText || '');
+  if (selfLabel) return selfLabel;
+
+  const subs = taskElem._subtasks || [];
+  const abs = subs.filter(s=>s.date).map(s=>isoToMillisLocal(s.date)).filter(t=>isFinite(t));
+  if (abs.length){
+    const t = Math.min(...abs);
+    const d = new Date(t);
+    return `${pad2(d.getMonth()+1)}/${pad2(d.getDate())}`;
+  }
+  const durDays = subs
+    .map(s=>{
+      if (!s.dateText) return null;
+      const m = s.dateText.match(/^\s*(\d+)\s*(d|w|mo)\s*$/i);
+      if (!m) return null;
+      const n = parseInt(m[1],10);
+      const u = m[2].toLowerCase();
+      return u==='d'?n : u==='w'?n*7 : n*30;
+    }).filter(v=>v!==null);
+  if (durDays.length){
+    const min = Math.min(...durDays);
+    if (min%30===0) return `${min/30}mo`;
+    if (min%7===0) return `${Math.round(min/7)}w`;
+    return `${min}d`;
+  }
+  for (const s of subs){
+    const L = subtaskLabel(s);
+    if (L) return L;
+  }
+  return '';
+}
+
+/* Subtask dashes */
 function updateSubtaskDashes(taskElem){
   let wrap = taskElem.querySelector('.subtask-dashes');
-  if (!wrap) {
-    wrap = document.createElement('div');
-    wrap.className = 'subtask-dashes';
-    taskElem.appendChild(wrap);
-  }
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'subtask-dashes'; taskElem.appendChild(wrap); }
   wrap.innerHTML = '';
   const count = (taskElem._subtasks || []).length;
   if (count <= 0) return;
-
-  // scale down slightly if many dashes
   const scale = count > 12 ? Math.max(0.55, 12 / count) : 1;
   wrap.style.transform = `scale(${scale})`;
-
   for (let i = 0; i < count; i++) {
-    const d = document.createElement('div');
-    d.className = 'dash';
-    wrap.appendChild(d);
+    const d = document.createElement('div'); d.className = 'dash'; wrap.appendChild(d);
   }
 }
 
+/* Invoice badge */
+function updateInvoiceBadge(taskElem){
+  const isInv = (taskElem.dataset.category || '').toLowerCase() === 'invoice';
+  let b = taskElem.querySelector('.invoice-badge');
+  if (!isInv) { if (b) b.remove(); return; }
+  const pct = Number(taskElem.dataset.invoicePercent || 0);
+  if (!b) { b = document.createElement('div'); b.className = 'invoice-badge';
+    taskElem.insertBefore(b, taskElem.querySelector('.subtask-dashes') || null);
+  }
+  b.textContent = `Invoice: ${pct}%`;
+}
+
+/* Prompt helpers */
+function promptPercent(defaultVal){
+  const raw = prompt('Invoice percent (e.g., 30 for 30%)', defaultVal ?? '');
+  if (raw === null) return null;
+  const n = Math.round(Number(raw));
+  if (!Number.isFinite(n) || n < 0 || n > 100) { alert('Please enter a number 0–100.'); return null; }
+  return n;
+}
+
+/* Task meta (owner + tiny date/duration) */
+function updateTaskMetaDisplay(taskElem){
+  let meta = taskElem.querySelector('.task-meta');
+  if (!meta){ meta = document.createElement('div'); meta.className = 'task-meta';
+    taskElem.insertBefore(meta, taskElem.querySelector('.subtask-dashes') || null);
+  }
+  const owner = taskElem.dataset.owner || '';
+  const hint = bestTaskDateLabel(taskElem);
+  const parts = [];
+  if (owner) parts.push(`👤 ${owner}`);
+  if (hint) parts.push(`📅 ${hint}`);
+  meta.textContent = parts.join(' • ');
+}
+
+/* Add / Build Task */
 function addTaskToTimeline(timelineElem, insertBefore=null){
+  if (READ_ONLY) return;
   const name=prompt("Task Name:","New Task"); if(!name) return;
   const hoursRaw=prompt("Estimated Base Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
   const catRaw=prompt("Category (Task, Invoice, External):","Task")||"Task"; const category=normalizeCategory(catRaw);
-  const div=buildTask({name, baseHours:hours, category, subtasks:[], completed:false});
+
+  const data = {name, baseHours:hours, category, subtasks:[], completed:false};
+
+  const owner = prompt("Owner (optional):","") || '';
+  const ddRaw = prompt("Date or Duration (e.g., 9/14, 2025-09-14, 10d, 2w, 1mo; blank to skip):","") || '';
+  const parsed = parseDateOrDuration(ddRaw);
+  if (owner) data.owner = owner;
+  if (parsed.iso) data.date = parsed.iso;
+  if (parsed.label) data.dateText = parsed.label;
+
+  if (category.toLowerCase() === 'invoice') {
+    const pct = promptPercent(''); if (pct === null) return; data.invoicePercent = pct;
+  }
+
+  const div=buildTask(data);
   if(insertBefore&&insertBefore.parentNode===timelineElem) timelineElem.insertBefore(div,insertBefore); else timelineElem.appendChild(div);
-  updateSubtaskHours(div); applyCompletionStyle(div); updateCurrentIndicator(timelineElem); updateSubtaskDashes(div);
+  updateSubtaskHours(div); applyCompletionStyle(div); updateCurrentIndicator(timelineElem); updateSubtaskDashes(div); updateInvoiceBadge(div);
+  updateFinalInvoiceUI(timelineElem);
   markDirty();
   requestAnimationFrame(()=>{ timelineElem.scrollLeft = timelineElem.scrollWidth; });
 }
+
 function buildTask(data){
   const [icon,color]=categoryIcon(data.category||'Task');
-  const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',true);
+  const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',!READ_ONLY);
   div.innerHTML=`<span class="icon ${color}">${icon}</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
   const base=Number.isFinite(Number(data.baseHours))?Number(data.baseHours):0;
   div.dataset.baseHours=base; div.dataset.category=normalizeCategory(data.category||'Task'); div.dataset.completed=data.completed?'true':'false';
-  div._subtasks=Array.isArray(data.subtasks)?data.subtasks.map(s=>({ name:(s&&s.name)?s.name:'Subtask', hours:Number.isFinite(Number(s&&s.hours))?Number(s.hours):0, done:!!(s&&s.done) })):[];
-  div.addEventListener('click',()=>openSubtaskModal(div)); addTaskContextMenu(div); enableDragAndDrop(div);
-  updateSubtaskHours(div); updateSubtaskDashes(div); return div;
+  if (typeof data.invoicePercent !== 'undefined') div.dataset.invoicePercent = Number(data.invoicePercent);
+  if (data.owner) div.dataset.owner = data.owner;
+  if (data.date) div.dataset.date = data.date;
+  if (data.dateText) div.dataset.dateText = data.dateText;
+
+  div._subtasks=Array.isArray(data.subtasks)?data.subtasks.map(s=>({
+    name:(s&&s.name)?s.name:'Subtask',
+    hours:Number.isFinite(Number(s&&s.hours))?Number(s.hours):0,
+    done:!!(s&&s.done),
+    owner:(s&&s.owner)||'',
+    date:(s&&s.date)||'',
+    dateText:(s&&s.dateText)||''
+  })):[];
+  div.addEventListener('click',()=>openSubtaskModal(div));
+  if (!READ_ONLY) { addTaskContextMenu(div); enableDragAndDrop(div); }
+  updateSubtaskHours(div); updateSubtaskDashes(div); updateInvoiceBadge(div); updateTaskMetaDisplay(div); return div;
 }
-function addProject({name,salesOrder,poNumber,estDate,tasks}){ const container=document.getElementById('project-container'); const div=document.createElement('div'); div.className='project';
+
+function addProject({name,customer='',application='',salesOrder,poNumber,estDate,tasks}){
+  const container=document.getElementById('project-container');
+  const div=document.createElement('div'); div.className='project';
+  const subText = formatSubheader({customer, application, salesOrder, poNumber, estDate});
   div.innerHTML=`<div class="project-header">${name}<button class="edit-btn" onclick="editProject(event,this)">Edit</button></div>
-    <div class="project-subheader">PO: ${poNumber||''} | Est. Completion: ${estDate||''} | Sales Order: ${salesOrder||''}</div>
+    <div class="project-subheader">${subText}</div>
     <div class="timeline"></div><div class="total-hours">Total Hours: 0</div>`;
   const timeline=div.querySelector('.timeline');
 
-  // Right-click: only add task when clicking blank area (not on a task)
   timeline.addEventListener('contextmenu',e=>{
+    if (READ_ONLY) return;
     e.preventDefault();
     if (e.target.closest('.timeline-item')) return;
     addTaskToTimeline(timeline);
   });
+  timeline.addEventListener('dblclick',()=>{ if(!READ_ONLY) addTaskToTimeline(timeline); });
 
-  timeline.addEventListener('dblclick',()=>addTaskToTimeline(timeline));
   container.appendChild(div);
-  (tasks||[]).forEach(t=>{
-    const el = buildTask(t);
-    timeline.appendChild(el);
-  });
-  [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ applyCompletionStyle(el); updateSubtaskHours(el); updateSubtaskDashes(el); });
-  updateTotalHours(timeline); updateCurrentIndicator(timeline); return div; }
+  (tasks||[]).forEach(t=>{ const el = buildTask(t); timeline.appendChild(el); });
+  [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ applyCompletionStyle(el); updateSubtaskHours(el); updateSubtaskDashes(el); updateInvoiceBadge(el); updateTaskMetaDisplay(el); });
+  updateTotalHours(timeline); updateCurrentIndicator(timeline);
+  updateFinalInvoiceUI(timeline);
+  return div;
+}
 
-/* Modal */
+/* Subtasks modal */
 const modalBackdrop=document.getElementById('subtask-modal-backdrop');
 const modalClose=document.getElementById('subtask-modal-close');
 const modalDone=document.getElementById('subtask-modal-done');
 const modalTitle=document.getElementById('subtask-modal-title');
 const subtaskRows=document.getElementById('subtask-rows');
 const addSubtaskBtn=document.getElementById('add-subtask-btn');
+const addSubtaskWrap=document.getElementById('add-subtask-wrap');
 const modalSummary=document.getElementById('modal-summary');
+const readyInvoiceBtn=document.getElementById('ready-invoice-btn');
 let currentTask=null;
 
-function openSubtaskModal(taskElem){ currentTask=taskElem; const taskName=taskElem.querySelector('.task-name')?.textContent||'Task';
-  modalTitle.textContent=`Subtasks – ${taskName}`; renderSubtaskRows(); modalBackdrop.style.display='flex'; }
+function openSubtaskModal(taskElem){
+  currentTask=taskElem;
+  const taskName=taskElem.querySelector('.task-name')?.textContent||'Task';
+  modalTitle.textContent=`Subtasks – ${taskName}`;
+  renderSubtaskRows();
+
+  const isInv = (taskElem.dataset.category||'').toLowerCase()==='invoice';
+  readyInvoiceBtn.style.display = (!READ_ONLY && isInv) ? 'inline-block' : 'none';
+  readyInvoiceBtn.onclick = (!READ_ONLY && isInv) ? (()=>openInvoiceModal(taskElem)) : null;
+
+  addSubtaskWrap.style.display = READ_ONLY ? 'none' : 'block';
+  modalDone.textContent = READ_ONLY ? 'Close' : 'Done';
+
+  modalBackdrop.style.display='flex';
+}
 function closeSubtaskModal(){ modalBackdrop.style.display='none'; currentTask=null; }
 modalClose.addEventListener('click',closeSubtaskModal); modalDone.addEventListener('click',closeSubtaskModal);
 modalBackdrop.addEventListener('click',e=>{ if(e.target===modalBackdrop) closeSubtaskModal(); });
 
-addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
+addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask || READ_ONLY) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
   const hoursRaw=prompt("Starting Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
-  currentTask._subtasks.push({name, hours, done:false}); renderSubtaskRows(); markDirty(); });
+  currentTask._subtasks.push({name, hours, done:false, owner:'', date:'', dateText:''}); renderSubtaskRows(); markDirty(); });
 
 function renderSubtaskRows(){ subtaskRows.innerHTML=''; if(!currentTask) return;
   const rows=currentTask._subtasks||[]; const maxHours=Math.max(1,...rows.map(r=>Number(r.hours)||0));
-  rows.forEach((st,idx)=>{ const wrap=document.createElement('div'); wrap.className='subtask-chip'; wrap.title='Click bar to add hours';
+  rows.forEach((st,idx)=>{ const wrap=document.createElement('div'); wrap.className='subtask-chip'; wrap.title= READ_ONLY ? '' : 'Click bar to add hours';
     const barWrap=document.createElement('div'); barWrap.className='chip-bar-wrap';
     const bar=document.createElement('div'); bar.className='chip-bar'; bar.style.width=`${(Math.min(Number(st.hours)||0,maxHours)/maxHours)*100}%`;
-    const label=document.createElement('div'); label.className='chip-label'; label.textContent=`${st.name} — ${st.hours}h${st.done?" (Complete)":""}`;
+    const extras = [];
+    const stDate = subtaskLabel(st);
+    if (stDate) extras.push(stDate);
+    if (st.owner) extras.push(`👤 ${st.owner}`);
+    const extraText = extras.length ? ' — ' + extras.join(' • ') : '';
+    const label=document.createElement('div'); label.className='chip-label'; label.textContent=`${st.name} — ${st.hours}h${st.done?" (Complete)":""}${extraText}`;
     barWrap.appendChild(bar); barWrap.appendChild(label);
-    barWrap.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+
+    if (!READ_ONLY) {
+      barWrap.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+    }
+
     const actions=document.createElement('div'); actions.className='chip-actions';
-    const completeBox=document.createElement('input'); completeBox.type='checkbox'; completeBox.checked=!!st.done; completeBox.title='Complete';
-    completeBox.onchange=()=>{ st.done=completeBox.checked; renderSubtaskRows(); markDirty(); };
-    const completeLabel=document.createElement('label'); completeLabel.textContent='Complete'; completeLabel.style.fontSize='12px';
-    const addBtn=document.createElement('button'); addBtn.className='btn-icon'; addBtn.textContent='+ Hours';
-    addBtn.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
-    const renameBtn=document.createElement('button'); renameBtn.className='btn-icon'; renameBtn.textContent='Rename';
-    renameBtn.onclick=()=>{ const nn=prompt('New subtask name:',st.name); if(nn&&nn.trim()){ st.name=nn.trim(); renderSubtaskRows(); markDirty(); } };
-    const delBtn=document.createElement('button'); delBtn.className='btn-icon'; delBtn.textContent='Delete';
-    delBtn.onclick=()=>{ currentTask._subtasks.splice(idx,1); renderSubtaskRows(); markDirty(); };
-    actions.appendChild(completeBox); actions.appendChild(completeLabel); actions.appendChild(addBtn); actions.appendChild(renameBtn); actions.appendChild(delBtn);
+    if (!READ_ONLY) {
+      const completeBox=document.createElement('input'); completeBox.type='checkbox'; completeBox.checked=!!st.done; completeBox.title='Complete';
+      completeBox.onchange=()=>{ st.done=completeBox.checked; renderSubtaskRows(); markDirty(); };
+      const completeLabel=document.createElement('label'); completeLabel.textContent='Complete'; completeLabel.style.fontSize='12px';
+
+      const ownerBtn=document.createElement('button'); ownerBtn.className='btn-icon'; ownerBtn.textContent='Owner';
+      ownerBtn.onclick=()=>{ const v=prompt('Owner (optional):', st.owner||''); st.owner = (v||''); renderSubtaskRows(); markDirty(); };
+
+      const dateBtn=document.createElement('button'); dateBtn.className='btn-icon'; dateBtn.textContent='Date/Dur';
+      dateBtn.onclick=()=> openDateModalForSubtask(currentTask, idx);
+
+      const addBtn=document.createElement('button'); addBtn.className='btn-icon'; addBtn.textContent='+ Hours';
+      addBtn.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+
+      const renameBtn=document.createElement('button'); renameBtn.className='btn-icon'; renameBtn.textContent='Rename';
+      renameBtn.onclick=()=>{ const nn=prompt('New subtask name:',st.name); if(nn&&nn.trim()){ st.name=nn.trim(); renderSubtaskRows(); markDirty(); } };
+
+      const delBtn=document.createElement('button'); delBtn.className='btn-icon'; delBtn.textContent='Delete';
+      delBtn.onclick=()=>{ currentTask._subtasks.splice(idx,1); renderSubtaskRows(); markDirty(); };
+
+      actions.appendChild(completeBox); actions.appendChild(completeLabel);
+      actions.appendChild(ownerBtn); actions.appendChild(dateBtn);
+      actions.appendChild(addBtn); actions.appendChild(renameBtn); actions.appendChild(delBtn);
+    }
     wrap.appendChild(barWrap); wrap.appendChild(actions); subtaskRows.appendChild(wrap); });
   updateSubtaskHours(currentTask); updateModalSummary(); updateCurrentIndicator(currentTask.closest('.timeline')); applyCompletionStyle(currentTask); updateSubtaskDashes(currentTask);
 }
+
+/* Totals & completion */
 function updateModalSummary(){ if(!currentTask) return; const base=Number(currentTask.dataset.baseHours||0);
   const subs=(currentTask._subtasks||[]).reduce((s,x)=>s+(Number(x.hours)||0),0); const total=base+subs;
   modalSummary.innerHTML=`<span><b>Base:</b> ${base}</span><span><b>Subtasks:</b> ${subs}</span><span><b>Total:</b> ${total}</span>`; }
 
-function openSubTimeline(taskElem){ openSubtaskModal(taskElem); } function addSubtask(subTimeline,parentTask){ openSubtaskModal(parentTask); }
 function isTaskComplete(taskElem){ const subs=taskElem._subtasks||[]; if(subs.length>0) return subs.every(st=>!!st.done); return taskElem.dataset.completed==='true'; }
-function setTaskComplete(taskElem,val){ taskElem.dataset.completed=val?'true':'false'; applyCompletionStyle(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); markDirty(); }
+function setTaskComplete(taskElem,val){ if (READ_ONLY) return; taskElem.dataset.completed=val?'true':'false'; applyCompletionStyle(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); markDirty(); }
 function applyCompletionStyle(taskElem){ if(isTaskComplete(taskElem)) taskElem.classList.add('completed'); else taskElem.classList.remove('completed'); }
 
-function updateSubtaskHours(taskElem){ const subHours=(taskElem._subtasks||[]).reduce((sum,st)=>sum+(Number(st.hours)||0),0);
+function updateSubtaskHours(taskElem){
+  const subHours=(taskElem._subtasks||[]).reduce((sum,st)=>sum+(Number(st.hours)||0),0);
   const baseHours=Number(taskElem.dataset.baseHours||0); const total=baseHours+subHours;
   const totalLabel=taskElem.querySelector('.task-total'); if(totalLabel) totalLabel.textContent=total; taskElem.dataset.totalHours=total;
-  const tl=taskElem.closest('.timeline'); updateTotalHours(tl); applyCompletionStyle(taskElem); }
-function updateTotalHours(timelineElem){ if(!timelineElem) return;
+  const tl=taskElem.closest('.timeline'); updateTotalHours(tl); applyCompletionStyle(taskElem); updateTaskMetaDisplay(taskElem);
+}
+
+function updateTotalHours(timelineElem){
+  if(!timelineElem) return;
   const total=[...timelineElem.querySelectorAll('.timeline-item')].reduce((sum,el)=>sum+Number(el.dataset.totalHours||el.dataset.baseHours||0),0);
-  const totalHoursElem=timelineElem.closest('.project')?.querySelector('.total-hours'); if(totalHoursElem) totalHoursElem.textContent=`Total Hours: ${total}`; }
+  const totalHoursElem=timelineElem.closest('.project')?.querySelector('.total-hours');
+  if (totalHoursElem) totalHoursElem.textContent=`Total Hours: ${total}`;
+  updateFinalInvoiceUI(timelineElem);
+}
+
 function updateCurrentIndicator(timelineElem){ if(!timelineElem) return; const tasks=[...timelineElem.querySelectorAll('.timeline-item')];
   tasks.forEach(t=>{ t.querySelector('.current-tag')?.remove(); t.querySelector('.current-text')?.remove(); applyCompletionStyle(t); });
   const firstIncomplete=tasks.find(t=>!isTaskComplete(t)); if(!firstIncomplete) return; const tag=document.createElement('div'); tag.className='current-tag';
   const text=document.createElement('div'); text.className='current-text'; text.textContent='CURRENT'; firstIncomplete.appendChild(tag); firstIncomplete.appendChild(text); }
 
+function updateFinalInvoiceUI(timelineElem){
+  if (!timelineElem) return;
+  const invs = [...timelineElem.querySelectorAll('.timeline-item')].filter(el => (el.dataset.category||'').toLowerCase()==='invoice');
+  invs.forEach(el => { el.dataset.isFinalInvoice = 'false'; el.classList.remove('final-invoice'); });
+  if (invs.length === 0) return;
+  const last = invs[invs.length - 1];
+  last.dataset.isFinalInvoice = 'true';
+  last.classList.add('final-invoice');
+}
+
+/* Right-click menu */
 function addTaskContextMenu(taskElem){
   taskElem.addEventListener('contextmenu',function(e){
+    if (READ_ONLY) return;
     e.preventDefault();
     contextMenu.innerHTML='';
+
     addContextItem('Edit Task',()=>{ const nameEl=taskElem.querySelector('.task-name');
       const newName=prompt('Edit Task Name:',nameEl.textContent);
       const newHoursRaw=prompt('Edit Base Hours:',taskElem.dataset.baseHours||'0'); const newHours=Number.isFinite(Number(newHoursRaw))?Number(newHoursRaw):0;
-      const newCategory=normalizeCategory(prompt('Edit Category (Task, Invoice, External):',taskElem.dataset.category||'Task')||'Task');
-      const [icon,color]=categoryIcon(newCategory); if(newName) nameEl.textContent=newName;
-      taskElem.dataset.baseHours=newHours; taskElem.dataset.category=newCategory; const iconSpan=taskElem.querySelector('span.icon'); iconSpan.textContent=icon; iconSpan.className=`icon ${color}`;
-      updateSubtaskHours(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); updateSubtaskDashes(taskElem); markDirty(); });
+      let newCategory=normalizeCategory(prompt('Edit Category (Task, Invoice, External):',taskElem.dataset.category||'Task')||'Task');
+
+      const newOwner = prompt('Owner (optional):', taskElem.dataset.owner || '') || '';
+
+      const [icon,color]=categoryIcon(newCategory);
+      if(newName) nameEl.textContent=newName;
+      taskElem.dataset.baseHours=newHours; taskElem.dataset.category=newCategory;
+      const iconSpan=taskElem.querySelector('span.icon'); iconSpan.textContent=icon; iconSpan.className=`icon ${color}`;
+      taskElem.dataset.owner = newOwner;
+
+      if (newCategory.toLowerCase() === 'invoice' && typeof taskElem.dataset.invoicePercent === 'undefined') {
+        const pct = promptPercent(''); if (pct !== null) taskElem.dataset.invoicePercent = pct;
+      }
+      if (newCategory.toLowerCase() !== 'invoice') { delete taskElem.dataset.invoicePercent; }
+
+      updateSubtaskHours(taskElem); updateCurrentIndicator(taskElem.closest('.timeline'));
+      updateInvoiceBadge(taskElem); updateSubtaskDashes(taskElem); updateTaskMetaDisplay(taskElem); updateFinalInvoiceUI(taskElem.closest('.timeline'));
+      markDirty();
+    });
+
+    addContextItem('Set Date/Duration…', ()=> openDateModalForTask(taskElem));
+
+    if ((taskElem.dataset.category||'').toLowerCase() === 'invoice') {
+      addContextItem('Edit Invoice %', ()=>{
+        const cur = taskElem.dataset.invoicePercent || '';
+        const pct = promptPercent(cur);
+        if (pct === null) return;
+        taskElem.dataset.invoicePercent = pct;
+        updateInvoiceBadge(taskElem); updateFinalInvoiceUI(taskElem.closest('.timeline')); markDirty();
+      });
+    }
+
     addContextItem(isTaskComplete(taskElem)?'Mark Task Incomplete':'Mark Task Complete',()=>{ if((taskElem._subtasks||[]).length===0) setTaskComplete(taskElem,!isTaskComplete(taskElem)); else alert('Task completion is controlled by its subtasks.'); });
-    addContextItem('Delete Task',()=>{ const parent=taskElem.closest('.timeline'); taskElem.remove(); updateTotalHours(parent); updateCurrentIndicator(parent); markDirty(); });
+    addContextItem('Delete Task',()=>{ const parent=taskElem.closest('.timeline'); taskElem.remove(); updateTotalHours(parent); updateCurrentIndicator(parent); updateFinalInvoiceUI(parent); markDirty(); });
     addContextItem('Add Task Before',()=>{ addTaskToTimeline(taskElem.parentElement,taskElem); });
     addContextItem('Add Subtask',()=>{ openSubtaskModal(taskElem); });
     contextMenu.style.top=e.pageY+'px'; contextMenu.style.left=e.pageX+'px'; contextMenu.style.display='block';
@@ -272,45 +632,53 @@ function addTaskContextMenu(taskElem){
 function addContextItem(label,action){ const div=document.createElement('div'); div.textContent=label;
   div.addEventListener('mousedown',(e)=>{ e.preventDefault(); e.stopPropagation(); contextMenu.style.display='none'; setTimeout(action,0); });
   contextMenu.appendChild(div); }
-function enableDragAndDrop(elem){ elem.addEventListener('dragstart',e=>{ dragged=elem; e.dataTransfer.setData('text/plain',''); });
+function enableDragAndDrop(elem){ if (READ_ONLY) return;
+  elem.addEventListener('dragstart',e=>{ dragged=elem; e.dataTransfer.setData('text/plain',''); });
   elem.addEventListener('dragover',e=>e.preventDefault());
   elem.addEventListener('drop',e=>{ e.preventDefault(); const target=e.currentTarget;
-    if(dragged&&dragged!==target){ const parent=dragged.parentNode; parent.insertBefore(dragged,target.nextSibling); updateTotalHours(parent); updateCurrentIndicator(parent); markDirty(); } }); }
+    if(dragged&&dragged!==target){ const parent=dragged.parentNode; parent.insertBefore(dragged,target.nextSibling); updateTotalHours(parent); updateCurrentIndicator(parent); updateFinalInvoiceUI(parent); markDirty(); } }); }
 
+/* New project + default template */
 document.getElementById('new-project-btn').addEventListener('click',()=>{
+  if (READ_ONLY) return;
   const projectName=prompt("Project Name:"); if(!projectName) return;
-  const salesOrder=prompt("Sales Order:"); const poNumber=prompt("PO Number:"); const estDate=prompt("Estimated Completion Date:");
-  const project = addProject({ name:projectName, salesOrder, poNumber, estDate, tasks:[] });
+  const customer=prompt("Customer:") || '';
+  const application=prompt("Application:") || '';
+  const salesOrder=prompt("Sales Order:") || '';
+  const poNumber=prompt("PO Number:") || '';
+  const estDate=prompt("Estimated Completion Date:") || '';
+  const project = addProject({ name:projectName, customer, application, salesOrder, poNumber, estDate, tasks:[] });
   markDirty();
 
-  // Default template (with Manufacture)
   const addTemplate = confirm("Add default timeline template to this project?");
   if (addTemplate) {
     const template = [
-      { name: 'DP Invoice', category: 'Invoice' },
+      { name: 'DP Invoice', category: 'Invoice', invoicePercent: 50 },
       { name: 'Kickoff', category: 'Task' },
       { name: 'Design', category: 'Task' },
       { name: 'Manufacture', category: 'External' },
       { name: 'Assy & Prep', category: 'Task' },
       { name: 'PreInstall Prep', category: 'External' },
-      { name: 'Pre Ship Invoice', category: 'Invoice' },
+      { name: 'Pre Ship Invoice', category: 'Invoice', invoicePercent: 35 },
       { name: 'Ship', category: 'Task' },
       { name: 'Install', category: 'Task' },
       { name: 'Risk Assessment', category: 'Task' },
-      { name: 'Final Invoice', category: 'Invoice' },
+      { name: 'Final Invoice', category: 'Invoice', invoicePercent: 15 }
     ];
     const timeline = project.querySelector('.timeline');
     template.forEach(t => {
-      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false });
+      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false, invoicePercent: t.invoicePercent });
       timeline.appendChild(card);
     });
-    [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ updateSubtaskHours(el); updateSubtaskDashes(el); });
+    [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ updateSubtaskHours(el); updateSubtaskDashes(el); updateInvoiceBadge(el); updateTaskMetaDisplay(el); });
     updateTotalHours(timeline); updateCurrentIndicator(timeline);
+    updateFinalInvoiceUI(timeline);
     markDirty();
   }
 });
 
 function editProject(ev, btn){
+  if (READ_ONLY) return;
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   const project=btn.closest('.project');
   const header=project.querySelector('.project-header');
@@ -320,13 +688,17 @@ function editProject(ev, btn){
   contextMenu.innerHTML='';
   addContextItem('Edit Project Details', ()=>{
     const currentTitle=header.childNodes[0].textContent.trim();
-    const currentDetails=subheader.textContent;
-    const projectName=prompt("Edit Project Name:",currentTitle);
-    const salesOrder=prompt("Edit Sales Order:",currentDetails.match(/Sales Order: (.*?)$/)?.[1]||'');
-    const poNumber=prompt("Edit PO Number:",currentDetails.match(/PO: (.*?) \|/)?.[1]||'');
-    const estDate=prompt("Edit Estimated Completion Date:",currentDetails.match(/Est. Completion: (.*?) \|/)?.[1]||'');
+    const parsed = parseSubheaderText(subheader.textContent);
+    const projectName=prompt("Edit Project Name:",currentTitle) ?? currentTitle;
+    const customer=prompt("Edit Customer:", parsed.customer) ?? parsed.customer;
+    const application=prompt("Edit Application:", parsed.application) ?? parsed.application;
+    const salesOrder=prompt("Edit Sales Order:", parsed.salesOrder) ?? parsed.salesOrder;
+    const poNumber=prompt("Edit PO Number:", parsed.poNumber) ?? parsed.poNumber;
+    const estDate=prompt("Edit Estimated Completion Date:", parsed.estDate) ?? parsed.estDate;
+
     header.childNodes[0].textContent=projectName;
-    subheader.textContent=`PO: ${poNumber} | Est. Completion: ${estDate} | Sales Order: ${salesOrder}`;
+    subheader.textContent = formatSubheader({customer, application, salesOrder, poNumber, estDate});
+    updateFinalInvoiceUI(project.querySelector('.timeline'));
     markDirty();
   });
   addContextItem('Delete Project', ()=>{
@@ -340,31 +712,188 @@ function editProject(ev, btn){
   contextMenu.style.display='block';
 }
 
-/* --- Google Save/Load --- */
+/* INVOICE EMAIL GENERATOR (unchanged except header fields already included) */
+const invBackdrop = document.getElementById('invoice-modal-backdrop');
+const invClose = document.getElementById('invoice-modal-close');
+const invSubject = document.getElementById('invoice-subject');
+const invBody = document.getElementById('invoice-body');
+const invCopy = document.getElementById('invoice-copy');
+const invOpen = document.getElementById('invoice-open-mail');
+const invComplete = document.getElementById('invoice-complete');
+let invoiceTaskRef = null;
+
+function isFinalInvoiceTask(taskElem){
+  if (!taskElem) return false;
+  const tl = taskElem.closest('.timeline');
+  const invs = [...tl.querySelectorAll('.timeline-item')].filter(el => (el.dataset.category||'').toLowerCase()==='invoice');
+  return invs.length && invs[invs.length-1] === taskElem;
+}
+function getProjectDetails(taskElem){
+  const tl = taskElem.closest('.timeline');
+  const total = [...tl.querySelectorAll('.timeline-item')].reduce((s,el)=> s + Number(el.dataset.totalHours||el.dataset.baseHours||0), 0);
+  const project = tl.closest('.project');
+  const projName = project.querySelector('.project-header').childNodes[0].textContent.trim();
+  const parsed = parseSubheaderText(project.querySelector('.project-subheader').textContent);
+  return { total, projName, ...parsed };
+}
+function openInvoiceModal(taskElem){
+  if (READ_ONLY) return;
+  invoiceTaskRef = taskElem;
+
+  const { total, projName, customer, application, poNumber:po, salesOrder:so } = getProjectDetails(taskElem);
+  const stepName = taskElem.querySelector('.task-name').textContent.trim();
+  const pct = taskElem.dataset.invoicePercent ? `${taskElem.dataset.invoicePercent}%` : '';
+
+  const isFinal = isFinalInvoiceTask(taskElem);
+
+  if (isFinal) {
+    const name = Settings.data.finalName || 'Zach';
+    invSubject.value = `Final Invoice: ${projName} — ${stepName}${pct?` (${pct})`:''}`;
+    invBody.value =
+`Hey ${name},
+
+${projName} Project has been completed, and we are ready to process through the BOM and close out this project. Remaining balance can be invoiced to the customer as well when you are done. Total project hours are listed below. Hollar with any questions.
+
+Project Details:
+Customer: ${customer}
+Application: ${application}
+Project: ${projName}
+PO: ${po}
+Sales Order: ${so}
+Phase: ${stepName}
+Project Hours: ${total}
+
+Thanks!`;
+  } else {
+    const name = Settings.data.primaryName || 'Katie';
+    invSubject.value = `Ready to Invoice: ${projName} — ${stepName}${pct?` (${pct})`:''}`;
+    invBody.value =
+`Hello ${name},
+
+Can you please generate an invoice for the following project/phase.
+
+Project Details:
+Customer: ${customer}
+Application: ${application}
+Project: ${projName}
+PO: ${po}
+Sales Order: ${so}
+Phase: ${stepName}
+Amount: ${pct || '(specify %)'}
+
+Notes:
+- Please let me know when it gets sent out, so I can mark it complete in my notes.
+
+Thank you!`;
+  }
+
+  invBackdrop.style.display = 'flex';
+}
+function closeInvoiceModal(){ invBackdrop.style.display = 'none'; invoiceTaskRef = null; }
+invClose.addEventListener('click', closeInvoiceModal);
+invBackdrop.addEventListener('click', e=>{ if(e.target===invBackdrop) closeInvoiceModal(); });
+invCopy.addEventListener('click', ()=>{ navigator.clipboard.writeText(invBody.value).then(()=>alert('Copied.')); });
+invOpen.addEventListener('click', ()=>{
+  if (!invoiceTaskRef) return;
+  const isFinal = isFinalInvoiceTask(invoiceTaskRef);
+  const subj = encodeURIComponent(invSubject.value);
+  const body = encodeURIComponent(invBody.value);
+
+  if (isFinal) {
+    const to = Settings.data.finalEmail || 'zschuchardt@gogcg.com';
+    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${subj}&body=${body}`;
+  } else {
+    const to = Settings.data.primaryEmail || '';
+    if (!to) { alert("Please set the Primary Invoice Email in Settings."); return; }
+    const cc = Settings.data.finalEmail || 'zschuchardt@gogcg.com';
+    window.location.href = `mailto:${encodeURIComponent(to)}?cc=${encodeURIComponent(cc)}&subject=${subj}&body=${body}`;
+  }
+});
+invComplete.addEventListener('click', ()=>{
+  if (!invoiceTaskRef) return;
+  (invoiceTaskRef._subtasks || []).forEach(st => st.done = true);
+  invoiceTaskRef.dataset.completed = 'true';
+  updateSubtaskHours(invoiceTaskRef);
+  updateCurrentIndicator(invoiceTaskRef.closest('.timeline'));
+  applyCompletionStyle(invoiceTaskRef);
+  markDirty();
+  closeInvoiceModal();
+  alert('Marked invoice task as complete.');
+});
+
+/* Google Save/Load */
 function serializeState(){ const projects=[...document.querySelectorAll('.project')].map(project=>{
     const title=project.querySelector('.project-header').childNodes[0].textContent.trim();
-    const sub=project.querySelector('.project-subheader').textContent;
-    const poMatch=sub.match(/PO:\s(.*?)\s\|/); const estMatch=sub.match(/Est\. Completion:\s(.*?)\s\|/); const soMatch=sub.match(/Sales Order:\s(.*)$/);
+    const parsed = parseSubheaderText(project.querySelector('.project-subheader').textContent);
     const timeline=project.querySelector('.timeline');
-    const tasks=[...timeline.querySelectorAll('.timeline-item')].map((t,idx)=>({ name:t.querySelector('.task-name').textContent, baseHours:Number(t.dataset.baseHours||0), category:t.dataset.category||'Task', completed:isTaskComplete(t), order:idx, subtasks:(t._subtasks||[]).map(st=>({ name:st.name, hours:Number(st.hours||0), done:!!st.done })) }));
-    return { name:title, poNumber: poMatch?poMatch[1]:'', estDate: estMatch?estMatch[1]:'', salesOrder: soMatch?soMatch[1]:'', tasks };
-  }); return { projects }; }
+    const tasks=[...timeline.querySelectorAll('.timeline-item')].map((t,idx)=>({
+      name:t.querySelector('.task-name').textContent,
+      baseHours:Number(t.dataset.baseHours||0),
+      category:t.dataset.category||'Task',
+      completed:isTaskComplete(t),
+      order:idx,
+      invoicePercent: (typeof t.dataset.invoicePercent !== 'undefined') ? Number(t.dataset.invoicePercent) : undefined,
+      owner: t.dataset.owner || '',
+      date: t.dataset.date || '',
+      dateText: t.dataset.dateText || '',
+      isDeadline: t.dataset.isDeadline === 'true',
+      subtasks:(t._subtasks||[]).map(st=>({
+        name:st.name, hours:Number(st.hours||0), done:!!st.done,
+        owner: st.owner || '',
+        date: st.date || '',
+        dateText: st.dateText || ''
+      }))
+    }));
+    return {
+      name:title,
+      customer: parsed.customer,
+      application: parsed.application,
+      poNumber: parsed.poNumber,
+      estDate: parsed.estDate,
+      salesOrder: parsed.salesOrder,
+      tasks
+    };
+  }); return { projects, kind:'ProjectTracker', allowEmpty:(projects.length===0) }; }
 function clearAllProjects(){ document.getElementById('project-container').innerHTML=''; }
-function loadState(state){ if(!state||!state.projects) return; clearAllProjects(); state.projects.forEach(p=>addProject(p)); }
+function loadState(state){ if(!state||!state.projects) return; clearAllProjects();
+  state.projects.forEach(p=>addProject({
+    name:p.name,
+    customer:p.customer||'',
+    application:p.application||'',
+    salesOrder:p.salesOrder||'',
+    poNumber:p.poNumber||'',
+    estDate:p.estDate||'',
+    tasks:(p.tasks||[]).map(t=>({
+      name:t.name,
+      baseHours:t.baseHours,
+      category:t.category,
+      completed:!!t.completed,
+      invoicePercent: (typeof t.invoicePercent!=='undefined')?t.invoicePercent:undefined,
+      owner: t.owner || '',
+      date: t.date || '',
+      dateText: t.dateText || '',
+      isDeadline: !!(t.isDeadline || t.deadline),
+      subtasks:(t.subtasks||[]).map(st=>({
+        name:st.name, hours:st.hours, done:!!st.done,
+        owner: st.owner || '',
+        date: st.date || '',
+        dateText: st.dateText || ''
+      }))
+    }))
+  }));
+}
 
 async function saveToGoogle({silent=false} = {}){
+  if (READ_ONLY) return;
   const payload=serializeState();
-  // Guard fields so server knows this is intentional
-  payload.kind = 'ProjectTracker';
-  payload.allowEmpty = (payload.projects && payload.projects.length === 0);
-
   try{
     const res=await fetch(GOOGLE_URL,{ method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
     const text=await res.text();
     let data=null; try{ data=JSON.parse(text); }catch{}
     if(!silent){
       if(data && data.ok){ alert(`✅ Saved ${data.saved} project(s) to Google.`); hasLocalEdits = false; }
-      else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Use Save after adding a project, or confirm a full wipe in code.'); }
+      else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.'); }
+      else if (data && data.ignored) { alert('⚠️ Save ignored by server (wrong kind).'); }
       else { alert('⚠️ Save response not recognized.'); }
     }
   } catch(e){
@@ -377,39 +906,234 @@ async function loadFromGoogle({forceApply=true} = {}){
     const res=await fetch(GOOGLE_URL,{ mode:'cors' });
     const text=await res.text();
     const data=JSON.parse(text);
-    if (forceApply) {
-      loadState(data);
-      hasLocalEdits = false;
-    }
+    if (forceApply) { loadState(data); if(!READ_ONLY) hasLocalEdits = false; }
   } catch(e){
     try{
       const cb='PT_JSONP_'+Date.now();
-      window[cb]=(data)=>{ try{ if (forceApply){ loadState(data); hasLocalEdits=false; } } finally{ delete window[cb]; } };
+      window[cb]=(data)=>{ try{ if (forceApply){ loadState(data); if(!READ_ONLY) hasLocalEdits=false; } } finally{ delete window[cb]; } };
       const s=document.createElement('script'); s.src=GOOGLE_URL+'?callback='+cb; s.onerror=()=>{}; document.body.appendChild(s);
     }catch(err){ /* noop */ }
   }
 }
 
+/* Print: popup with fit-to-width scale */
+function collectStyleText() {
+  return Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
+}
+function exportPDFFit(size) {
+  const page = (size === 'tabloid')
+    ? { wIn: 17, hIn: 11, label: '17in 11in' }
+    : { wIn: 11, hIn: 8.5, label: '11in 8.5in' }; // landscape
+
+  const marginIn = 0.5;
+  const availWidthPx = (page.wIn - 2*marginIn) * 96;
+
+  const w = window.open('', '_blank');
+  if (!w) { alert('Popup blocked. Please allow popups for this site to export PDF.'); return; }
+  const inPageStyles = collectStyleText();
+  const contentHTML = document.getElementById('project-container').outerHTML;
+
+  const htmlStart = `
+<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Project Tracker — Fit (${size})</title>
+<style>
+${inPageStyles}
+@media print { @page { size: ${page.label}; margin: ${marginIn}in; } }
+body { font-family: Arial, sans-serif; padding: ${marginIn}in; }
+.timeline { overflow: visible !important; display: flex !important; flex-wrap: nowrap !important; gap: 6px !important; }
+.timeline-item { box-shadow: none; border: 1px solid #ddd; }
+.timeline.__fit { transform-origin: top left; }
+.project { page-break-inside: avoid; border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 0 0 12px 0; }
+.project-header { font-size: 16px; }
+.project-subheader { font-size: 11px; }
+.task-name { font-size: 11px; }
+.timeline-label { font-size: 9px; }
+.invoice-badge { font-size: 9px; padding: 1px 5px; }
+.subtask-dashes .dash { width:8px; height:2px; }
+.total-hours { font-size: 11px; }
+.topbar, #context-menu, .modal-backdrop, #new-project-btn { display:none !important; }
+</style>
+</head><body>
+${contentHTML}
+`;
+
+  const js = `
+(function(){
+  var timelines = Array.from(document.querySelectorAll('.timeline'));
+  var maxW = 0;
+  timelines.forEach(function(t){
+    t.classList.add('__fit');
+    var w = t.scrollWidth;
+    if (w > maxW) maxW = w;
+  });
+  var avail = ${Math.floor(availWidthPx)};
+  var scale = maxW > 0 ? Math.min(1, avail / maxW) : 1;
+  timelines.forEach(function(t){
+    var h = t.getBoundingClientRect().height;
+    var scaledH = h * scale;
+    t.style.transform = 'scale(' + scale + ')';
+    t.style.height = scaledH + 'px';
+  });
+  setTimeout(function(){ window.print(); }, 300);
+})();
+`;
+
+  const htmlEnd = `</body></html>`;
+
+  w.document.open();
+  w.document.write(htmlStart);
+  w.document.write('<scr' + 'ipt>' + js + '</scr' + 'ipt>');
+  w.document.write(htmlEnd);
+  w.document.close();
+  w.focus();
+}
+
+/* Date/Duration editor modal logic */
+const dateBackdrop = document.getElementById('date-modal-backdrop');
+const dateClose = document.getElementById('date-modal-close');
+const dateCancel = document.getElementById('date-cancel');
+const dateSave = document.getElementById('date-save');
+const dateClear = document.getElementById('date-clear');
+const dateInput = document.getElementById('date-input');
+const durInput = document.getElementById('dur-input');
+
+let dateCtx = null; // { type:'task'|'sub', taskElem:Element, subIndex?:number }
+
+function openDateModalForTask(taskElem){
+  if (READ_ONLY) return;
+  dateCtx = { type:'task', taskElem };
+  dateInput.value = taskElem.dataset.date || '';
+  durInput.value = taskElem.dataset.dateText || '';
+  dateBackdrop.style.display = 'flex';
+}
+function openDateModalForSubtask(taskElem, index){
+  if (READ_ONLY) return;
+  dateCtx = { type:'sub', taskElem, subIndex:index };
+  const st = taskElem._subtasks[index];
+  dateInput.value = st.date || '';
+  durInput.value = st.dateText || '';
+  dateBackdrop.style.display = 'flex';
+}
+function closeDateModal(){ dateBackdrop.style.display = 'none'; dateCtx = null; }
+dateClose.addEventListener('click', closeDateModal);
+dateCancel.addEventListener('click', closeDateModal);
+dateBackdrop.addEventListener('click', e=>{ if(e.target===dateBackdrop) closeDateModal(); });
+
+dateClear.addEventListener('click', ()=>{
+  if (!dateCtx) return;
+  if (dateCtx.type==='task'){
+    delete dateCtx.taskElem.dataset.date;
+    delete dateCtx.taskElem.dataset.dateText;
+    updateTaskMetaDisplay(dateCtx.taskElem);
+    markDirty();
+  } else {
+    const st = dateCtx.taskElem._subtasks[dateCtx.subIndex];
+    st.date=''; st.dateText='';
+    renderSubtaskRows();
+    markDirty();
+  }
+  closeDateModal();
+});
+
+dateSave.addEventListener('click', ()=>{
+  if (!dateCtx) return;
+  const dateVal = (dateInput.value || '').trim();
+  const durVal = (durInput.value || '').trim();
+
+  // If date is provided, prefer it. Else, accept duration label (validated).
+  let iso = '', label = '';
+  if (dateVal){
+    // trust native date input (YYYY-MM-DD)
+    iso = dateVal;
+  } else if (durVal){
+    const p = parseDateOrDuration(durVal);
+    if (!p.iso && !p.label){ alert('Please enter a valid date or duration.'); return; }
+    if (p.iso) iso = p.iso; else label = p.label;
+  } else {
+    // nothing set
+    iso = ''; label = '';
+  }
+
+  if (dateCtx.type==='task'){
+    if (iso) dateCtx.taskElem.dataset.date = iso; else delete dateCtx.taskElem.dataset.date;
+    if (label) dateCtx.taskElem.dataset.dateText = label; else delete dateCtx.taskElem.dataset.dateText;
+    updateTaskMetaDisplay(dateCtx.taskElem);
+  } else {
+    const st = dateCtx.taskElem._subtasks[dateCtx.subIndex];
+    st.date = iso || '';
+    st.dateText = label || (iso ? '' : '');
+    renderSubtaskRows();
+  }
+  markDirty();
+  closeDateModal();
+});
+
 /* Buttons */
-document.getElementById('saveGoogleBtn').addEventListener('click', ()=> saveToGoogle({silent:false}));
-document.getElementById('loadGoogleBtn').addEventListener('click', async ()=>{
-  if (hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
+const saveBtn = document.getElementById('saveGoogleBtn');
+const loadBtn = document.getElementById('loadGoogleBtn');
+const newProjectBtn = document.getElementById('new-project-btn');
+const printBtn = document.getElementById('printBtn');
+const printTabloidBtn = document.getElementById('printTabloidBtn');
+const settingsBtn = document.getElementById('settingsBtn');
+
+saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
+loadBtn.addEventListener('click', async ()=>{
+  if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
   showLoading(true);
   await loadFromGoogle({forceApply:true});
   showLoading(false);
 });
+printBtn.addEventListener('click', ()=> exportPDFFit('letter'));
+printTabloidBtn.addEventListener('click', ()=> exportPDFFit('tabloid'));
 
-/* Prompt when leaving with unsaved changes */
+/* Settings modal handlers */
+const settingsBackdrop = document.getElementById('settings-backdrop');
+const settingsClose = document.getElementById('settings-close');
+const settingsSave = document.getElementById('settings-save');
+const setPrimaryName = document.getElementById('set-primary-name');
+const setPrimaryEmail = document.getElementById('set-primary-email');
+const setFinalName = document.getElementById('set-final-name');
+const setFinalEmail = document.getElementById('set-final-email');
+
+function openSettings(){
+  setPrimaryName.value = Settings.data.primaryName || '';
+  setPrimaryEmail.value = Settings.data.primaryEmail || '';
+  setFinalName.value = Settings.data.finalName || '';
+  setFinalEmail.value = Settings.data.finalEmail || '';
+  settingsBackdrop.style.display = 'flex';
+}
+function closeSettings(){ settingsBackdrop.style.display = 'none'; }
+settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) openSettings(); });
+settingsClose.addEventListener('click', closeSettings);
+settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
+settingsSave.addEventListener('click', ()=>{
+  Settings.data.primaryName = setPrimaryName.value.trim() || 'Katie';
+  Settings.data.primaryEmail = setPrimaryEmail.value.trim();
+  Settings.data.finalName = setFinalName.value.trim() || 'Zach';
+  Settings.data.finalEmail = setFinalEmail.value.trim() || 'zschuchardt@gogcg.com';
+  Settings.save();
+  closeSettings();
+  alert('Settings saved.');
+});
+
+/* Unsaved-changes prompt */
 window.addEventListener('beforeunload', (e)=>{
-  if (!hasLocalEdits) return;
+  if (READ_ONLY || !hasLocalEdits) return;
   e.preventDefault();
   e.returnValue = '';
 });
 
-/* Initial BLOCKING load */
+/* Initial blocking load + view-only UI tweaks */
 (async function init(){
+  if (READ_ONLY) {
+    saveBtn.style.display = 'none';
+    newProjectBtn.style.display = 'none';
+    settingsBtn.style.display = 'none';
+    document.getElementById('ready-invoice-btn')?.style?.setProperty('display','none','important');
+    viewBadge.style.display = 'block';
+  }
   showLoading(true);
-  await loadFromGoogle({forceApply:true}); // always apply cloud at startup
+  await loadFromGoogle({forceApply:true});
   showLoading(false);
 })();
 </script>
