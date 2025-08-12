@@ -19,7 +19,7 @@
   .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .timeline-label { font-size: 10px; line-height: 1.2; }
   .task-meta { font-size: 9px; color: #666; margin-top: 2px; min-height: 12px; }
-  .timeline-item.final-invoice .timeline-label { display: none; }
+  .timeline-item.final-invoice .timeline-label { display: none; } /* hide Hours on final invoice card */
   .total-hours { margin-top: 8px; font-weight: bold; font-size: 13px; }
   .green { color: green; } .blue { color: blue; } .orange { color: orange; }
   #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
@@ -66,6 +66,13 @@
   /* Date editor modal tweaks */
   .mini-input { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; }
   .hint { font-size: 11px; color:#666; }
+
+  /* --- Extra hardening in READ-ONLY (CSS side) --- */
+  body.ro #saveGoogleBtn,
+  body.ro #new-project-btn,
+  body.ro #settingsBtn,
+  body.ro .edit-btn,
+  body.ro #ready-invoice-btn { display: none !important; }
 
   @media print {
     body { background: #fff; padding: 0; }
@@ -234,6 +241,32 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const viewBadge = document.getElementById('viewBadge');
 const showLoading = (on)=> { loadingOverlay.style.display = on ? 'flex' : 'none'; };
 
+/* --- Global hardening in READ_ONLY mode --- */
+if (READ_ONLY) {
+  // Add a CSS class for extra hiding
+  document.documentElement.classList.add('ro');
+  document.body.classList.add('ro');
+
+  // Block drag everywhere
+  document.addEventListener('dragstart', e => { e.preventDefault(); }, true);
+
+  // Block context menus that could lead to edits
+  document.addEventListener('contextmenu', e => {
+    if (e.target.closest('.timeline') || e.target.closest('.timeline-item') || e.target.closest('.edit-btn')) {
+      e.preventDefault();
+    }
+  }, true);
+
+  // Block dangerous keys (Delete, Ctrl/Cmd+S)
+  document.addEventListener('keydown', e => {
+    const isSave = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's';
+    const isDelete = e.key === 'Delete' || e.key === 'Backspace';
+    if (isSave || isDelete) {
+      e.preventDefault();
+    }
+  }, true);
+}
+
 let dragged = null;
 document.addEventListener('click', (e) => { if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none'; });
 
@@ -319,7 +352,7 @@ function bestTaskDateLabel(taskElem){
       if (!m) return null;
       const n = parseInt(m[1],10);
       const u = m[2].toLowerCase();
-      return u==='d'?n : u==='w'?n*7 : n*30;
+      return u==='d'?n : u==='w'?n*7 : u==='mo'?n*30:null;
     }).filter(v=>v!==null);
   if (durDays.length){
     const min = Math.min(...durDays);
@@ -445,7 +478,7 @@ function addProject({name,customer='',application='',salesOrder,poNumber,estDate
   const timeline=div.querySelector('.timeline');
 
   timeline.addEventListener('contextmenu',e=>{
-    if (READ_ONLY) return;
+    if (READ_ONLY) { e.preventDefault(); return; }
     e.preventDefault();
     if (e.target.closest('.timeline-item')) return;
     addTaskToTimeline(timeline);
@@ -570,6 +603,7 @@ function updateCurrentIndicator(timelineElem){ if(!timelineElem) return; const t
   const firstIncomplete=tasks.find(t=>!isTaskComplete(t)); if(!firstIncomplete) return; const tag=document.createElement('div'); tag.className='current-tag';
   const text=document.createElement('div'); text.className='current-text'; text.textContent='CURRENT'; firstIncomplete.appendChild(tag); firstIncomplete.appendChild(text); }
 
+/* Identify last Invoice card */
 function updateFinalInvoiceUI(timelineElem){
   if (!timelineElem) return;
   const invs = [...timelineElem.querySelectorAll('.timeline-item')].filter(el => (el.dataset.category||'').toLowerCase()==='invoice');
@@ -577,13 +611,13 @@ function updateFinalInvoiceUI(timelineElem){
   if (invs.length === 0) return;
   const last = invs[invs.length - 1];
   last.dataset.isFinalInvoice = 'true';
-  last.classList.add('final-invoice');
+  last.classList.add('final-invoice'); /* hides hours line on the final invoice card */
 }
 
 /* Right-click menu */
 function addTaskContextMenu(taskElem){
   taskElem.addEventListener('contextmenu',function(e){
-    if (READ_ONLY) return;
+    if (READ_ONLY) { e.preventDefault(); return; }
     e.preventDefault();
     contextMenu.innerHTML='';
 
@@ -712,7 +746,7 @@ function editProject(ev, btn){
   contextMenu.style.display='block';
 }
 
-/* INVOICE EMAIL GENERATOR (unchanged except header fields already included) */
+/* INVOICE EMAIL GENERATOR */
 const invBackdrop = document.getElementById('invoice-modal-backdrop');
 const invClose = document.getElementById('invoice-modal-close');
 const invSubject = document.getElementById('invoice-subject');
@@ -1076,6 +1110,7 @@ const printBtn = document.getElementById('printBtn');
 const printTabloidBtn = document.getElementById('printTabloidBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 
+/* Attach listeners (guarded inside functions already) */
 saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
 loadBtn.addEventListener('click', async ()=>{
   if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
@@ -1126,16 +1161,22 @@ window.addEventListener('beforeunload', (e)=>{
 /* Initial blocking load + view-only UI tweaks */
 (async function init(){
   if (READ_ONLY) {
-    saveBtn.style.display = 'none';
-    newProjectBtn.style.display = 'none';
-    settingsBtn.style.display = 'none';
-    document.getElementById('ready-invoice-btn')?.style?.setProperty('display','none','important');
+    // Strong UI hiding & disabling
+    document.body.classList.add('ro');
     viewBadge.style.display = 'block';
+
+    // Hide/disable risky buttons in case CSS is overridden somewhere
+    const risky = ['saveGoogleBtn','new-project-btn','settingsBtn'];
+    risky.forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) { el.style.display='none'; el.disabled = true; el.setAttribute('aria-hidden','true'); }
+    });
+
+    // Also hide all project-line Edit buttons if already rendered
+    document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
   }
   showLoading(true);
   await loadFromGoogle({forceApply:true});
-  showLoading(false);
-})();
-</script>
-</body>
-</html>
+  // Hide any edit buttons created during load in read-only
+  if (READ_ONLY) {
+    document.querySelectorAll('.edit-btn').forEach(b=>{ b.st
