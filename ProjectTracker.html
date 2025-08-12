@@ -24,15 +24,27 @@
   .green { color: green; } .blue { color: blue; } .orange { color: orange; }
   #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
   .edit-btn { float: right; font-size: 11px; background: none; border: none; color: #007BFF; cursor: pointer; }
-  #context-menu { position: absolute; display: none; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.3); z-index: 1000; padding: 5px; border-radius: 4px; }
-  #context-menu div { padding: 5px 10px; cursor: pointer; }
+
+  /* SMALLER + ABOVE MODALS */
+  #context-menu {
+    position: absolute;
+    display: none;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    z-index: 10000;               /* ↑ above modal (was 1000) */
+    padding: 4px;                 /* tighter */
+    border-radius: 6px;
+    font-size: 12px;              /* smaller text */
+    min-width: 160px;
+  }
+  #context-menu div { padding: 4px 8px; cursor: pointer; }
   #context-menu div:hover { background: #f0f0f0; }
 
   .current-tag { position: absolute; left: -6px; top: 6px; bottom: 6px; width: 4px; background: #007BFF; border-radius: 4px; }
   .current-text { position: absolute; left: -26px; top: 6px; font-size: 9px; writing-mode: vertical-rl; text-orientation: mixed; color: #007BFF; font-weight: 700; letter-spacing: 0.5px; user-select: none; }
 
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 2000; }
-  .modal { background: #fff; width: 800px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; } /* widened */
+  .modal { background: #fff; width: 800px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
   .modal-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
   .modal-body { padding: 12px 16px; max-height: 60vh; overflow: auto; }
   .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
@@ -43,11 +55,12 @@
   .btn-icon { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; cursor: pointer; }
 
   .subtask-list { display: flex; flex-direction: column; gap: 8px; }
-  .subtask-chip { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: center; } /* one column, more room */
+  .subtask-chip { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: center; }
   .chip-bar-wrap { background: #f3f3f3; border-radius: 999px; height: 16px; position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 8px; }
-  .chip-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #d0e3ff; }
-  .chip-label { position: relative; z-index: 1; font-size: 11px; white-space: normal; } /* allow wrapping */
-  .chip-actions { display: none; } /* buttons removed per request */
+  .chip-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #d0e3ff; transition: width 0.15s ease; }
+  .chip-label { position: relative; z-index: 1; font-size: 11px; white-space: normal; }
+  .chip-actions { display: none; }
+
   .summary-hours { font-size: 12px; display: flex; gap: 14px; flex-wrap: wrap; }
   .summary-hours b { font-weight: 700; }
 
@@ -333,7 +346,7 @@ function daysToLabel(d){
 }
 function subtaskLabel(st){ return st.date ? formatDateShort(st.date) : (st.dateText||''); }
 
-/* NEW: compute meta label from ALL subtasks (earliest→latest date or shortest→longest duration) */
+/* Compute meta label from ALL subtasks (earliest→latest date or shortest→longest duration) */
 function bestTaskDateLabel(taskElem){
   const selfLabel = taskElem.dataset.date ? formatDateShort(taskElem.dataset.date)
                    : (taskElem.dataset.dateText || '');
@@ -364,7 +377,6 @@ function bestTaskDateLabel(taskElem){
     return (min===max) ? daysToLabel(min) : `${daysToLabel(min)}–${daysToLabel(max)}`;
   }
 
-  // fallback: first non-empty label
   for (const s of subs){
     const L = subtaskLabel(s);
     if (L) return L;
@@ -565,31 +577,58 @@ function addSubtaskContextMenu(wrap, st, idx, taskElem){
   });
 }
 
-function renderSubtaskRows(){ subtaskRows.innerHTML=''; if(!currentTask) return;
-  const rows=currentTask._subtasks||[]; const maxHours=Math.max(1,...rows.map(r=>Number(r.hours)||0));
-  rows.forEach((st,idx)=>{ const wrap=document.createElement('div'); wrap.className='subtask-chip'; wrap.title= READ_ONLY ? '' : 'Right-click for actions • Click bar to add hours';
+function renderSubtaskRows(){
+  subtaskRows.innerHTML=''; if(!currentTask) return;
+  const rows=currentTask._subtasks||[];
+
+  /* NEW: bars are % of PARENT TASK TOTAL (base + all sub hours) */
+  const base = Number(currentTask.dataset.baseHours||0) || 0;
+  const subsTotal = rows.reduce((s,r)=>s+(Number(r.hours)||0),0);
+  const parentTotal = base + subsTotal; // denominator for percentages
+
+  const maxForFallback = Math.max(1,...rows.map(r=>Number(r.hours)||0));
+
+  rows.forEach((st,idx)=>{
+    const wrap=document.createElement('div'); wrap.className='subtask-chip';
+    wrap.title= READ_ONLY ? '' : 'Right-click for actions • Click bar to add hours';
+
     const barWrap=document.createElement('div'); barWrap.className='chip-bar-wrap';
-    const bar=document.createElement('div'); bar.className='chip-bar'; bar.style.width=`${(Math.min(Number(st.hours)||0,maxHours)/maxHours)*100}%`;
+    const bar=document.createElement('div'); bar.className='chip-bar';
+
+    let pct = 0;
+    if (parentTotal > 0) pct = Math.max(0, (Number(st.hours)||0) / parentTotal * 100);
+    else pct = (Math.min(Number(st.hours)||0, maxForFallback)/maxForFallback)*100; // safe fallback when total is 0
+    bar.style.width = `${pct}%`;
 
     const extraBits = [];
     const stDate = subtaskLabel(st);
     if (stDate) extraBits.push(stDate);
     if (st.owner) extraBits.push(`👤 ${st.owner}`);
     const extraText = extraBits.length ? ' — ' + extraBits.join(' • ') : '';
+
     const label=document.createElement('div'); label.className='chip-label';
     label.textContent=`${st.name} — ${st.hours}h${st.done?" (Complete)":""}${extraText}`;
 
     barWrap.appendChild(bar); barWrap.appendChild(label);
 
     if (!READ_ONLY) {
-      barWrap.onclick=()=>{ const addRaw=prompt(`Add hours to "${st.name}":`,"0"); const add=Number.isFinite(Number(addRaw))?Number(addRaw):0; if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); } };
+      barWrap.onclick=()=>{
+        const addRaw=prompt(`Add hours to "${st.name}":`,"0");
+        const add=Number.isFinite(Number(addRaw))?Number(addRaw):0;
+        if(add>0){ st.hours=(Number(st.hours)||0)+add; renderSubtaskRows(); markDirty(); }
+      };
       addSubtaskContextMenu(wrap, st, idx, currentTask);
     }
 
     wrap.appendChild(barWrap);
     subtaskRows.appendChild(wrap);
   });
-  updateSubtaskHours(currentTask); updateModalSummary(); updateCurrentIndicator(currentTask.closest('.timeline')); applyCompletionStyle(currentTask); updateSubtaskDashes(currentTask);
+
+  updateSubtaskHours(currentTask);
+  updateModalSummary();
+  updateCurrentIndicator(currentTask.closest('.timeline'));
+  applyCompletionStyle(currentTask);
+  updateSubtaskDashes(currentTask);
 }
 
 /* Totals & completion */
