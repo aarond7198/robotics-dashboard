@@ -31,10 +31,10 @@
     display: none;
     background: white;
     box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    z-index: 10000;               /* ↑ above modal (was 1000) */
-    padding: 4px;                 /* tighter */
+    z-index: 10000;
+    padding: 4px;
     border-radius: 6px;
-    font-size: 12px;              /* smaller text */
+    font-size: 12px;
     min-width: 160px;
   }
   #context-menu div { padding: 4px 8px; cursor: pointer; }
@@ -82,6 +82,19 @@
   body.ro #settingsBtn,
   body.ro .edit-btn,
   body.ro #ready-invoice-btn { display: none !important; }
+
+  /* --- Settings: Project Order list --- */
+  .settings-section-title { font-weight:700; margin-top:14px; }
+  .reorder-list { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
+  .re-item {
+    display:flex; align-items:center; gap:8px;
+    padding:6px 10px; border:1px solid #e2e2e2; border-radius:8px; background:#fafafa;
+    cursor: grab; user-select:none;
+  }
+  .re-item:active { cursor: grabbing; }
+  .re-handle { font-size:14px; opacity:.6; }
+  .re-name { font-size:12px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .re-ghost { opacity:.5; }
 
   @media print {
     body { background: #fff; padding: 0; }
@@ -181,6 +194,13 @@
           <label>Final/Closeout Email
             <input id="set-final-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
+
+          <!-- New: Project Order -->
+          <div class="settings-section-title">Project Order</div>
+          <div id="proj-order-wrap">
+            <div id="proj-order-list" class="reorder-list"></div>
+            <div style="font-size:11px; color:#666; margin-top:4px;">Drag to change display/save order.</div>
+          </div>
         </div>
       </div>
       <div class="modal-footer" style="grid-template-columns:1fr auto;">
@@ -327,7 +347,7 @@ function parseDateOrDuration(input){
   if (m){
     const n = parseInt(m[1],10);
     const unit = m[2].toLowerCase();
-    const days = unit==='d' ? n : unit==='w' ? n*7 : n*30;
+    const days = unit==='d' ? n : unit==='w' ? n*7 : n==='mo' ? n*30 : n*30;
     const label = unit==='d' ? `${n}d` : unit==='w' ? `${n}w` : `${n}mo`;
     return { iso:'', label, days };
   }
@@ -346,7 +366,7 @@ function daysToLabel(d){
 }
 function subtaskLabel(st){ return st.date ? formatDateShort(st.date) : (st.dateText||''); }
 
-/* Compute meta label from ALL subtasks (earliest→latest date or shortest→longest duration) */
+/* Compute meta label from ALL subtasks */
 function bestTaskDateLabel(taskElem){
   const selfLabel = taskElem.dataset.date ? formatDateShort(taskElem.dataset.date)
                    : (taskElem.dataset.dateText || '');
@@ -433,6 +453,12 @@ function updateTaskMetaDisplay(taskElem){
   meta.textContent = parts.join(' • ');
 }
 
+/* Unique id for projects (session only) */
+let NEXT_PID = 1;
+function ensureProjectPid(projectElem){
+  if (!projectElem.dataset.pid) projectElem.dataset.pid = String(NEXT_PID++);
+}
+
 /* Add / Build Task */
 function addTaskToTimeline(timelineElem, insertBefore=null){
   if (READ_ONLY) return;
@@ -492,6 +518,7 @@ function addProject({name,customer='',application='',salesOrder,poNumber,estDate
   div.innerHTML=`<div class="project-header">${name}<button class="edit-btn" onclick="editProject(event,this)">Edit</button></div>
     <div class="project-subheader">${subText}</div>
     <div class="timeline"></div><div class="total-hours">Total Hours: 0</div>`;
+  ensureProjectPid(div);
   const timeline=div.querySelector('.timeline');
 
   timeline.addEventListener('contextmenu',e=>{
@@ -581,11 +608,10 @@ function renderSubtaskRows(){
   subtaskRows.innerHTML=''; if(!currentTask) return;
   const rows=currentTask._subtasks||[];
 
-  /* NEW: bars are % of PARENT TASK TOTAL (base + all sub hours) */
+  /* Bars are % of PARENT TASK TOTAL (base + all sub hours) */
   const base = Number(currentTask.dataset.baseHours||0) || 0;
   const subsTotal = rows.reduce((s,r)=>s+(Number(r.hours)||0),0);
-  const parentTotal = base + subsTotal; // denominator for percentages
-
+  const parentTotal = base + subsTotal;
   const maxForFallback = Math.max(1,...rows.map(r=>Number(r.hours)||0));
 
   rows.forEach((st,idx)=>{
@@ -597,7 +623,7 @@ function renderSubtaskRows(){
 
     let pct = 0;
     if (parentTotal > 0) pct = Math.max(0, (Number(st.hours)||0) / parentTotal * 100);
-    else pct = (Math.min(Number(st.hours)||0, maxForFallback)/maxForFallback)*100; // safe fallback when total is 0
+    else pct = (Math.min(Number(st.hours)||0, maxForFallback)/maxForFallback)*100;
     bar.style.width = `${pct}%`;
 
     const extraBits = [];
@@ -619,7 +645,6 @@ function renderSubtaskRows(){
       };
       addSubtaskContextMenu(wrap, st, idx, currentTask);
     }
-
     wrap.appendChild(barWrap);
     subtaskRows.appendChild(wrap);
   });
@@ -772,6 +797,7 @@ function editProject(ev, btn){
   if (READ_ONLY) return;
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   const project=btn.closest('.project');
+  ensureProjectPid(project);
   const header=project.querySelector('.project-header');
   const subheader=project.querySelector('.project-subheader');
 
@@ -914,6 +940,7 @@ invComplete.addEventListener('click', ()=>{
 
 /* Google Save/Load */
 function serializeState(){ const projects=[...document.querySelectorAll('.project')].map(project=>{
+    ensureProjectPid(project);
     const title=project.querySelector('.project-header').childNodes[0].textContent.trim();
     const parsed = parseSubheaderText(project.querySelector('.project-subheader').textContent);
     const timeline=project.querySelector('.timeline');
@@ -947,31 +974,34 @@ function serializeState(){ const projects=[...document.querySelectorAll('.projec
   }); return { projects, kind:'ProjectTracker', allowEmpty:(projects.length===0) }; }
 function clearAllProjects(){ document.getElementById('project-container').innerHTML=''; }
 function loadState(state){ if(!state||!state.projects) return; clearAllProjects();
-  state.projects.forEach(p=>addProject({
-    name:p.name,
-    customer:p.customer||'',
-    application:p.application||'',
-    salesOrder:p.salesOrder||'',
-    poNumber:p.poNumber||'',
-    estDate:p.estDate||'',
-    tasks:(p.tasks||[]).map(t=>({
-      name:t.name,
-      baseHours:t.baseHours,
-      category:t.category,
-      completed:!!t.completed,
-      invoicePercent: (typeof t.invoicePercent!=='undefined')?t.invoicePercent:undefined,
-      owner: t.owner || '',
-      date: t.date || '',
-      dateText: t.dateText || '',
-      isDeadline: !!(t.isDeadline || t.deadline),
-      subtasks:(t.subtasks||[]).map(st=>({
-        name:st.name, hours:st.hours, done:!!st.done,
-        owner: st.owner || '',
-        date: st.date || '',
-        dateText: st.dateText || ''
+  state.projects.forEach(p=>{
+    const proj = addProject({
+      name:p.name,
+      customer:p.customer||'',
+      application:p.application||'',
+      salesOrder:p.salesOrder||'',
+      poNumber:p.poNumber||'',
+      estDate:p.estDate||'',
+      tasks:(p.tasks||[]).map(t=>({
+        name:t.name,
+        baseHours:t.baseHours,
+        category:t.category,
+        completed:!!t.completed,
+        invoicePercent: (typeof t.invoicePercent!=='undefined')?t.invoicePercent:undefined,
+        owner: t.owner || '',
+        date: t.date || '',
+        dateText: t.dateText || '',
+        isDeadline: !!(t.isDeadline || t.deadline),
+        subtasks:(t.subtasks||[]).map(st=>({
+          name:st.name, hours:st.hours, done:!!st.done,
+          owner: st.owner || '',
+          date: st.date || '',
+          dateText: st.dateText || ''
+        }))
       }))
-    }))
-  }));
+    });
+    ensureProjectPid(proj);
+  });
 }
 
 async function saveToGoogle({silent=false} = {}){
@@ -1181,24 +1211,84 @@ const setPrimaryName = document.getElementById('set-primary-name');
 const setPrimaryEmail = document.getElementById('set-primary-email');
 const setFinalName = document.getElementById('set-final-name');
 const setFinalEmail = document.getElementById('set-final-email');
+const projOrderList = document.getElementById('proj-order-list');
+
+function buildProjectOrderList(){
+  projOrderList.innerHTML = '';
+  const projects = [...document.querySelectorAll('#project-container .project')];
+  if (projects.length === 0){
+    projOrderList.innerHTML = '<div style="font-size:12px; color:#777;">No active projects.</div>';
+    return;
+  }
+  projects.forEach(p=>{
+    ensureProjectPid(p);
+    const item = document.createElement('div');
+    item.className = 're-item';
+    item.draggable = true;
+    item.dataset.pid = p.dataset.pid;
+    item.innerHTML = `<span class="re-handle">☰</span><span class="re-name"></span>`;
+    item.querySelector('.re-name').textContent = p.querySelector('.project-header').childNodes[0].textContent.trim();
+    attachReorderDnD(item);
+    projOrderList.appendChild(item);
+  });
+}
+let dragReItem = null;
+function attachReorderDnD(item){
+  item.addEventListener('dragstart', ()=>{
+    dragReItem = item;
+    item.classList.add('re-ghost');
+  });
+  item.addEventListener('dragend', ()=>{
+    item.classList.remove('re-ghost');
+    dragReItem = null;
+  });
+  item.addEventListener('dragover', (e)=>{
+    e.preventDefault();
+    if (!dragReItem || dragReItem === item) return;
+    const list = projOrderList;
+    const rect = item.getBoundingClientRect();
+    const mid = rect.top + rect.height/2;
+    if (e.clientY < mid) {
+      list.insertBefore(dragReItem, item);
+    } else {
+      list.insertBefore(dragReItem, item.nextSibling);
+    }
+  });
+}
 
 function openSettings(){
   setPrimaryName.value = Settings.data.primaryName || '';
   setPrimaryEmail.value = Settings.data.primaryEmail || '';
   setFinalName.value = Settings.data.finalName || '';
   setFinalEmail.value = Settings.data.finalEmail || '';
+  buildProjectOrderList();
   settingsBackdrop.style.display = 'flex';
 }
 function closeSettings(){ settingsBackdrop.style.display = 'none'; }
 if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) openSettings(); });
 if (settingsClose) settingsClose.addEventListener('click', closeSettings);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
+
 if (settingsSave) settingsSave.addEventListener('click', ()=>{
+  // Save contacts
   Settings.data.primaryName = setPrimaryName.value.trim() || 'Katie';
   Settings.data.primaryEmail = setPrimaryEmail.value.trim();
   Settings.data.finalName = setFinalName.value.trim() || 'Zach';
   Settings.data.finalEmail = setFinalEmail.value.trim() || 'zschuchardt@gogcg.com';
   Settings.save();
+
+  // Apply project order
+  const container = document.getElementById('project-container');
+  const pidToProject = new Map([...container.querySelectorAll('.project')].map(p=>[p.dataset.pid, p]));
+  const items = [...projOrderList.querySelectorAll('.re-item')];
+  if (items.length){
+    items.forEach(it=>{
+      const p = pidToProject.get(it.dataset.pid);
+      if (p) container.appendChild(p);
+    });
+    markDirty();
+  }
+
   closeSettings();
   alert('Settings saved.');
 });
@@ -1210,7 +1300,7 @@ window.addEventListener('beforeunload', (e)=>{
   e.returnValue = '';
 });
 
-/* Initial blocking load + view-only UI tweaks (SAFETY: overlay always clears) */
+/* Initial blocking load + view-only UI tweaks */
 (async function init(){
   if (READ_ONLY) {
     document.body.classList.add('ro');
