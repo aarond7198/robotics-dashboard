@@ -19,7 +19,7 @@
   .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .timeline-label { font-size: 10px; line-height: 1.2; }
   .task-meta { font-size: 9px; color: #666; margin-top: 2px; min-height: 12px; }
-  .timeline-item.final-invoice .timeline-label { display: none; } /* hide Hours on final invoice card */
+  .timeline-item.final-invoice .timeline-label { display: none; }
   .total-hours { margin-top: 8px; font-weight: bold; font-size: 13px; }
   .green { color: green; } .blue { color: blue; } .orange { color: orange; }
   #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
@@ -63,11 +63,7 @@
 
   #viewBadge { position: fixed; top: 10px; right: 12px; background:#222; color:#fff; font-size:11px; padding:6px 8px; border-radius: 6px; opacity: .85; z-index: 4000; display:none; }
 
-  /* Date editor modal tweaks */
-  .mini-input { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; }
-  .hint { font-size: 11px; color:#666; }
-
-  /* --- Extra hardening in READ-ONLY (CSS side) --- */
+  /* Read-only CSS hiding */
   body.ro #saveGoogleBtn,
   body.ro #new-project-btn,
   body.ro #settingsBtn,
@@ -135,10 +131,10 @@
       <div class="modal-body">
         <div style="display:grid; gap:8px;">
           <label>Subject
-            <input id="invoice-subject" class="mini-input">
+            <input id="invoice-subject" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
           <label>Body
-            <textarea id="invoice-body" rows="10" class="mini-input"></textarea>
+            <textarea id="invoice-body" rows="10" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;"></textarea>
           </label>
         </div>
       </div>
@@ -161,16 +157,16 @@
         <div style="display:grid; gap:10px;">
           <div style="font-weight:700; margin-bottom:4px;">Invoice Contacts</div>
           <label>Primary Invoice Name
-            <input id="set-primary-name" class="mini-input">
+            <input id="set-primary-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
           <label>Primary Invoice Email
-            <input id="set-primary-email" type="email" class="mini-input">
+            <input id="set-primary-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
           <label>Final/Closeout Name
-            <input id="set-final-name" class="mini-input">
+            <input id="set-final-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
           <label>Final/Closeout Email
-            <input id="set-final-email" type="email" class="mini-input">
+            <input id="set-final-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
         </div>
       </div>
@@ -191,12 +187,12 @@
       <div class="modal-body">
         <div style="display:grid; gap:10px;">
           <label>Pick a Date
-            <input id="date-input" type="date" class="mini-input">
+            <input id="date-input" type="date" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
           <div style="text-align:center; color:#888; font-size:12px;">— or —</div>
           <label>Duration (optional)
-            <input id="dur-input" class="mini-input" placeholder="e.g., 10d, 2w, 1mo">
-            <div class="hint">Use <b>d</b>=days, <b>w</b>=weeks, <b>mo</b>=months.</div>
+            <input id="dur-input" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;" placeholder="e.g., 10d, 2w, 1mo">
+            <div style="font-size: 11px; color:#666;">Use <b>d</b>=days, <b>w</b>=weeks, <b>mo</b>=months.</div>
           </label>
         </div>
       </div>
@@ -218,6 +214,15 @@ const READ_ONLY = (() => {
   const v = (q.get('view') || q.get('readonly') || q.get('ro') || '').toLowerCase();
   return v === '1' || v === 'true' || v === 'yes';
 })();
+
+/* Ensure ro class never lingers between sessions */
+if (READ_ONLY) {
+  document.documentElement.classList.add('ro');
+  document.body.classList.add('ro');
+} else {
+  document.documentElement.classList.remove('ro');
+  document.body.classList.remove('ro');
+}
 
 /* Settings (persisted) */
 const SETTINGS_KEY = 'pt_settings_v1';
@@ -243,27 +248,19 @@ const showLoading = (on)=> { loadingOverlay.style.display = on ? 'flex' : 'none'
 
 /* --- Global hardening in READ_ONLY mode --- */
 if (READ_ONLY) {
-  // Add a CSS class for extra hiding
-  document.documentElement.classList.add('ro');
-  document.body.classList.add('ro');
-
   // Block drag everywhere
   document.addEventListener('dragstart', e => { e.preventDefault(); }, true);
-
   // Block context menus that could lead to edits
   document.addEventListener('contextmenu', e => {
     if (e.target.closest('.timeline') || e.target.closest('.timeline-item') || e.target.closest('.edit-btn')) {
       e.preventDefault();
     }
   }, true);
-
   // Block dangerous keys (Delete, Ctrl/Cmd+S)
   document.addEventListener('keydown', e => {
     const isSave = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's';
     const isDelete = e.key === 'Delete' || e.key === 'Backspace';
-    if (isSave || isDelete) {
-      e.preventDefault();
-    }
+    if (isSave || isDelete) { e.preventDefault(); }
   }, true);
 }
 
@@ -310,7 +307,7 @@ function parseDateOrDuration(input){
     const dd = Math.max(1, Math.min(31, parseInt(m[2],10)));
     const year = m[3] ? parseInt(m[3],10) : (new Date()).getFullYear();
     const yyyy = year < 100 ? 2000 + year : year;
-    const d = new Date(yyyy, mm-1, dd); // local date (avoids TZ shift)
+    const d = new Date(yyyy, mm-1, dd); // local date
     if (!isNaN(d)) {
       const iso = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
       return { iso, label:`${pad2(mm)}/${pad2(dd)}`, days:null };
@@ -330,14 +327,13 @@ function isoToMillisLocal(iso){
   const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if(!m) return NaN;
   const y = +m[1], mo = +m[2]-1, d=+m[3];
-  return new Date(y, mo, d).getTime(); // local midnight
+  return new Date(y, mo, d).getTime();
 }
 function subtaskLabel(st){ return st.date ? formatDateShort(st.date) : (st.dateText||''); }
 function bestTaskDateLabel(taskElem){
   const selfLabel = taskElem.dataset.date ? formatDateShort(taskElem.dataset.date)
                    : (taskElem.dataset.dateText || '');
   if (selfLabel) return selfLabel;
-
   const subs = taskElem._subtasks || [];
   const abs = subs.filter(s=>s.date).map(s=>isoToMillisLocal(s.date)).filter(t=>isFinite(t));
   if (abs.length){
@@ -611,7 +607,7 @@ function updateFinalInvoiceUI(timelineElem){
   if (invs.length === 0) return;
   const last = invs[invs.length - 1];
   last.dataset.isFinalInvoice = 'true';
-  last.classList.add('final-invoice'); /* hides hours line on the final invoice card */
+  last.classList.add('final-invoice');
 }
 
 /* Right-click menu */
@@ -1073,18 +1069,14 @@ dateSave.addEventListener('click', ()=>{
   if (!dateCtx) return;
   const dateVal = (dateInput.value || '').trim();
   const durVal = (durInput.value || '').trim();
-
-  // If date is provided, prefer it. Else, accept duration label (validated).
   let iso = '', label = '';
   if (dateVal){
-    // trust native date input (YYYY-MM-DD)
     iso = dateVal;
   } else if (durVal){
     const p = parseDateOrDuration(durVal);
     if (!p.iso && !p.label){ alert('Please enter a valid date or duration.'); return; }
     if (p.iso) iso = p.iso; else label = p.label;
   } else {
-    // nothing set
     iso = ''; label = '';
   }
 
@@ -1110,16 +1102,15 @@ const printBtn = document.getElementById('printBtn');
 const printTabloidBtn = document.getElementById('printTabloidBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 
-/* Attach listeners (guarded inside functions already) */
-saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
-loadBtn.addEventListener('click', async ()=>{
+/* Attach listeners */
+if (saveBtn) saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
+if (loadBtn) loadBtn.addEventListener('click', async ()=>{
   if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
   showLoading(true);
-  await loadFromGoogle({forceApply:true});
-  showLoading(false);
+  try { await loadFromGoogle({forceApply:true}); } finally { showLoading(false); }
 });
-printBtn.addEventListener('click', ()=> exportPDFFit('letter'));
-printTabloidBtn.addEventListener('click', ()=> exportPDFFit('tabloid'));
+if (printBtn) printBtn.addEventListener('click', ()=> exportPDFFit('letter'));
+if (printTabloidBtn) printTabloidBtn.addEventListener('click', ()=> exportPDFFit('tabloid'));
 
 /* Settings modal handlers */
 const settingsBackdrop = document.getElementById('settings-backdrop');
@@ -1138,10 +1129,10 @@ function openSettings(){
   settingsBackdrop.style.display = 'flex';
 }
 function closeSettings(){ settingsBackdrop.style.display = 'none'; }
-settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) openSettings(); });
-settingsClose.addEventListener('click', closeSettings);
-settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
-settingsSave.addEventListener('click', ()=>{
+if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) openSettings(); });
+if (settingsClose) settingsClose.addEventListener('click', closeSettings);
+if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
+if (settingsSave) settingsSave.addEventListener('click', ()=>{
   Settings.data.primaryName = setPrimaryName.value.trim() || 'Katie';
   Settings.data.primaryEmail = setPrimaryEmail.value.trim();
   Settings.data.finalName = setFinalName.value.trim() || 'Zach';
@@ -1158,25 +1149,35 @@ window.addEventListener('beforeunload', (e)=>{
   e.returnValue = '';
 });
 
-/* Initial blocking load + view-only UI tweaks */
+/* Initial blocking load + view-only UI tweaks (SAFETY: overlay always clears) */
 (async function init(){
+  // View-only UI hide
   if (READ_ONLY) {
-    // Strong UI hiding & disabling
     document.body.classList.add('ro');
     viewBadge.style.display = 'block';
-
-    // Hide/disable risky buttons in case CSS is overridden somewhere
-    const risky = ['saveGoogleBtn','new-project-btn','settingsBtn'];
-    risky.forEach(id=>{
+    ['saveGoogleBtn','new-project-btn','settingsBtn'].forEach(id=>{
       const el = document.getElementById(id);
       if (el) { el.style.display='none'; el.disabled = true; el.setAttribute('aria-hidden','true'); }
     });
-
-    // Also hide all project-line Edit buttons if already rendered
-    document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
   }
+
   showLoading(true);
-  await loadFromGoogle({forceApply:true});
-  // Hide any edit buttons created during load in read-only
-  if (READ_ONLY) {
-    document.querySelectorAll('.edit-btn').forEach(b=>{ b.st
+
+  // Watchdog: never leave overlay stuck on
+  const overlayWatchdog = setTimeout(()=>{ showLoading(false); }, 12000);
+
+  try {
+    await loadFromGoogle({forceApply:true});
+    // In read-only, hide any Edit buttons that may have been created by load
+    if (READ_ONLY) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
+  } catch (e) {
+    // Non-fatal: just continue with an empty screen
+    console.error('Load failure:', e);
+  } finally {
+    clearTimeout(overlayWatchdog);
+    showLoading(false);
+  }
+})();
+</script>
+</body>
+</html>
