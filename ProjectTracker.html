@@ -12,14 +12,15 @@
   .project { margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
   .project-header { font-weight: bold; font-size: 18px; margin-bottom: 8px; }
   .project-subheader { font-size: 13px; color: #666; margin-bottom: 12px; }
-  .timeline { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; background: #eee; border-radius: 6px; padding: 6px; position: relative; font-size: 10px; min-height: 120px; }
+  .timeline { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; background: #eee; border-radius: 6px; padding: 6px; position: relative; font-size: 10px; min-height: 120px; align-items: stretch; }
   .timeline-item { background: white; padding: 8px 8px 6px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); min-width: 110px; text-align: center; position: relative; cursor: pointer; transition: opacity 0.2s ease; }
+  .timeline-item.dragging { opacity: 0.35; }
   .timeline-item.completed { opacity: 0.5; }
   .timeline-item span.icon { font-size: 16px; display: block; margin-bottom: 4px; }
   .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
   .timeline-label { font-size: 10px; line-height: 1.2; }
   .task-meta { font-size: 9px; color: #666; margin-top: 2px; min-height: 12px; }
-  .timeline-item.final-invoice .timeline-label { display: none; } /* hide Hours on final invoice card */
+  .timeline-item.final-invoice .timeline-label { display: none; }
   .total-hours { margin-top: 8px; font-weight: bold; font-size: 13px; }
   .green { color: green; } .blue { color: blue; } .orange { color: orange; }
   #new-project-btn { margin-bottom: 20px; padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; }
@@ -45,9 +46,15 @@
 
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 2000; }
   .modal { background: #fff; width: 800px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
+  /* Wider only for the Assignments modal */
+  .modal.assignments-modal { width: 1200px; max-width: calc(100% - 32px); }
+  @media (max-width: 1300px) {
+    .modal.assignments-modal { width: 95vw; }
+  }
+
   .modal-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
   .modal-body { padding: 12px 16px; max-height: 60vh; overflow: auto; }
-  .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .modal-footer { padding: 10px 16px; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; align-items: center; }
   .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; }
   .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
   .btn-primary { background: #007BFF; color: #fff; }
@@ -76,25 +83,34 @@
 
   #viewBadge { position: fixed; top: 10px; right: 12px; background:#222; color:#fff; font-size:11px; padding:6px 8px; border-radius: 6px; opacity: .85; z-index: 4000; display:none; }
 
-  /* Read-only CSS hiding */
   body.ro #saveGoogleBtn,
   body.ro #new-project-btn,
   body.ro #settingsBtn,
   body.ro .edit-btn,
-  body.ro #ready-invoice-btn { display: none !important; }
+  body.ro #ready-invoice-btn,
+  body.ro #risk-btn { display: none !important; }
 
-  /* --- Settings: Project Order list --- */
   .settings-section-title { font-weight:700; margin-top:14px; }
   .reorder-list { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
-  .re-item {
-    display:flex; align-items:center; gap:8px;
-    padding:6px 10px; border:1px solid #e2e2e2; border-radius:8px; background:#fafafa;
-    cursor: grab; user-select:none;
-  }
+  .re-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #e2e2e2; border-radius:8px; background:#fafafa; cursor: grab; user-select:none; }
   .re-item:active { cursor: grabbing; }
   .re-handle { font-size:14px; opacity:.6; }
   .re-name { font-size:12px; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .re-ghost { opacity:.5; }
+
+  .drop-indicator { width: 5px; background: #0b5ed7; border-radius: 3px; align-self: stretch; box-shadow: 0 0 0 2px rgba(11,94,215,0.15); }
+
+  /* Assignments modal UI */
+  .assn-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+  .assn-chip { padding:4px 8px; border:1px solid #ddd; border-radius:999px; cursor:pointer; font-size:12px; background:#fafafa; user-select:none; }
+  .assn-chip.active { background:#0b5ed7; color:#fff; border-color:#0b5ed7; }
+  .assn-chip.disabled { opacity:.5; cursor:default; }
+  .assn-search { min-width:220px; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
+  .assn-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .assn-table th, .assn-table td { border:1px solid #eee; padding:6px 8px; text-align:left; }
+  .assn-table th { background:#f7f7f7; position:sticky; top:0; z-index:1; }
+  .assn-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .assn-note { font-size:11px; color:#666; margin-top:4px; }
 
   @media print {
     body { background: #fff; padding: 0; }
@@ -112,6 +128,7 @@
     <button id="printBtn" class="btn">🖨️ Export PDF (Letter, Fit)</button>
     <button id="printTabloidBtn" class="btn">🖨️ Export PDF 11×17 (Fit)</button>
     <span class="spacer"></span>
+    <button id="assignmentsBtn" class="btn">👥 Assignments</button>
     <button id="settingsBtn" class="btn">⚙️ Settings</button>
   </div>
 
@@ -142,6 +159,7 @@
           <span><b>Total:</b> 0</span>
         </div>
         <button id="ready-invoice-btn" class="btn" style="display:none;">Ready to Invoice…</button>
+        <button id="risk-btn" class="btn" style="display:none;">Create Risk Assessment…</button>
         <button id="subtask-modal-done" class="btn btn-primary">Done</button>
       </div>
     </div>
@@ -195,7 +213,24 @@
             <input id="set-final-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
           </label>
 
-          <!-- New: Project Order -->
+          <!-- NEW: Risk Assessment -->
+          <div class="settings-section-title">Risk Assessment</div>
+          <label>GitHub XLSM URL (blob or raw)
+            <input id="set-risk-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                   placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsm">
+            <div style="font-size:11px; color:#666; margin-top:4px;">
+              Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
+            </div>
+          </label>
+          <label>Filename Pattern
+            <input id="set-risk-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                   placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm">
+            <div style="font-size:11px; color:#666; margin-top:4px;">
+              Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
+            </div>
+          </label>
+
+          <!-- Project Order -->
           <div class="settings-section-title">Project Order</div>
           <div id="proj-order-wrap">
             <div id="proj-order-list" class="reorder-list"></div>
@@ -237,6 +272,55 @@
     </div>
   </div>
 
+  <!-- NEW: Assignments Modal -->
+  <div id="assignments-backdrop" class="modal-backdrop">
+    <!-- ADDED .assignments-modal to widen only this modal -->
+    <div class="modal assignments-modal" role="dialog" aria-modal="true" aria-labelledby="assignments-title">
+      <div class="modal-header">
+        <div id="assignments-title">Assignments</div>
+        <button id="assignments-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="assn-bar" id="assn-owner-chips"></div>
+        <div class="assn-bar">
+          <label style="font-size:12px;">Show:
+            <select id="assn-status" style="margin-left:6px; padding:4px 6px; border:1px solid #ddd; border-radius:6px; font-size:12px;">
+              <option value="open">Open only</option>
+              <option value="completed">Completed only</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+          <input id="assn-search" class="assn-search" placeholder="Search project / task / subtask">
+          <div class="assn-note">Tip: Click a row’s ➜ Open to jump to the card.</div>
+        </div>
+
+        <div class="summary-hours" id="assn-summary"></div>
+
+        <div style="overflow:auto; border:1px solid #eee; border-radius:8px; max-height:44vh;">
+          <table class="assn-table" id="assn-table">
+            <thead>
+              <tr>
+                <th style="min-width:120px;">Owner</th>
+                <th style="min-width:160px;">Project</th>
+                <th style="min-width:160px;">Task</th>
+                <th style="min-width:180px;">Subtask</th>
+                <th style="min-width:80px;">Hours</th>
+                <th style="min-width:80px;">Done</th>
+                <th style="min-width:200px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assn-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:auto auto auto;">
+        <button id="assn-copy" class="btn">Copy CSV</button>
+        <button id="assn-print" class="btn">Print</button>
+        <button id="assn-close" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* Google URL */
 const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbws6zd3ifawAHUR3equN29KD5dULQ0blgUmekwycLibEJHg4MjO_V_BAMX0DbIv8P3lWg/exec';
@@ -257,17 +341,20 @@ if (READ_ONLY) {
   document.body.classList.remove('ro');
 }
 
-/* Settings (persisted) */
-const SETTINGS_KEY = 'pt_settings_v1';
+/* Settings (stored via Google; no localStorage) */
 const Settings = {
   data: {
     primaryName: 'Katie',
-    primaryEmail: '',
+    primaryEmail: 'kmason@gogcg.com',
     finalName: 'Zach',
-    finalEmail: 'zschuchardt@gogcg.com'
+    finalEmail: 'zschuchardt@gogcg.com',
+
+    /* Risk Assessment download settings */
+    riskGithubUrl: '',
+    riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm'
   },
-  load() { try { const raw = localStorage.getItem(SETTINGS_KEY); if (raw) this.data = Object.assign(this.data, JSON.parse(raw)); } catch {} },
-  save() { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.data)); }
+  load() { /* no-op */ },
+  save() { /* no-op */ }
 };
 Settings.load();
 
@@ -295,24 +382,37 @@ if (READ_ONLY) {
 }
 
 let dragged = null;
+let dragOriginTimeline = null;
+let dropIndicator = null;
+
 document.addEventListener('click', (e) => { if (!contextMenu.contains(e.target)) contextMenu.style.display = 'none'; });
 
 function normalizeCategory(c){ if(!c) return 'Task'; const v=String(c).trim().toLowerCase(); if(v==='customer'||v==='external') return 'External'; if(v==='invoice') return 'Invoice'; return 'Task'; }
-function categoryIcon(category){ const c=normalizeCategory(category); switch(c.toLowerCase()){ case 'invoice': return ['$', 'green']; case 'external': return ['⚑', 'orange']; default: return ['■', 'blue']; } }
+function normalizeRobot(r){ const v=String(r||'').trim().toLowerCase(); if (v==='ur') return 'UR'; if (v==='fanuc') return 'Fanuc'; return ''; }
+
+/* Robot-aware icon */
+function categoryIcon(category, robotResolved){
+  const c=normalizeCategory(category);
+  if (c==='Invoice') return ['$', 'green'];
+  if (c==='External') return ['⚑', 'orange'];
+  const color = (robotResolved==='Fanuc') ? 'green' : 'blue';
+  return ['■', color];
+}
 
 /* ---------- Header helpers ---------- */
-function formatSubheader({customer='', application='', salesOrder='', poNumber='', estDate=''}) {
-  return `Customer: ${customer} | Application: ${application} | Sales Order: ${salesOrder} | PO: ${poNumber} | Est. Completion: ${estDate}`;
+function formatSubheader({robot='', customer='', application='', salesOrder='', poNumber='', estDate=''}) {
+  const rob = normalizeRobot(robot) || 'UR';
+  return `Robot: ${rob} | Customer: ${customer} | Application: ${application} | Sales Order: ${salesOrder} | PO: ${poNumber} | Est. Completion: ${estDate}`;
 }
 function parseSubheaderText(text) {
-  const obj = { customer:'', application:'', salesOrder:'', poNumber:'', estDate:'' };
+  const obj = { robot:'', customer:'', application:'', salesOrder:'', poNumber:'', estDate:'' };
   const parts = String(text||'').split('|').map(s=>s.trim());
   parts.forEach(seg=>{
     const m = seg.match(/^([^:]+):\s*(.*)$/);
-    if (!m) return;
-    const key = m[1].toLowerCase();
-    const val = m[2] || '';
-    if (key.startsWith('customer')) obj.customer = val;
+    const key = m ? m[1].toLowerCase() : '';
+    const val = m ? (m[2] || '') : '';
+    if (key.startsWith('robot')) obj.robot = val;
+    else if (key.startsWith('customer')) obj.customer = val;
     else if (key.startsWith('application')) obj.application = val;
     else if (key.startsWith('sales order')) obj.salesOrder = val;
     else if (key === 'po' || key.startsWith('po ')) obj.poNumber = val;
@@ -453,6 +553,23 @@ function updateTaskMetaDisplay(taskElem){
   meta.textContent = parts.join(' • ');
 }
 
+/* Robot resolution for a task */
+function getResolvedRobot(taskElem){
+  const taskRob = normalizeRobot(taskElem.dataset.robot);
+  if (taskRob) return taskRob;
+  const project = taskElem.closest('.project');
+  const projRob = normalizeRobot(project?.dataset.robot);
+  return projRob || 'UR';
+}
+function updateTaskIcon(taskElem){
+  const [icon, color] = categoryIcon(taskElem.dataset.category || 'Task', getResolvedRobot(taskElem));
+  const iconSpan = taskElem.querySelector('span.icon');
+  if (iconSpan){
+    iconSpan.textContent = icon;
+    iconSpan.className = `icon ${color}`;
+  }
+}
+
 /* Unique id for projects (session only) */
 let NEXT_PID = 1;
 function ensureProjectPid(projectElem){
@@ -475,12 +592,17 @@ function addTaskToTimeline(timelineElem, insertBefore=null){
   if (parsed.iso) data.date = parsed.iso;
   if (parsed.label) data.dateText = parsed.label;
 
+  const proj = timelineElem.closest('.project');
+  const projRobot = normalizeRobot(proj?.dataset.robot) || 'UR';
+  data.robot = projRobot;
+
   if (category.toLowerCase() === 'invoice') {
     const pct = promptPercent(''); if (pct === null) return; data.invoicePercent = pct;
   }
 
   const div=buildTask(data);
   if(insertBefore&&insertBefore.parentNode===timelineElem) timelineElem.insertBefore(div,insertBefore); else timelineElem.appendChild(div);
+  updateTaskIcon(div);
   updateSubtaskHours(div); applyCompletionStyle(div); updateCurrentIndicator(timelineElem); updateSubtaskDashes(div); updateInvoiceBadge(div);
   updateFinalInvoiceUI(timelineElem);
   markDirty();
@@ -488,15 +610,15 @@ function addTaskToTimeline(timelineElem, insertBefore=null){
 }
 
 function buildTask(data){
-  const [icon,color]=categoryIcon(data.category||'Task');
   const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',!READ_ONLY);
-  div.innerHTML=`<span class="icon ${color}">${icon}</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
+  div.innerHTML=`<span class="icon blue">■</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
   const base=Number.isFinite(Number(data.baseHours))?Number(data.baseHours):0;
   div.dataset.baseHours=base; div.dataset.category=normalizeCategory(data.category||'Task'); div.dataset.completed=data.completed?'true':'false';
   if (typeof data.invoicePercent !== 'undefined') div.dataset.invoicePercent = Number(data.invoicePercent);
   if (data.owner) div.dataset.owner = data.owner;
   if (data.date) div.dataset.date = data.date;
   if (data.dateText) div.dataset.dateText = data.dateText;
+  if (data.robot) div.dataset.robot = normalizeRobot(data.robot);
 
   div._subtasks=Array.isArray(data.subtasks)?data.subtasks.map(s=>({
     name:(s&&s.name)?s.name:'Subtask',
@@ -511,15 +633,59 @@ function buildTask(data){
   updateSubtaskHours(div); updateSubtaskDashes(div); updateInvoiceBadge(div); updateTaskMetaDisplay(div); return div;
 }
 
-function addProject({name,customer='',application='',salesOrder,poNumber,estDate,tasks}){
+function addProject({name,robot='UR',customer='',application='',salesOrder,poNumber,estDate,tasks}){
   const container=document.getElementById('project-container');
   const div=document.createElement('div'); div.className='project';
-  const subText = formatSubheader({customer, application, salesOrder, poNumber, estDate});
+  const subText = formatSubheader({robot, customer, application, salesOrder, poNumber, estDate});
   div.innerHTML=`<div class="project-header">${name}<button class="edit-btn" onclick="editProject(event,this)">Edit</button></div>
     <div class="project-subheader">${subText}</div>
     <div class="timeline"></div><div class="total-hours">Total Hours: 0</div>`;
   ensureProjectPid(div);
+  div.dataset.robot = normalizeRobot(robot) || 'UR';
   const timeline=div.querySelector('.timeline');
+
+  timeline.addEventListener('dragover', (e)=>{
+    if (READ_ONLY) return;
+    if (!dragged) return;
+    e.preventDefault();
+    const t = timeline;
+    if (!dropIndicator){ dropIndicator = document.createElement('div'); dropIndicator.className = 'drop-indicator'; }
+    if (!dropIndicator.parentNode || dropIndicator.parentNode !== t) t.appendChild(dropIndicator);
+
+    const items = [...t.querySelectorAll('.timeline-item')].filter(x=>x!==dragged);
+    let inserted = false;
+    for (const it of items){
+      const rect = it.getBoundingClientRect();
+      const midpoint = rect.left + rect.width/2;
+      if (e.clientX < midpoint){
+        t.insertBefore(dropIndicator, it);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) t.appendChild(dropIndicator);
+  });
+  timeline.addEventListener('drop', (e)=>{
+    if (READ_ONLY) return;
+    e.preventDefault();
+    const t = timeline;
+    if (dragged && (dragged.parentNode !== t || dropIndicator)){
+      const ref = (dropIndicator && dropIndicator.parentNode===t) ? dropIndicator : null;
+      if (ref) t.insertBefore(dragged, ref);
+      else t.appendChild(dragged);
+      updateTotalHours(t); updateCurrentIndicator(t); updateFinalInvoiceUI(t);
+      markDirty();
+    }
+    if (dropIndicator && dropIndicator.parentNode===t) t.removeChild(dropIndicator);
+    if (dragged) dragged.classList.remove('dragging');
+    dragged = null;
+    dragOriginTimeline = null;
+  });
+  timeline.addEventListener('dragleave', (e)=>{
+    if (dropIndicator && !timeline.contains(e.relatedTarget)) {
+      if (dropIndicator.parentNode===timeline) timeline.removeChild(dropIndicator);
+    }
+  });
 
   timeline.addEventListener('contextmenu',e=>{
     if (READ_ONLY) { e.preventDefault(); return; }
@@ -530,7 +696,7 @@ function addProject({name,customer='',application='',salesOrder,poNumber,estDate
   timeline.addEventListener('dblclick',()=>{ if(!READ_ONLY) addTaskToTimeline(timeline); });
 
   container.appendChild(div);
-  (tasks||[]).forEach(t=>{ const el = buildTask(t); timeline.appendChild(el); });
+  (tasks||[]).forEach(t=>{ const el = buildTask(t); timeline.appendChild(el); updateTaskIcon(el); });
   [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ applyCompletionStyle(el); updateSubtaskHours(el); updateSubtaskDashes(el); updateInvoiceBadge(el); updateTaskMetaDisplay(el); });
   updateTotalHours(timeline); updateCurrentIndicator(timeline);
   updateFinalInvoiceUI(timeline);
@@ -547,6 +713,7 @@ const addSubtaskBtn=document.getElementById('add-subtask-btn');
 const addSubtaskWrap=document.getElementById('add-subtask-wrap');
 const modalSummary=document.getElementById('modal-summary');
 const readyInvoiceBtn=document.getElementById('ready-invoice-btn');
+const riskBtn = document.getElementById('risk-btn');
 let currentTask=null;
 
 function openSubtaskModal(taskElem){
@@ -558,6 +725,10 @@ function openSubtaskModal(taskElem){
   const isInv = (taskElem.dataset.category||'').toLowerCase()==='invoice';
   readyInvoiceBtn.style.display = (!READ_ONLY && isInv) ? 'inline-block' : 'none';
   readyInvoiceBtn.onclick = (!READ_ONLY && isInv) ? (()=>openInvoiceModal(taskElem)) : null;
+
+  const isRisk = /^risk\s*assessment$/i.test(taskName.trim());
+  riskBtn.style.display = (!READ_ONLY && isRisk) ? 'inline-block' : 'none';
+  riskBtn.onclick = (!READ_ONLY && isRisk) ? (()=>downloadRiskFromGithub(taskElem)) : null;
 
   addSubtaskWrap.style.display = READ_ONLY ? 'none' : 'block';
   modalDone.textContent = READ_ONLY ? 'Close' : 'Done';
@@ -572,7 +743,7 @@ addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask || READ_ONLY) retur
   const hoursRaw=prompt("Starting Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
   currentTask._subtasks.push({name, hours, done:false, owner:'', date:'', dateText:''}); renderSubtaskRows(); markDirty(); });
 
-/* Right-click context menu for SUBTASKS; removed inline buttons */
+/* Right-click context menu for SUBTASKS */
 function addSubtaskContextMenu(wrap, st, idx, taskElem){
   if (READ_ONLY) return;
   wrap.addEventListener('contextmenu', (e)=>{
@@ -608,7 +779,6 @@ function renderSubtaskRows(){
   subtaskRows.innerHTML=''; if(!currentTask) return;
   const rows=currentTask._subtasks||[];
 
-  /* Bars are % of PARENT TASK TOTAL (base + all sub hours) */
   const base = Number(currentTask.dataset.baseHours||0) || 0;
   const subsTotal = rows.reduce((s,r)=>s+(Number(r.hours)||0),0);
   const parentTotal = base + subsTotal;
@@ -710,10 +880,8 @@ function addTaskContextMenu(taskElem){
 
       const newOwner = prompt('Owner (optional):', taskElem.dataset.owner || '') || '';
 
-      const [icon,color]=categoryIcon(newCategory);
       if(newName) nameEl.textContent=newName;
       taskElem.dataset.baseHours=newHours; taskElem.dataset.category=newCategory;
-      const iconSpan=taskElem.querySelector('span.icon'); iconSpan.textContent=icon; iconSpan.className=`icon ${color}`;
       taskElem.dataset.owner = newOwner;
 
       if (newCategory.toLowerCase() === 'invoice' && typeof taskElem.dataset.invoicePercent === 'undefined') {
@@ -721,12 +889,28 @@ function addTaskContextMenu(taskElem){
       }
       if (newCategory.toLowerCase() !== 'invoice') { delete taskElem.dataset.invoicePercent; }
 
+      updateTaskIcon(taskElem);
       updateSubtaskHours(taskElem); updateCurrentIndicator(taskElem.closest('.timeline'));
       updateInvoiceBadge(taskElem); updateSubtaskDashes(taskElem); updateTaskMetaDisplay(taskElem); updateFinalInvoiceUI(taskElem.closest('.timeline'));
       markDirty();
     });
 
     addContextItem('Set Date/Duration…', ()=> openDateModalForTask(taskElem));
+
+    const resolved = getResolvedRobot(taskElem);
+    if (resolved === 'Fanuc') {
+      addContextItem('Change Robot to UR', ()=>{
+        taskElem.dataset.robot = 'UR';
+        updateTaskIcon(taskElem);
+        markDirty();
+      });
+    } else {
+      addContextItem('Change Robot to Fanuc', ()=>{
+        taskElem.dataset.robot = 'Fanuc';
+        updateTaskIcon(taskElem);
+        markDirty();
+      });
+    }
 
     if ((taskElem.dataset.category||'').toLowerCase() === 'invoice') {
       addContextItem('Edit Invoice %', ()=>{
@@ -749,21 +933,23 @@ function addContextItem(label,action){ const div=document.createElement('div'); 
   div.addEventListener('mousedown',(e)=>{ e.preventDefault(); e.stopPropagation(); contextMenu.style.display='none'; setTimeout(action,0); });
   contextMenu.appendChild(div); }
 function enableDragAndDrop(elem){ if (READ_ONLY) return;
-  elem.addEventListener('dragstart',e=>{ dragged=elem; e.dataTransfer.setData('text/plain',''); });
+  elem.addEventListener('dragstart',e=>{ dragged=elem; dragOriginTimeline = elem.closest('.timeline'); e.dataTransfer.setData('text/plain',''); elem.classList.add('dragging'); });
+  elem.addEventListener('dragend',e=>{ if (dropIndicator && dropIndicator.parentNode) dropIndicator.parentNode.removeChild(dropIndicator); elem.classList.remove('dragging'); dragged=null; dragOriginTimeline=null; });
   elem.addEventListener('dragover',e=>e.preventDefault());
-  elem.addEventListener('drop',e=>{ e.preventDefault(); const target=e.currentTarget;
-    if(dragged&&dragged!==target){ const parent=dragged.parentNode; parent.insertBefore(dragged,target.nextSibling); updateTotalHours(parent); updateCurrentIndicator(parent); updateFinalInvoiceUI(parent); markDirty(); } }); }
+  elem.addEventListener('drop',e=>{ e.preventDefault(); });
+}
 
 /* New project + default template */
 document.getElementById('new-project-btn').addEventListener('click',()=>{
   if (READ_ONLY) return;
   const projectName=prompt("Project Name:"); if(!projectName) return;
+  const robot=normalizeRobot(prompt("Robot (UR/Fanuc):","UR")) || 'UR';
   const customer=prompt("Customer:") || '';
   const application=prompt("Application:") || '';
   const salesOrder=prompt("Sales Order:") || '';
   const poNumber=prompt("PO Number:") || '';
   const estDate=prompt("Estimated Completion Date:") || '';
-  const project = addProject({ name:projectName, customer, application, salesOrder, poNumber, estDate, tasks:[] });
+  const project = addProject({ name:projectName, robot, customer, application, salesOrder, poNumber, estDate, tasks:[] });
   markDirty();
 
   const addTemplate = confirm("Add default timeline template to this project?");
@@ -783,8 +969,9 @@ document.getElementById('new-project-btn').addEventListener('click',()=>{
     ];
     const timeline = project.querySelector('.timeline');
     template.forEach(t => {
-      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false, invoicePercent: t.invoicePercent });
+      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false, invoicePercent: t.invoicePercent, robot });
       timeline.appendChild(card);
+      updateTaskIcon(card);
     });
     [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ updateSubtaskHours(el); updateSubtaskDashes(el); updateInvoiceBadge(el); updateTaskMetaDisplay(el); });
     updateTotalHours(timeline); updateCurrentIndicator(timeline);
@@ -792,6 +979,11 @@ document.getElementById('new-project-btn').addEventListener('click',()=>{
     markDirty();
   }
 });
+
+function refreshProjectTaskIcons(projectElem){
+  const tasks = [...projectElem.querySelectorAll('.timeline-item')];
+  tasks.forEach(updateTaskIcon);
+}
 
 function editProject(ev, btn){
   if (READ_ONLY) return;
@@ -807,6 +999,7 @@ function editProject(ev, btn){
     const currentTitle=header.childNodes[0].textContent.trim();
     const parsed = parseSubheaderText(subheader.textContent);
     const projectName=prompt("Edit Project Name:",currentTitle) ?? currentTitle;
+    const robot=normalizeRobot(prompt("Edit Robot (UR/Fanuc):", parsed.robot || project.dataset.robot || 'UR')) || 'UR';
     const customer=prompt("Edit Customer:", parsed.customer) ?? parsed.customer;
     const application=prompt("Edit Application:", parsed.application) ?? parsed.application;
     const salesOrder=prompt("Edit Sales Order:", parsed.salesOrder) ?? parsed.salesOrder;
@@ -814,7 +1007,9 @@ function editProject(ev, btn){
     const estDate=prompt("Edit Estimated Completion Date:", parsed.estDate) ?? parsed.estDate;
 
     header.childNodes[0].textContent=projectName;
-    subheader.textContent = formatSubheader({customer, application, salesOrder, poNumber, estDate});
+    subheader.textContent = formatSubheader({robot, customer, application, salesOrder, poNumber, estDate});
+    project.dataset.robot = robot;
+    refreshProjectTaskIcons(project);
     updateFinalInvoiceUI(project.querySelector('.timeline'));
     markDirty();
   });
@@ -829,7 +1024,7 @@ function editProject(ev, btn){
   contextMenu.style.display='block';
 }
 
-/* INVOICE EMAIL GENERATOR */
+/* INVOICE EMAIL GENERATOR (unchanged) */
 const invBackdrop = document.getElementById('invoice-modal-backdrop');
 const invClose = document.getElementById('invoice-modal-close');
 const invSubject = document.getElementById('invoice-subject');
@@ -851,7 +1046,7 @@ function getProjectDetails(taskElem){
   const project = tl.closest('.project');
   const projName = project.querySelector('.project-header').childNodes[0].textContent.trim();
   const parsed = parseSubheaderText(project.querySelector('.project-subheader').textContent);
-  return { total, projName, ...parsed };
+  return { total, projName, ...parsed, robot: project.dataset.robot || parsed.robot || '' };
 }
 function openInvoiceModal(taskElem){
   if (READ_ONLY) return;
@@ -938,11 +1133,106 @@ invComplete.addEventListener('click', ()=>{
   alert('Marked invoice task as complete.');
 });
 
-/* Google Save/Load */
-function serializeState(){ const projects=[...document.querySelectorAll('.project')].map(project=>{
+/* ---------- GitHub XLSM downloader ---------- */
+function toRawGithub(urlStr){
+  try {
+    const u = new URL(urlStr);
+    if (!/^https?:$/i.test(u.protocol)) return null;
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (u.hostname === 'raw.githubusercontent.com') return u.toString();
+    if (u.hostname !== 'github.com' || parts.length < 4) return null;
+
+    const owner = parts[0];
+    const repo  = parts[1];
+    const kind  = parts[2];
+    let ref = '';
+    let pathParts = [];
+
+    if (kind === 'blob' || kind === 'raw' || kind === 'tree') {
+      if (parts[3] === 'refs' && parts[4] === 'heads' && parts[5]) {
+        ref = parts[5];
+        pathParts = parts.slice(6);
+      } else {
+        ref = parts[3];
+        pathParts = parts.slice(4);
+      }
+    } else if (kind === 'refs' && parts[3] === 'heads' && parts[4]) {
+      ref = parts[4];
+      pathParts = parts.slice(5);
+    } else {
+      return null;
+    }
+
+    const path = pathParts.join('/');
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
+  } catch (_){ return null; }
+}
+function buildRiskFileName(details){
+  const pattern = (Settings.data.riskFileNamePattern || '').trim() || 'Risk Assessment [YYYY-MM-DD].xlsm';
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const mm = pad2(now.getMonth()+1);
+  const dd = pad2(now.getDate());
+
+  const tokenMap = {
+    'CUSTOMER': details.customer || '',
+    'PROJECT': details.projName || '',
+    'APPLICATION': details.application || '',
+    'SALESORDER': details.salesOrder || '',
+    'PO': details.poNumber || '',
+    'ROBOT': normalizeRobot(details.robot || '') || '',
+    'YYYY': yyyy, 'MM': mm, 'DD': dd,
+    'YYYY-MM-DD': `${yyyy}-${mm}-${dd}`,
+    'MM-DD-YYYY': `${mm}-${dd}-${yyyy}`,
+    'MM DD YYYY': `${mm} ${dd} ${yyyy}`
+  };
+
+  const out = pattern.replace(/\[([^\]]+)\]/g, (_, keyRaw)=>{
+    const k = String(keyRaw || '').trim().toUpperCase();
+    return Object.prototype.hasOwnProperty.call(tokenMap, k) ? tokenMap[k] : `[${keyRaw}]`;
+  });
+
+  const ext = out.toLowerCase().endsWith('.xlsm') ? '' : '.xlsm';
+  const safe = (out + ext).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
+  return safe || `Risk Assessment ${yyyy}-${mm}-${dd}.xlsm`;
+}
+async function downloadRiskFromGithub(taskElem){
+  try{
+    const urlInput = (Settings.data.riskGithubUrl || '').trim();
+    if (!urlInput) { alert('Please set the GitHub XLSM URL in Settings.'); return; }
+    const rawUrl = toRawGithub(urlInput);
+    if (!rawUrl) { alert('The GitHub URL does not look valid. Paste a public blob/raw link.'); return; }
+
+    const details = getProjectDetails(taskElem);
+    const filename = buildRiskFileName(details);
+
+    showLoading(true);
+    const res = await fetch(rawUrl, { mode:'cors', cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const blob = await res.blob();
+    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.ms-excel.sheet.macroEnabled.12' });
+
+    const a = document.createElement('a');
+    const href = URL.createObjectURL(finalBlob);
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(href); a.remove(); }, 0);
+  } catch (e){
+    alert('Download failed: ' + e.message + '\n\nTips:\n• Repo must be public\n• Use a blob/raw URL and Save Settings\n• We auto-convert to raw.githubusercontent.com');
+  } finally {
+    showLoading(false);
+  }
+}
+
+/* Google Save/Load (unchanged except settings travel via payload) */
+function serializeState(){
+  const projects=[...document.querySelectorAll('.project')].map(project=>{
     ensureProjectPid(project);
     const title=project.querySelector('.project-header').childNodes[0].textContent.trim();
     const parsed = parseSubheaderText(project.querySelector('.project-subheader').textContent);
+    const robot = normalizeRobot(project.dataset.robot) || normalizeRobot(parsed.robot) || 'UR';
     const timeline=project.querySelector('.timeline');
     const tasks=[...timeline.querySelectorAll('.timeline-item')].map((t,idx)=>({
       name:t.querySelector('.task-name').textContent,
@@ -955,6 +1245,7 @@ function serializeState(){ const projects=[...document.querySelectorAll('.projec
       date: t.dataset.date || '',
       dateText: t.dataset.dateText || '',
       isDeadline: t.dataset.isDeadline === 'true',
+      robot: t.dataset.robot || '',
       subtasks:(t._subtasks||[]).map(st=>({
         name:st.name, hours:Number(st.hours||0), done:!!st.done,
         owner: st.owner || '',
@@ -964,6 +1255,7 @@ function serializeState(){ const projects=[...document.querySelectorAll('.projec
     }));
     return {
       name:title,
+      robot,
       customer: parsed.customer,
       application: parsed.application,
       poNumber: parsed.poNumber,
@@ -971,12 +1263,26 @@ function serializeState(){ const projects=[...document.querySelectorAll('.projec
       salesOrder: parsed.salesOrder,
       tasks
     };
-  }); return { projects, kind:'ProjectTracker', allowEmpty:(projects.length===0) }; }
+  });
+  return {
+    projects,
+    settings: { ...Settings.data },
+    kind:'ProjectTracker',
+    allowEmpty:(projects.length===0)
+  };
+}
 function clearAllProjects(){ document.getElementById('project-container').innerHTML=''; }
-function loadState(state){ if(!state||!state.projects) return; clearAllProjects();
+function loadState(state){
+  if(!state) return;
+  if (state.settings) {
+    Settings.data = { ...Settings.data, ...state.settings };
+  }
+  if(!state.projects) return;
+  clearAllProjects();
   state.projects.forEach(p=>{
     const proj = addProject({
       name:p.name,
+      robot: p.robot || 'UR',
       customer:p.customer||'',
       application:p.application||'',
       salesOrder:p.salesOrder||'',
@@ -992,6 +1298,7 @@ function loadState(state){ if(!state||!state.projects) return; clearAllProjects(
         date: t.date || '',
         dateText: t.dateText || '',
         isDeadline: !!(t.isDeadline || t.deadline),
+        robot: t.robot || '',
         subtasks:(t.subtasks||[]).map(st=>({
           name:st.name, hours:st.hours, done:!!st.done,
           owner: st.owner || '',
@@ -1004,7 +1311,7 @@ function loadState(state){ if(!state||!state.projects) return; clearAllProjects(
   });
 }
 
-async function saveToGoogle({silent=false} = {}){
+async function saveToGoogle({silent=false} = ''){
   if (READ_ONLY) return;
   const payload=serializeState();
   try{
@@ -1014,7 +1321,7 @@ async function saveToGoogle({silent=false} = {}){
     if(!silent){
       if(data && data.ok){ alert(`✅ Saved ${data.saved} project(s) to Google.`); hasLocalEdits = false; }
       else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.'); }
-      else if (data && data.ignored) { alert('⚠️ Save ignored by server (wrong kind).'); }
+      else if (data && data.ignored) { alert('⚠️ Save response not recognized.'); }
       else { alert('⚠️ Save response not recognized.'); }
     }
   } catch(e){
@@ -1037,15 +1344,12 @@ async function loadFromGoogle({forceApply=true} = {}){
   }
 }
 
-/* Print: popup with fit-to-width scale */
-function collectStyleText() {
-  return Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
-}
+/* Print helpers (unchanged) */
+function collectStyleText() { return Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n'); }
 function exportPDFFit(size) {
   const page = (size === 'tabloid')
     ? { wIn: 17, hIn: 11, label: '17in 11in' }
-    : { wIn: 11, hIn: 8.5, label: '11in 8.5in' }; // landscape
-
+    : { wIn: 11, hIn: 8.5, label: '11in 8.5in' };
   const marginIn = 0.5;
   const availWidthPx = (page.wIn - 2*marginIn) * 96;
 
@@ -1109,7 +1413,7 @@ ${contentHTML}
   w.focus();
 }
 
-/* Date/Duration editor modal logic */
+/* Date/Duration editor modal logic (unchanged) */
 const dateBackdrop = document.getElementById('date-modal-backdrop');
 const dateClose = document.getElementById('date-modal-close');
 const dateCancel = document.getElementById('date-cancel');
@@ -1118,7 +1422,7 @@ const dateClear = document.getElementById('date-clear');
 const dateInput = document.getElementById('date-input');
 const durInput = document.getElementById('dur-input');
 
-let dateCtx = null; // { type:'task'|'sub', taskElem:Element, subIndex?:number }
+let dateCtx = null;
 
 function openDateModalForTask(taskElem){
   if (READ_ONLY) return;
@@ -1192,6 +1496,7 @@ const newProjectBtn = document.getElementById('new-project-btn');
 const printBtn = document.getElementById('printBtn');
 const printTabloidBtn = document.getElementById('printTabloidBtn');
 const settingsBtn = document.getElementById('settingsBtn');
+const assignmentsBtn = document.getElementById('assignmentsBtn');
 
 /* Attach listeners */
 if (saveBtn) saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
@@ -1212,6 +1517,10 @@ const setPrimaryEmail = document.getElementById('set-primary-email');
 const setFinalName = document.getElementById('set-final-name');
 const setFinalEmail = document.getElementById('set-final-email');
 const projOrderList = document.getElementById('proj-order-list');
+
+/* NEW refs for Risk fields */
+const setRiskGithub = document.getElementById('set-risk-github');
+const setRiskPattern = document.getElementById('set-risk-pattern');
 
 function buildProjectOrderList(){
   projOrderList.innerHTML = '';
@@ -1261,6 +1570,10 @@ function openSettings(){
   setPrimaryEmail.value = Settings.data.primaryEmail || '';
   setFinalName.value = Settings.data.finalName || '';
   setFinalEmail.value = Settings.data.finalEmail || '';
+
+  setRiskGithub.value = Settings.data.riskGithubUrl || '';
+  setRiskPattern.value = Settings.data.riskFileNamePattern || '';
+
   buildProjectOrderList();
   settingsBackdrop.style.display = 'flex';
 }
@@ -1269,15 +1582,15 @@ if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) op
 if (settingsClose) settingsClose.addEventListener('click', closeSettings);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
 
-if (settingsSave) settingsSave.addEventListener('click', ()=>{
-  // Save contacts
+if (settingsSave) settingsSave.addEventListener('click', async ()=>{
   Settings.data.primaryName = setPrimaryName.value.trim() || 'Katie';
   Settings.data.primaryEmail = setPrimaryEmail.value.trim();
   Settings.data.finalName = setFinalName.value.trim() || 'Zach';
   Settings.data.finalEmail = setFinalEmail.value.trim() || 'zschuchardt@gogcg.com';
-  Settings.save();
 
-  // Apply project order
+  Settings.data.riskGithubUrl = setRiskGithub.value.trim();
+  Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm';
+
   const container = document.getElementById('project-container');
   const pidToProject = new Map([...container.querySelectorAll('.project')].map(p=>[p.dataset.pid, p]));
   const items = [...projOrderList.querySelectorAll('.re-item')];
@@ -1290,7 +1603,8 @@ if (settingsSave) settingsSave.addEventListener('click', ()=>{
   }
 
   closeSettings();
-  alert('Settings saved.');
+  await saveToGoogle({silent:false});
+  await loadFromGoogle({forceApply:true});
 });
 
 /* Unsaved-changes prompt */
@@ -1300,7 +1614,370 @@ window.addEventListener('beforeunload', (e)=>{
   e.returnValue = '';
 });
 
-/* Initial blocking load + view-only UI tweaks */
+/* -------- NEW: Assignments Report logic -------- */
+const assnBackdrop = document.getElementById('assignments-backdrop');
+const assnCloseBtn = document.getElementById('assignments-close');
+const assnCloseBtn2 = document.getElementById('assn-close');
+const assnOwnerChips = document.getElementById('assn-owner-chips');
+const assnStatus = document.getElementById('assn-status');
+const assnSearch = document.getElementById('assn-search');
+const assnTbody = document.getElementById('assn-tbody');
+const assnSummary = document.getElementById('assn-summary');
+const assnCopy = document.getElementById('assn-copy');
+const assnPrint = document.getElementById('assn-print');
+
+let assnState = {
+  owners: [],    // [{key,name}]
+  selected: new Set(), // keys — starts EMPTY by design
+  rows: [],      // flattened rows
+  status: 'open',
+  query: ''
+};
+
+function canonicalOwnerListFromData(rows){
+  const map = new Map();
+  rows.forEach(r=>{
+    const k = r.ownerKey;
+    if (k || k==='') {
+      if (!map.has(k)) map.set(k, r.owner || '(Unassigned)');
+    }
+  });
+  return [...map.entries()]
+    .map(([key, name])=>({key, name}))
+    .sort((a,b)=> a.name.localeCompare(b.name, undefined, {sensitivity:'base'}));
+}
+
+function gatherAssignmentData(){
+  const rows=[];
+  const projects = [...document.querySelectorAll('#project-container .project')];
+  projects.forEach(project=>{
+    const projName = project.querySelector('.project-header').childNodes[0].textContent.trim();
+    const timeline = project.querySelector('.timeline');
+    const tasks = [...timeline.querySelectorAll('.timeline-item')];
+
+    tasks.forEach((task)=>{
+      const taskName = task.querySelector('.task-name').textContent.trim();
+      const baseHours = Number(task.dataset.baseHours||0);
+      const subs = task._subtasks||[];
+      const hasSubs = subs.length>0;
+
+      // base row shown if baseHours>0 OR no subtasks (to represent standalone task work)
+      if (baseHours>0 || !hasSubs) {
+        const owner = (task.dataset.owner||'').trim();
+        const ownerKey = owner ? owner.toLowerCase() : '';
+        rows.push({
+          ownerKey, owner: owner || '(Unassigned)',
+          projName, projectElem: project,
+          taskElem: task, taskName,
+          subName: '— base —',
+          subIndex: -1,
+          hours: baseHours,
+          done: hasSubs ? null : (task.dataset.completed==='true'),
+          hasSubs
+        });
+      }
+      subs.forEach((st, sIndex)=>{
+        const owner = (st.owner||'').trim();
+        const ownerKey = owner ? owner.toLowerCase() : '';
+        rows.push({
+          ownerKey, owner: owner || '(Unassigned)',
+          projName, projectElem: project,
+          taskElem: task, taskName,
+          subName: st.name || '',
+          subIndex: sIndex,
+          hours: Number(st.hours||0),
+          done: !!st.done,
+          hasSubs
+        });
+      });
+    });
+  });
+  return rows;
+}
+
+function openAssignments(){
+  // build state
+  const rows = gatherAssignmentData();
+  const owners = canonicalOwnerListFromData(rows);
+  assnState.rows = rows;
+  assnState.owners = owners;
+  // Do NOT auto-select anyone. Start empty by design.
+  assnState.status = assnStatus.value || 'open';
+  assnState.query = (assnSearch.value||'').trim().toLowerCase();
+
+  renderOwnerChips();
+  renderAssignmentsTable();
+  assnBackdrop.style.display = 'flex';
+}
+function closeAssignments(){ assnBackdrop.style.display = 'none'; }
+
+function renderOwnerChips(){
+  assnOwnerChips.innerHTML = '';
+  // Quick-select controls
+  const allChip = document.createElement('div');
+  const activeKeys = assnState.owners.map(o=>o.key).filter(k => k !== ''); // exclude Unassigned ('' key)
+  const isAll = assnState.selected.size === assnState.owners.length;
+  const isAllActive = assnState.selected.size === activeKeys.length && activeKeys.every(k=>assnState.selected.has(k));
+
+  allChip.className = 'assn-chip ' + (isAll ? 'active' : '');
+  allChip.textContent = 'All';
+  allChip.onclick = ()=>{
+    if (assnState.owners.length === 0) return;
+    if (isAll) {
+      assnState.selected.clear(); // toggle off -> none
+    } else {
+      assnState.selected = new Set(assnState.owners.map(o=>o.key)); // select all including Unassigned
+    }
+    renderOwnerChips(); renderAssignmentsTable();
+  };
+  assnOwnerChips.appendChild(allChip);
+
+  const allActiveChip = document.createElement('div');
+  allActiveChip.className = 'assn-chip ' + (isAllActive ? 'active' : '');
+  allActiveChip.textContent = 'All Active';
+  allActiveChip.onclick = ()=>{
+    if (activeKeys.length === 0) { assnState.selected.clear(); renderOwnerChips(); renderAssignmentsTable(); return; }
+    if (isAllActive) {
+      assnState.selected.clear(); // toggle off -> none
+    } else {
+      assnState.selected = new Set(activeKeys); // select all except Unassigned
+    }
+    renderOwnerChips(); renderAssignmentsTable();
+  };
+  assnOwnerChips.appendChild(allActiveChip);
+
+  if (!assnState.owners.length){
+    const span = document.createElement('span');
+    span.textContent = 'No owners found.';
+    span.style.fontSize = '12px';
+    span.style.color = '#666';
+    assnOwnerChips.appendChild(span);
+    return;
+  }
+
+  // Individual owner chips (click to toggle; supports single-person views)
+  assnState.owners.forEach(o=>{
+    const chip = document.createElement('div');
+    chip.className = 'assn-chip ' + (assnState.selected.has(o.key) ? 'active' : '');
+    chip.textContent = o.name;
+    chip.onclick = ()=>{
+      if (assnState.selected.has(o.key)) assnState.selected.delete(o.key);
+      else assnState.selected.add(o.key);
+      renderOwnerChips(); renderAssignmentsTable();
+    };
+    assnOwnerChips.appendChild(chip);
+  });
+}
+
+function rowMatchesFilters(r){
+  // If nothing is selected, show nothing (blank view by default)
+  if (assnState.selected.size === 0) return false;
+
+  if (!assnState.selected.has(r.ownerKey)) return false;
+
+  const q = assnState.query;
+  if (q){
+    const hay = `${r.owner} ${r.projName} ${r.taskName} ${r.subName}`.toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+
+  const st = assnState.status;
+  if (st === 'open') {
+    // Treat base-row with hasSubs as "open" (no single checkbox to complete it)
+    if (r.subIndex === -1 && r.hasSubs) return true;
+    return r.done === false;
+  } else if (st === 'completed') {
+    // base-row with hasSubs has no own completion; exclude unless task complete with no subs
+    if (r.subIndex === -1 && r.hasSubs) return false;
+    return r.done === true;
+  } else {
+    return true; // all
+  }
+}
+
+function renderAssignmentsTable(){
+  assnTbody.innerHTML = '';
+  const rows = assnState.rows.filter(rowMatchesFilters)
+    .sort((a,b)=>{
+      // sort by owner, then project, then task name, then subIndex
+      const o = a.owner.localeCompare(b.owner, undefined, {sensitivity:'base'}); if (o) return o;
+      const p = a.projName.localeCompare(b.projName, undefined, {sensitivity:'base'}); if (p) return p;
+      const t = a.taskName.localeCompare(b.taskName, undefined, {sensitivity:'base'}); if (t) return t;
+      return (a.subIndex - b.subIndex);
+    });
+
+  // Per-owner totals (visible only)
+  const perOwner = new Map();
+  let totalHours = 0;
+  rows.forEach(r=>{
+    perOwner.set(r.owner, (perOwner.get(r.owner)||0) + (Number(r.hours)||0));
+    totalHours += (Number(r.hours)||0);
+  });
+  assnSummary.innerHTML = [...perOwner.entries()].map(([name,h])=>`<span><b>${name}:</b> ${h}</span>`).join(' ') + (rows.length ? ` <span><b>Total:</b> ${totalHours}</span>` : '');
+
+  if (!rows.length){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.color = '#666';
+    td.style.fontSize = '12px';
+    td.textContent = 'No matching rows.';
+    tr.appendChild(td);
+    assnTbody.appendChild(tr);
+    return;
+  }
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+
+    const tdOwner = document.createElement('td'); tdOwner.textContent = r.owner;
+    const tdProj  = document.createElement('td'); tdProj.textContent = r.projName;
+    const tdTask  = document.createElement('td'); tdTask.textContent = r.taskName;
+    const tdSub   = document.createElement('td'); tdSub.textContent  = r.subIndex>=0 ? r.subName : '— base —';
+    const tdHours = document.createElement('td'); tdHours.textContent = String(r.hours||0);
+
+    const tdDone  = document.createElement('td');
+    const cb = document.createElement('input'); cb.type = 'checkbox';
+    if (r.subIndex === -1 && r.hasSubs) {
+      cb.disabled = true; // base row with subtasks: completion controlled by subtasks
+    } else {
+      cb.checked = !!r.done;
+      cb.disabled = READ_ONLY;
+      cb.addEventListener('change', ()=>{
+        if (READ_ONLY) return;
+        if (r.subIndex>=0) {
+          const st = r.taskElem._subtasks[r.subIndex];
+          st.done = !!cb.checked;
+          updateSubtaskHours(r.taskElem);
+          updateCurrentIndicator(r.taskElem.closest('.timeline'));
+          applyCompletionStyle(r.taskElem);
+          markDirty();
+        } else {
+          setTaskComplete(r.taskElem, !!cb.checked);
+        }
+        // reflect new state
+        assnState.rows = gatherAssignmentData();
+        renderAssignmentsTable();
+      });
+    }
+    tdDone.appendChild(cb);
+
+    const tdActions = document.createElement('td');
+    tdActions.className = 'assn-actions';
+
+    const btnHours = document.createElement('button');
+    btnHours.className = 'btn-icon';
+    btnHours.textContent = '+ Hours';
+    if (READ_ONLY) btnHours.disabled = true;
+    btnHours.addEventListener('click', ()=>{
+      if (READ_ONLY) return;
+      const addRaw = prompt(`Add hours to ${r.subIndex>=0 ? 'subtask' : 'task base'}:`, '0');
+      const add = Number(addRaw);
+      if (!Number.isFinite(add) || add<=0) return;
+      if (r.subIndex>=0) {
+        const st = r.taskElem._subtasks[r.subIndex];
+        st.hours = (Number(st.hours)||0) + add;
+      } else {
+        r.taskElem.dataset.baseHours = String((Number(r.taskElem.dataset.baseHours)||0) + add);
+      }
+      updateSubtaskHours(r.taskElem);
+      updateCurrentIndicator(r.taskElem.closest('.timeline'));
+      applyCompletionStyle(r.taskElem);
+      markDirty();
+      assnState.rows = gatherAssignmentData();
+      renderAssignmentsTable();
+    });
+
+    const btnOwner = document.createElement('button');
+    btnOwner.className = 'btn-icon';
+    btnOwner.textContent = '✎ Owner';
+    if (READ_ONLY) btnOwner.disabled = true;
+    btnOwner.addEventListener('click', ()=>{
+      if (READ_ONLY) return;
+      const cur = r.subIndex>=0 ? (r.taskElem._subtasks[r.subIndex].owner||'') : (r.taskElem.dataset.owner||'');
+      const v = prompt('Owner name:', cur);
+      if (v===null) return;
+      if (r.subIndex>=0) {
+        r.taskElem._subtasks[r.subIndex].owner = v.trim();
+      } else {
+        r.taskElem.dataset.owner = v.trim();
+        updateTaskMetaDisplay(r.taskElem);
+      }
+      markDirty();
+      assnState.rows = gatherAssignmentData();
+      // Update meta for display
+      updateSubtaskHours(r.taskElem);
+      renderOwnerChips();
+      renderAssignmentsTable();
+    });
+
+    const btnOpen = document.createElement('button');
+    btnOpen.className = 'btn-icon';
+    btnOpen.textContent = '➜ Open';
+    btnOpen.addEventListener('click', ()=>{
+      r.taskElem.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=> openSubtaskModal(r.taskElem), 250);
+    });
+
+    tdActions.appendChild(btnHours);
+    tdActions.appendChild(btnOwner);
+    tdActions.appendChild(btnOpen);
+
+    tr.appendChild(tdOwner);
+    tr.appendChild(tdProj);
+    tr.appendChild(tdTask);
+    tr.appendChild(tdSub);
+    tr.appendChild(tdHours);
+    tr.appendChild(tdDone);
+    tr.appendChild(tdActions);
+
+    assnTbody.appendChild(tr);
+  });
+}
+
+function copyAssignmentsCSV(){
+  const rows = assnState.rows.filter(rowMatchesFilters);
+  const esc = s => `"${String(s).replace(/"/g,'""')}"`;
+  const header = ['Owner','Project','Task','Subtask','Hours','Done'];
+  const lines = [header.map(esc).join(',')];
+  rows.forEach(r=>{
+    lines.push([r.owner, r.projName, r.taskName, r.subIndex>=0 ? r.subName : '— base —', r.hours||0, r.done===null ? '' : (r.done? 'TRUE':'FALSE')].map(esc).join(','));
+  });
+  const csv = lines.join('\n');
+  navigator.clipboard.writeText(csv).then(()=> alert('Copied CSV for current view.'));
+}
+function printAssignmentsView(){
+  const rows = assnState.rows.filter(rowMatchesFilters);
+  const w = window.open('', '_blank');
+  if (!w) { alert('Popup blocked.'); return; }
+  const styles = `
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    table { width:100%; border-collapse: collapse; font-size:12px; }
+    th, td { border:1px solid #ddd; padding:6px 8px; text-align:left; }
+    th { background:#f3f3f3; }
+  `;
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Assignments</title><style>'+styles+'</style></head><body>');
+  w.document.write('<h3>Assignments</h3>');
+  w.document.write('<table><thead><tr><th>Owner</th><th>Project</th><th>Task</th><th>Subtask</th><th>Hours</th><th>Done</th></tr></thead><tbody>');
+  rows.forEach(r=>{
+    w.document.write('<tr><td>'+r.owner+'</td><td>'+r.projName+'</td><td>'+r.taskName+'</td><td>'+(r.subIndex>=0 ? r.subName : '— base —')+'</td><td>'+ (r.hours||0) +'</td><td>'+ (r.done===null ? '' : (r.done?'Yes':'No')) +'</td></tr>');
+  });
+  w.document.write('</tbody></table></body></html>');
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+if (assignmentsBtn) assignmentsBtn.addEventListener('click', ()=> openAssignments());
+assnCloseBtn.addEventListener('click', closeAssignments);
+assnCloseBtn2.addEventListener('click', closeAssignments);
+assnBackdrop.addEventListener('click', e=>{ if(e.target===assnBackdrop) closeAssignments(); });
+assnStatus.addEventListener('change', ()=>{ assnState.status = assnStatus.value; renderAssignmentsTable(); });
+assnSearch.addEventListener('input', ()=>{ assnState.query = (assnSearch.value||'').trim().toLowerCase(); renderAssignmentsTable(); });
+assnCopy.addEventListener('click', copyAssignmentsCSV);
+assnPrint.addEventListener('click', printAssignmentsView);
+
+/* Initial load */
 (async function init(){
   if (READ_ONLY) {
     document.body.classList.add('ro');
@@ -1316,6 +1993,7 @@ window.addEventListener('beforeunload', (e)=>{
   try {
     await loadFromGoogle({forceApply:true});
     if (READ_ONLY) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
+    document.querySelectorAll('.timeline-item').forEach(updateTaskIcon);
   } catch (e) {
     console.error('Load failure:', e);
   } finally {
