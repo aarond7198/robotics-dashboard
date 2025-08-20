@@ -112,6 +112,25 @@
   .assn-actions { display:flex; gap:6px; flex-wrap:wrap; }
   .assn-note { font-size:11px; color:#666; margin-top:4px; }
 
+  /* Settings Tabs */
+  .tabs { display:flex; gap:6px; border-bottom:1px solid #eee; margin: -4px -16px 12px; padding: 0 16px; position: sticky; top: 0; background: #fff; z-index: 1; }
+  .tab-btn { padding:8px 12px; border-radius:8px 8px 0 0; border:1px solid transparent; background:transparent; cursor:pointer; font-size:13px; }
+  .tab-btn.active { background:#f7f9ff; border-color:#dbe5ff; border-bottom-color:#f7f9ff; color:#0b5ed7; }
+  .tab-pane { display:none; }
+  .tab-pane.active { display:block; }
+
+  /* Default Timeline editor rows */
+  .dtl-row { display:grid; grid-template-columns: 18px 1.4fr 1fr 0.9fr auto; align-items:center; gap:8px; padding:6px 8px; border:1px solid #e2e2e2; border-radius:8px; background:#fafafa; }
+  .dtl-grab { cursor: grab; opacity: .6; }
+  .dtl-row input[type="text"] { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
+  .dtl-row select { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
+  .dtl-row input[type="number"] { width:100%; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
+  .dtl-actions { display:flex; gap:6px; justify-content:flex-end; }
+  .dtl-help { font-size:11px; color:#666; margin:6px 0 0; }
+  .dtl-list { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .dtl-ghost { opacity:.5; }
+  .dtl-muted { color:#888; font-size:11px; margin-top:6px; }
+  .dtl-inline-note { font-size:11px; color:#666; }
   @media print {
     body { background: #fff; padding: 0; }
     .topbar, #context-menu, #loadingOverlay, #viewBadge, .modal-backdrop { display: none !important; }
@@ -190,7 +209,7 @@
     </div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings Modal (Tabbed) -->
   <div id="settings-backdrop" class="modal-backdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="modal-header">
@@ -198,43 +217,72 @@
         <button id="settings-close" class="modal-close" title="Close">✕</button>
       </div>
       <div class="modal-body">
-        <div style="display:grid; gap:10px;">
-          <div style="font-weight:700; margin-bottom:4px;">Invoice Contacts</div>
-          <label>Primary Invoice Name
-            <input id="set-primary-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
-          </label>
-          <label>Primary Invoice Email
-            <input id="set-primary-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
-          </label>
-          <label>Final/Closeout Name
-            <input id="set-final-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
-          </label>
-          <label>Final/Closeout Email
-            <input id="set-final-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
-          </label>
+        <!-- Tabs -->
+        <div class="tabs" id="settings-tabs">
+          <button class="tab-btn" data-tab="tab-order">Project Order</button>
+          <button class="tab-btn" data-tab="tab-invoice">Invoice Contacts</button>
+          <button class="tab-btn" data-tab="tab-timeline">Default Timeline</button>
+          <button class="tab-btn" data-tab="tab-risk">Risk Assessment</button>
+        </div>
 
-          <!-- NEW: Risk Assessment -->
-          <div class="settings-section-title">Risk Assessment</div>
-          <label>GitHub XLSM URL (blob or raw)
-            <input id="set-risk-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                   placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsm">
-            <div style="font-size:11px; color:#666; margin-top:4px;">
-              Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
-            </div>
-          </label>
-          <label>Filename Pattern
-            <input id="set-risk-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                   placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm">
-            <div style="font-size:11px; color:#666; margin-top:4px;">
-              Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
-            </div>
-          </label>
-
-          <!-- Project Order -->
+        <!-- Project Order -->
+        <div class="tab-pane" id="tab-order">
           <div class="settings-section-title">Project Order</div>
           <div id="proj-order-wrap">
             <div id="proj-order-list" class="reorder-list"></div>
             <div style="font-size:11px; color:#666; margin-top:4px;">Drag to change display/save order.</div>
+          </div>
+        </div>
+
+        <!-- Invoice Contacts -->
+        <div class="tab-pane" id="tab-invoice">
+          <div class="settings-section-title">Invoice Contacts</div>
+          <div style="display:grid; gap:10px;">
+            <label>Primary Invoice Name
+              <input id="set-primary-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
+            </label>
+            <label>Primary Invoice Email
+              <input id="set-primary-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
+            </label>
+            <label>Final/Closeout Name
+              <input id="set-final-name" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
+            </label>
+            <label>Final/Closeout Email
+              <input id="set-final-email" type="email" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;">
+            </label>
+          </div>
+        </div>
+
+        <!-- Default Timeline -->
+        <div class="tab-pane" id="tab-timeline">
+          <div class="settings-section-title">Default Timeline</div>
+          <div class="dtl-inline-note">This template is used when you choose “Add default timeline template” while creating a new project.</div>
+          <div class="dtl-actions" style="margin-top:8px;">
+            <button id="dtl-add" class="btn">+ Add Step</button>
+            <button id="dtl-reset" class="btn btn-ghost">Reset to Recommended</button>
+          </div>
+          <div id="dtl-list" class="dtl-list"></div>
+          <div class="dtl-help">Fields: <b>Name</b>, <b>Category</b> (Task, Invoice, External), and optional <b>Invoice %</b> (visible when Category = Invoice). Drag ☰ to reorder.</div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="tab-pane" id="tab-risk">
+          <div class="settings-section-title">Risk Assessment</div>
+          <div style="display:grid; gap:10px;">
+            <label>GitHub XLSM URL (blob or raw)
+              <input id="set-risk-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsm">
+              <div style="font-size:11px; color:#666; margin-top:4px;">
+                Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
+              </div>
+            </label>
+            <label>Filename Pattern
+              <input id="set-risk-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                     placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm">
+              <div style="font-size:11px; color:#666; margin-top:4px;">
+                Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
+              </div>
+            </label>
           </div>
         </div>
       </div>
@@ -341,6 +389,21 @@ if (READ_ONLY) {
   document.body.classList.remove('ro');
 }
 
+/* --- Default Timeline (recommended fallback) --- */
+const DEFAULT_TIMELINE = [
+  { name: 'DP Invoice', category: 'Invoice', invoicePercent: 50 },
+  { name: 'Kickoff', category: 'Task' },
+  { name: 'Design', category: 'Task' },
+  { name: 'Manufacture', category: 'External' },
+  { name: 'Assy & Prep', category: 'Task' },
+  { name: 'PreInstall Prep', category: 'External' },
+  { name: 'Pre Ship Invoice', category: 'Invoice', invoicePercent: 35 },
+  { name: 'Ship', category: 'Task' },
+  { name: 'Install', category: 'Task' },
+  { name: 'Risk Assessment', category: 'Task' },
+  { name: 'Final Invoice', category: 'Invoice', invoicePercent: 15 }
+];
+
 /* Settings (stored via Google; no localStorage) */
 const Settings = {
   data: {
@@ -351,7 +414,10 @@ const Settings = {
 
     /* Risk Assessment download settings */
     riskGithubUrl: '',
-    riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm'
+    riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm',
+
+    /* Editable default timeline */
+    defaultTimeline: []   // falls back to DEFAULT_TIMELINE if empty
   },
   load() { /* no-op */ },
   save() { /* no-op */ }
@@ -939,7 +1005,7 @@ function enableDragAndDrop(elem){ if (READ_ONLY) return;
   elem.addEventListener('drop',e=>{ e.preventDefault(); });
 }
 
-/* New project + default template */
+/* New project + default template (now reads Settings.data.defaultTimeline if present) */
 document.getElementById('new-project-btn').addEventListener('click',()=>{
   if (READ_ONLY) return;
   const projectName=prompt("Project Name:"); if(!projectName) return;
@@ -954,22 +1020,21 @@ document.getElementById('new-project-btn').addEventListener('click',()=>{
 
   const addTemplate = confirm("Add default timeline template to this project?");
   if (addTemplate) {
-    const template = [
-      { name: 'DP Invoice', category: 'Invoice', invoicePercent: 50 },
-      { name: 'Kickoff', category: 'Task' },
-      { name: 'Design', category: 'Task' },
-      { name: 'Manufacture', category: 'External' },
-      { name: 'Assy & Prep', category: 'Task' },
-      { name: 'PreInstall Prep', category: 'External' },
-      { name: 'Pre Ship Invoice', category: 'Invoice', invoicePercent: 35 },
-      { name: 'Ship', category: 'Task' },
-      { name: 'Install', category: 'Task' },
-      { name: 'Risk Assessment', category: 'Task' },
-      { name: 'Final Invoice', category: 'Invoice', invoicePercent: 15 }
-    ];
+    const template = (Settings.data.defaultTimeline && Settings.data.defaultTimeline.length)
+      ? Settings.data.defaultTimeline
+      : DEFAULT_TIMELINE;
+
     const timeline = project.querySelector('.timeline');
     template.forEach(t => {
-      const card = buildTask({ name: t.name, baseHours: 0, category: t.category, subtasks: [], completed: false, invoicePercent: t.invoicePercent, robot });
+      const card = buildTask({
+        name: t.name,
+        baseHours: 0,
+        category: t.category,
+        subtasks: [],
+        completed: false,
+        invoicePercent: (typeof t.invoicePercent !== 'undefined') ? t.invoicePercent : undefined,
+        robot
+      });
       timeline.appendChild(card);
       updateTaskIcon(card);
     });
@@ -1226,7 +1291,7 @@ async function downloadRiskFromGithub(taskElem){
   }
 }
 
-/* Google Save/Load (unchanged except settings travel via payload) */
+/* Google Save/Load */
 function serializeState(){
   const projects=[...document.querySelectorAll('.project')].map(project=>{
     ensureProjectPid(project);
@@ -1512,15 +1577,31 @@ if (printTabloidBtn) printTabloidBtn.addEventListener('click', ()=> exportPDFFit
 const settingsBackdrop = document.getElementById('settings-backdrop');
 const settingsClose = document.getElementById('settings-close');
 const settingsSave = document.getElementById('settings-save');
+
+/* Tabs */
+const settingsTabs = document.getElementById('settings-tabs');
+const tabButtons = () => [...document.querySelectorAll('#settings-tabs .tab-btn')];
+const tabPanes = () => [...document.querySelectorAll('.tab-pane')];
+function activateTab(id){
+  tabButtons().forEach(b=> b.classList.toggle('active', b.dataset.tab === id));
+  tabPanes().forEach(p=> p.classList.toggle('active', p.id === id));
+}
+function initTabs(){
+  settingsTabs.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    activateTab(btn.dataset.tab);
+  });
+}
+
+/* Invoice Contact fields */
 const setPrimaryName = document.getElementById('set-primary-name');
 const setPrimaryEmail = document.getElementById('set-primary-email');
 const setFinalName = document.getElementById('set-final-name');
 const setFinalEmail = document.getElementById('set-final-email');
-const projOrderList = document.getElementById('proj-order-list');
 
-/* NEW refs for Risk fields */
-const setRiskGithub = document.getElementById('set-risk-github');
-const setRiskPattern = document.getElementById('set-risk-pattern');
+/* Project Order list */
+const projOrderList = document.getElementById('proj-order-list');
 
 function buildProjectOrderList(){
   projOrderList.innerHTML = '';
@@ -1565,16 +1646,143 @@ function attachReorderDnD(item){
   });
 }
 
+/* Risk fields */
+const setRiskGithub = document.getElementById('set-risk-github');
+const setRiskPattern = document.getElementById('set-risk-pattern');
+
+/* -------- Default Timeline Editor -------- */
+const dtlList = document.getElementById('dtl-list');
+const dtlAdd = document.getElementById('dtl-add');
+const dtlReset = document.getElementById('dtl-reset');
+
+function getTimelineForUI(){
+  const arr = (Settings.data.defaultTimeline && Settings.data.defaultTimeline.length)
+    ? Settings.data.defaultTimeline
+    : DEFAULT_TIMELINE;
+  // Return deep-ish copy for editing safety
+  return arr.map(x => ({ name: x.name || 'Step', category: normalizeCategory(x.category || 'Task'), invoicePercent: (typeof x.invoicePercent !== 'undefined') ? Number(x.invoicePercent) : undefined }));
+}
+
+let dtlData = []; // working copy in UI
+let dtlDragItem = null;
+
+function buildDefaultTimelineList(){
+  dtlData = getTimelineForUI();
+  renderDTL();
+}
+
+function renderDTL(){
+  dtlList.innerHTML='';
+  if (!dtlData.length){
+    const m = document.createElement('div');
+    m.className = 'dtl-muted';
+    m.textContent = 'No steps. Click “+ Add Step” to get started.';
+    dtlList.appendChild(m);
+    return;
+  }
+  dtlData.forEach((row, idx)=>{
+    const div = document.createElement('div');
+    div.className = 'dtl-row';
+    div.draggable = true;
+    div.dataset.index = String(idx);
+    div.innerHTML = `
+      <span class="dtl-grab">☰</span>
+      <input type="text" class="dtl-name" value="${row.name.replace(/"/g,'&quot;')}" />
+      <select class="dtl-cat">
+        <option value="Task"${row.category==='Task'?' selected':''}>Task</option>
+        <option value="Invoice"${row.category==='Invoice'?' selected':''}>Invoice</option>
+        <option value="External"${row.category==='External'?' selected':''}>External</option>
+      </select>
+      <input type="number" class="dtl-pct" min="0" max="100" step="1" placeholder="%" ${row.category==='Invoice'?'':'style="display:none;"'} value="${(typeof row.invoicePercent!=='undefined' && row.invoicePercent!==null)? row.invoicePercent : ''}"/>
+      <div class="dtl-actions">
+        <button class="btn-icon dtl-del">Delete</button>
+      </div>
+    `;
+    const nameEl = div.querySelector('.dtl-name');
+    const catEl = div.querySelector('.dtl-cat');
+    const pctEl = div.querySelector('.dtl-pct');
+    const delBtn = div.querySelector('.dtl-del');
+
+    nameEl.addEventListener('input', ()=> { dtlData[idx].name = nameEl.value.trim() || 'Step'; });
+    catEl.addEventListener('change', ()=> {
+      dtlData[idx].category = normalizeCategory(catEl.value);
+      if (dtlData[idx].category === 'Invoice') {
+        pctEl.style.display = '';
+      } else {
+        pctEl.style.display = 'none';
+        delete dtlData[idx].invoicePercent;
+      }
+    });
+    pctEl.addEventListener('input', ()=> {
+      const n = Number(pctEl.value);
+      if (Number.isFinite(n)) dtlData[idx].invoicePercent = Math.max(0, Math.min(100, Math.round(n)));
+    });
+    delBtn.addEventListener('click', ()=>{
+      dtlData.splice(idx,1);
+      renderDTL();
+    });
+
+    // DnD
+    div.addEventListener('dragstart', ()=>{ dtlDragItem = div; div.classList.add('dtl-ghost'); });
+    div.addEventListener('dragend', ()=>{ div.classList.remove('dtl-ghost'); dtlDragItem = null; });
+    div.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      if (!dtlDragItem || dtlDragItem===div) return;
+      const list = dtlList;
+      const rect = div.getBoundingClientRect();
+      const mid = rect.top + rect.height/2;
+      if (e.clientY < mid) list.insertBefore(dtlDragItem, div);
+      else list.insertBefore(dtlDragItem, div.nextSibling);
+    });
+
+    dtlList.appendChild(div);
+  });
+}
+
+function collectDTLFromDOM(){
+  const rows = [...dtlList.querySelectorAll('.dtl-row')];
+  const out = rows.map(r=>{
+    const name = r.querySelector('.dtl-name').value.trim() || 'Step';
+    const cat = normalizeCategory(r.querySelector('.dtl-cat').value || 'Task');
+    const pctEl = r.querySelector('.dtl-pct');
+    const pctRaw = pctEl && pctEl.style.display !== 'none' ? pctEl.value : '';
+    const pct = pctRaw === '' ? undefined : Math.max(0, Math.min(100, Math.round(Number(pctRaw))));
+    return { name, category: cat, ...(cat==='Invoice' ? { invoicePercent: pct } : {}) };
+  });
+  return out;
+}
+
+if (dtlAdd) dtlAdd.addEventListener('click', ()=>{
+  dtlData.push({ name: 'New Step', category: 'Task' });
+  renderDTL();
+});
+if (dtlReset) dtlReset.addEventListener('click', ()=>{
+  if (!confirm('Reset Default Timeline to recommended steps?')) return;
+  dtlData = DEFAULT_TIMELINE.map(x=>({ ...x }));
+  renderDTL();
+});
+
+/* Open/Close Settings with tabs prepared */
 function openSettings(){
+  // Default active tab: Project Order
+  activateTab('tab-order');
+
+  // Populate invoice contacts
   setPrimaryName.value = Settings.data.primaryName || '';
   setPrimaryEmail.value = Settings.data.primaryEmail || '';
   setFinalName.value = Settings.data.finalName || '';
   setFinalEmail.value = Settings.data.finalEmail || '';
 
+  // Risk
   setRiskGithub.value = Settings.data.riskGithubUrl || '';
   setRiskPattern.value = Settings.data.riskFileNamePattern || '';
 
+  // Project order
   buildProjectOrderList();
+
+  // Default timeline
+  buildDefaultTimelineList();
+
   settingsBackdrop.style.display = 'flex';
 }
 function closeSettings(){ settingsBackdrop.style.display = 'none'; }
@@ -1583,14 +1791,17 @@ if (settingsClose) settingsClose.addEventListener('click', closeSettings);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
 
 if (settingsSave) settingsSave.addEventListener('click', async ()=>{
+  // Invoice contacts
   Settings.data.primaryName = setPrimaryName.value.trim() || 'Katie';
   Settings.data.primaryEmail = setPrimaryEmail.value.trim();
   Settings.data.finalName = setFinalName.value.trim() || 'Zach';
   Settings.data.finalEmail = setFinalEmail.value.trim() || 'zschuchardt@gogcg.com';
 
+  // Risk
   Settings.data.riskGithubUrl = setRiskGithub.value.trim();
   Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm';
 
+  // Project order
   const container = document.getElementById('project-container');
   const pidToProject = new Map([...container.querySelectorAll('.project')].map(p=>[p.dataset.pid, p]));
   const items = [...projOrderList.querySelectorAll('.re-item')];
@@ -1601,6 +1812,9 @@ if (settingsSave) settingsSave.addEventListener('click', async ()=>{
     });
     markDirty();
   }
+
+  // Default Timeline
+  Settings.data.defaultTimeline = collectDTLFromDOM();
 
   closeSettings();
   await saveToGoogle({silent:false});
@@ -1971,14 +2185,16 @@ function printAssignmentsView(){
 if (assignmentsBtn) assignmentsBtn.addEventListener('click', ()=> openAssignments());
 assnCloseBtn.addEventListener('click', closeAssignments);
 assnCloseBtn2.addEventListener('click', closeAssignments);
-assnBackdrop.addEventListener('click', e=>{ if(e.target===assnBackdrop) closeAssignments(); });
+assnBackdrop.addEventListener('click', e=>{ if(e.target===assnBackdrop) openAssignments(); });
 assnStatus.addEventListener('change', ()=>{ assnState.status = assnStatus.value; renderAssignmentsTable(); });
 assnSearch.addEventListener('input', ()=>{ assnState.query = (assnSearch.value||'').trim().toLowerCase(); renderAssignmentsTable(); });
 assnCopy.addEventListener('click', copyAssignmentsCSV);
 assnPrint.addEventListener('click', printAssignmentsView);
 
 /* Initial load */
-(async function init(){
+(function init(){
+  initTabs();
+
   if (READ_ONLY) {
     document.body.classList.add('ro');
     viewBadge.style.display = 'block';
@@ -1990,16 +2206,18 @@ assnPrint.addEventListener('click', printAssignmentsView);
 
   showLoading(true);
   const overlayWatchdog = setTimeout(()=>{ showLoading(false); }, 12000);
-  try {
-    await loadFromGoogle({forceApply:true});
-    if (READ_ONLY) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
-    document.querySelectorAll('.timeline-item').forEach(updateTaskIcon);
-  } catch (e) {
-    console.error('Load failure:', e);
-  } finally {
-    clearTimeout(overlayWatchdog);
-    showLoading(false);
-  }
+  (async () => {
+    try {
+      await loadFromGoogle({forceApply:true});
+      if (READ_ONLY) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
+      document.querySelectorAll('.timeline-item').forEach(updateTaskIcon);
+    } catch (e) {
+      console.error('Load failure:', e);
+    } finally {
+      clearTimeout(overlayWatchdog);
+      showLoading(false);
+    }
+  })();
 })();
 </script>
 </body>
