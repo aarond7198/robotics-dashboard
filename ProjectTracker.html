@@ -90,6 +90,19 @@
   body.ro #ready-invoice-btn,
   body.ro #risk-btn { display: none !important; }
 
+  /* === MODE-SPECIFIC UI VISIBILITY (Admin / Engineer / View) === */
+  /* View-only: also hide Assignments entrypoint */
+  body.mode-view #assignmentsBtn { display: none !important; }
+
+  /* Engineer: hide admin-only controls (but keep Assignments visible) */
+  body.mode-engineer #saveGoogleBtn,
+  body.mode-engineer #loadGoogleBtn,
+  body.mode-engineer #new-project-btn,
+  body.mode-engineer #settingsBtn,
+  body.mode-engineer .edit-btn,
+  body.mode-engineer #ready-invoice-btn,
+  body.mode-engineer #risk-btn { display: none !important; }
+
   .settings-section-title { font-weight:700; margin-top:14px; }
   .reorder-list { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
   .re-item { display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #e2e2e2; border-radius:8px; background:#fafafa; cursor: grab; user-select:none; }
@@ -131,6 +144,7 @@
   .dtl-ghost { opacity:.5; }
   .dtl-muted { color:#888; font-size:11px; margin-top:6px; }
   .dtl-inline-note { font-size:11px; color:#666; }
+
   @media print {
     body { background: #fff; padding: 0; }
     .topbar, #context-menu, #loadingOverlay, #viewBadge, .modal-backdrop { display: none !important; }
@@ -370,23 +384,47 @@
   </div>
 
 <script>
+/* ================== CORE & ASSIGNMENTS (merged) ================== */
+
 /* Google URL */
 const GOOGLE_URL = 'https://script.google.com/macros/s/AKfycbws6zd3ifawAHUR3equN29KD5dULQ0blgUmekwycLibEJHg4MjO_V_BAMX0DbIv8P3lWg/exec';
 
-/* View-only flag via URL */
-const READ_ONLY = (() => {
+/* ---- App Mode gate: admin | engineer | view ---- */
+const APP_MODE = (() => {
   const q = new URLSearchParams(location.search);
-  const v = (q.get('view') || q.get('readonly') || q.get('ro') || '').toLowerCase();
-  return v === '1' || v === 'true' || v === 'yes';
+  let m = (q.get('mode') || '').toLowerCase();
+  // Back-compat with old ?ro=1, ?view=true, ?readonly=true
+  if (!m) {
+    const ro = (q.get('view') || q.get('readonly') || q.get('ro') || '').toLowerCase();
+    if (ro === '1' || ro === 'true' || ro === 'yes') m = 'view';
+  }
+  if (!/^(admin|engineer|view)$/.test(m)) m = 'view';
+  return m;
 })();
 
-/* Ensure ro class never lingers between sessions */
-if (READ_ONLY) {
-  document.documentElement.classList.add('ro');
-  document.body.classList.add('ro');
-} else {
-  document.documentElement.classList.remove('ro');
-  document.body.classList.remove('ro');
+const IS_ADMIN    = (APP_MODE === 'admin');
+const IS_ENGINEER = (APP_MODE === 'engineer');
+const IS_VIEW     = (APP_MODE === 'view');
+
+/* Keep legacy name so minimal downstream churn */
+const READ_ONLY = IS_VIEW;
+
+/* Apply body classes early */
+document.body.classList.toggle('ro', IS_VIEW);
+document.body.classList.toggle('mode-admin', IS_ADMIN);
+document.body.classList.toggle('mode-engineer', IS_ENGINEER);
+document.body.classList.toggle('mode-view', IS_VIEW);
+
+/* Non-admin hardening: block drag/context on timelines/cards */
+if (!IS_ADMIN) {
+  document.addEventListener('dragstart', e => {
+    if (e.target.closest('.timeline-item')) e.preventDefault();
+  }, true);
+  document.addEventListener('contextmenu', e => {
+    if (e.target.closest('.timeline') || e.target.closest('.timeline-item') || e.target.closest('.edit-btn')) {
+      e.preventDefault();
+    }
+  }, true);
 }
 
 /* --- Default Timeline (recommended fallback) --- */
@@ -431,21 +469,6 @@ const contextMenu = document.getElementById('context-menu');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const viewBadge = document.getElementById('viewBadge');
 const showLoading = (on)=> { loadingOverlay.style.display = on ? 'flex' : 'none'; };
-
-/* --- Global hardening in READ_ONLY mode --- */
-if (READ_ONLY) {
-  document.addEventListener('dragstart', e => { e.preventDefault(); }, true);
-  document.addEventListener('contextmenu', e => {
-    if (e.target.closest('.timeline') || e.target.closest('.timeline-item') || e.target.closest('.edit-btn')) {
-      e.preventDefault();
-    }
-  }, true);
-  document.addEventListener('keydown', e => {
-    const isSave = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's';
-    const isDelete = e.key === 'Delete' || e.key === 'Backspace';
-    if (isSave || isDelete) { e.preventDefault(); }
-  }, true);
-}
 
 let dragged = null;
 let dragOriginTimeline = null;
@@ -513,7 +536,7 @@ function parseDateOrDuration(input){
   if (m){
     const n = parseInt(m[1],10);
     const unit = m[2].toLowerCase();
-    const days = unit==='d' ? n : unit==='w' ? n*7 : n==='mo' ? n*30 : n*30;
+    const days = unit==='d' ? n : unit==='w' ? n*7 : unit==='mo' ? n*30 : n*30;
     const label = unit==='d' ? `${n}d` : unit==='w' ? `${n}w` : `${n}mo`;
     return { iso:'', label, days };
   }
@@ -644,7 +667,7 @@ function ensureProjectPid(projectElem){
 
 /* Add / Build Task */
 function addTaskToTimeline(timelineElem, insertBefore=null){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   const name=prompt("Task Name:","New Task"); if(!name) return;
   const hoursRaw=prompt("Estimated Base Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
   const catRaw=prompt("Category (Task, Invoice, External):","Task")||"Task"; const category=normalizeCategory(catRaw);
@@ -676,7 +699,7 @@ function addTaskToTimeline(timelineElem, insertBefore=null){
 }
 
 function buildTask(data){
-  const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',!READ_ONLY);
+  const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',IS_ADMIN);
   div.innerHTML=`<span class="icon blue">■</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
   const base=Number.isFinite(Number(data.baseHours))?Number(data.baseHours):0;
   div.dataset.baseHours=base; div.dataset.category=normalizeCategory(data.category||'Task'); div.dataset.completed=data.completed?'true':'false';
@@ -695,7 +718,7 @@ function buildTask(data){
     dateText:(s&&s.dateText)||''
   })):[];
   div.addEventListener('click',()=>openSubtaskModal(div));
-  if (!READ_ONLY) { addTaskContextMenu(div); enableDragAndDrop(div); }
+  if (IS_ADMIN) { addTaskContextMenu(div); enableDragAndDrop(div); }
   updateSubtaskHours(div); updateSubtaskDashes(div); updateInvoiceBadge(div); updateTaskMetaDisplay(div); return div;
 }
 
@@ -711,7 +734,7 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
   const timeline=div.querySelector('.timeline');
 
   timeline.addEventListener('dragover', (e)=>{
-    if (READ_ONLY) return;
+    if (!IS_ADMIN) return;
     if (!dragged) return;
     e.preventDefault();
     const t = timeline;
@@ -732,7 +755,7 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
     if (!inserted) t.appendChild(dropIndicator);
   });
   timeline.addEventListener('drop', (e)=>{
-    if (READ_ONLY) return;
+    if (!IS_ADMIN) return;
     e.preventDefault();
     const t = timeline;
     if (dragged && (dragged.parentNode !== t || dropIndicator)){
@@ -754,12 +777,12 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
   });
 
   timeline.addEventListener('contextmenu',e=>{
-    if (READ_ONLY) { e.preventDefault(); return; }
+    if (!IS_ADMIN) { e.preventDefault(); return; }
     e.preventDefault();
     if (e.target.closest('.timeline-item')) return;
     addTaskToTimeline(timeline);
   });
-  timeline.addEventListener('dblclick',()=>{ if(!READ_ONLY) addTaskToTimeline(timeline); });
+  timeline.addEventListener('dblclick',()=>{ if(IS_ADMIN) addTaskToTimeline(timeline); });
 
   container.appendChild(div);
   (tasks||[]).forEach(t=>{ const el = buildTask(t); timeline.appendChild(el); updateTaskIcon(el); });
@@ -789,15 +812,15 @@ function openSubtaskModal(taskElem){
   renderSubtaskRows();
 
   const isInv = (taskElem.dataset.category||'').toLowerCase()==='invoice';
-  readyInvoiceBtn.style.display = (!READ_ONLY && isInv) ? 'inline-block' : 'none';
-  readyInvoiceBtn.onclick = (!READ_ONLY && isInv) ? (()=>openInvoiceModal(taskElem)) : null;
+  readyInvoiceBtn.style.display = (IS_ADMIN && isInv) ? 'inline-block' : 'none';
+  readyInvoiceBtn.onclick = (IS_ADMIN && isInv) ? (()=>openInvoiceModal(taskElem)) : null;
 
   const isRisk = /^risk\s*assessment$/i.test(taskName.trim());
-  riskBtn.style.display = (!READ_ONLY && isRisk) ? 'inline-block' : 'none';
-  riskBtn.onclick = (!READ_ONLY && isRisk) ? (()=>downloadRiskFromGithub(taskElem)) : null;
+  riskBtn.style.display = (IS_ADMIN && isRisk) ? 'inline-block' : 'none';
+  riskBtn.onclick = (IS_ADMIN && isRisk) ? (()=>downloadRiskFromGithub(taskElem)) : null;
 
-  addSubtaskWrap.style.display = READ_ONLY ? 'none' : 'block';
-  modalDone.textContent = READ_ONLY ? 'Close' : 'Done';
+  addSubtaskWrap.style.display = IS_ADMIN ? 'block' : 'none';
+  modalDone.textContent = (IS_ADMIN ? 'Done' : 'Close');
 
   modalBackdrop.style.display='flex';
 }
@@ -805,16 +828,18 @@ function closeSubtaskModal(){ modalBackdrop.style.display='none'; currentTask=nu
 modalClose.addEventListener('click',closeSubtaskModal); modalDone.addEventListener('click',closeSubtaskModal);
 modalBackdrop.addEventListener('click',e=>{ if(e.target===modalBackdrop) closeSubtaskModal(); });
 
-addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask || READ_ONLY) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
+addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask || !IS_ADMIN) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
   const hoursRaw=prompt("Starting Hours:","0"); const hours=Number.isFinite(Number(hoursRaw))?Number(hoursRaw):0;
   currentTask._subtasks.push({name, hours, done:false, owner:'', date:'', dateText:''}); renderSubtaskRows(); markDirty(); });
 
 /* Right-click context menu for SUBTASKS */
 function addSubtaskContextMenu(wrap, st, idx, taskElem){
-  if (READ_ONLY) return;
+  if (IS_VIEW) return;
   wrap.addEventListener('contextmenu', (e)=>{
     e.preventDefault();
     contextMenu.innerHTML='';
+
+    // Engineer + Admin
     addContextItem('Add Hours…', ()=>{
       const addRaw=prompt(`Add hours to "${st.name}":`,"0");
       const add=Number.isFinite(Number(addRaw))?Number(addRaw):0;
@@ -823,18 +848,23 @@ function addSubtaskContextMenu(wrap, st, idx, taskElem){
     addContextItem(st.done ? 'Mark Incomplete' : 'Mark Complete', ()=>{
       st.done = !st.done; renderSubtaskRows(); markDirty();
     });
-    addContextItem('Rename…', ()=>{
-      const nn=prompt('New subtask name:',st.name);
-      if(nn&&nn.trim()){ st.name=nn.trim(); renderSubtaskRows(); markDirty(); }
-    });
-    addContextItem('Set Owner…', ()=>{
-      const v=prompt('Owner (optional):', st.owner||'');
-      st.owner = (v||''); renderSubtaskRows(); markDirty();
-    });
-    addContextItem('Set Date/Duration…', ()=> openDateModalForSubtask(taskElem, idx));
-    addContextItem('Delete Subtask', ()=>{
-      taskElem._subtasks.splice(idx,1); renderSubtaskRows(); markDirty();
-    });
+
+    // Admin-only
+    if (IS_ADMIN) {
+      addContextItem('Rename…', ()=>{
+        const nn=prompt('New subtask name:',st.name);
+        if(nn&&nn.trim()){ st.name=nn.trim(); renderSubtaskRows(); markDirty(); }
+      });
+      addContextItem('Set Owner…', ()=>{
+        const v=prompt('Owner (optional):', st.owner||'');
+        st.owner = (v||''); renderSubtaskRows(); markDirty();
+      });
+      addContextItem('Set Date/Duration…', ()=> openDateModalForSubtask(taskElem, idx));
+      addContextItem('Delete Subtask', ()=>{
+        taskElem._subtasks.splice(idx,1); renderSubtaskRows(); markDirty();
+      });
+    }
+
     contextMenu.style.top=e.pageY+'px';
     contextMenu.style.left=e.pageX+'px';
     contextMenu.style.display='block';
@@ -852,7 +882,7 @@ function renderSubtaskRows(){
 
   rows.forEach((st,idx)=>{
     const wrap=document.createElement('div'); wrap.className='subtask-chip';
-    wrap.title= READ_ONLY ? '' : 'Right-click for actions • Click bar to add hours';
+    wrap.title= IS_VIEW ? '' : 'Right-click for actions • Click bar to add hours';
 
     const barWrap=document.createElement('div'); barWrap.className='chip-bar-wrap';
     const bar=document.createElement('div'); bar.className='chip-bar';
@@ -873,7 +903,7 @@ function renderSubtaskRows(){
 
     barWrap.appendChild(bar); barWrap.appendChild(label);
 
-    if (!READ_ONLY) {
+    if (!IS_VIEW) { // engineer + admin
       barWrap.onclick=()=>{
         const addRaw=prompt(`Add hours to "${st.name}":`,"0");
         const add=Number.isFinite(Number(addRaw))?Number(addRaw):0;
@@ -898,7 +928,7 @@ function updateModalSummary(){ if(!currentTask) return; const base=Number(curren
   modalSummary.innerHTML=`<span><b>Base:</b> ${base}</span><span><b>Subtasks:</b> ${subs}</span><span><b>Total:</b> ${total}</span>`; }
 
 function isTaskComplete(taskElem){ const subs=taskElem._subtasks||[]; if(subs.length>0) return subs.every(st=>!!st.done); return taskElem.dataset.completed==='true'; }
-function setTaskComplete(taskElem,val){ if (READ_ONLY) return; taskElem.dataset.completed=val?'true':'false'; applyCompletionStyle(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); markDirty(); }
+function setTaskComplete(taskElem,val){ if (!(IS_ENGINEER || IS_ADMIN)) return; taskElem.dataset.completed=val?'true':'false'; applyCompletionStyle(taskElem); updateCurrentIndicator(taskElem.closest('.timeline')); markDirty(); }
 function applyCompletionStyle(taskElem){ if(isTaskComplete(taskElem)) taskElem.classList.add('completed'); else taskElem.classList.remove('completed'); }
 
 function updateSubtaskHours(taskElem){
@@ -935,7 +965,7 @@ function updateFinalInvoiceUI(timelineElem){
 /* Right-click menu for TASK cards */
 function addTaskContextMenu(taskElem){
   taskElem.addEventListener('contextmenu',function(e){
-    if (READ_ONLY) { e.preventDefault(); return; }
+    if (!IS_ADMIN) { e.preventDefault(); return; }
     e.preventDefault();
     contextMenu.innerHTML='';
 
@@ -998,7 +1028,7 @@ function addTaskContextMenu(taskElem){
 function addContextItem(label,action){ const div=document.createElement('div'); div.textContent=label;
   div.addEventListener('mousedown',(e)=>{ e.preventDefault(); e.stopPropagation(); contextMenu.style.display='none'; setTimeout(action,0); });
   contextMenu.appendChild(div); }
-function enableDragAndDrop(elem){ if (READ_ONLY) return;
+function enableDragAndDrop(elem){ if (!IS_ADMIN) return;
   elem.addEventListener('dragstart',e=>{ dragged=elem; dragOriginTimeline = elem.closest('.timeline'); e.dataTransfer.setData('text/plain',''); elem.classList.add('dragging'); });
   elem.addEventListener('dragend',e=>{ if (dropIndicator && dropIndicator.parentNode) dropIndicator.parentNode.removeChild(dropIndicator); elem.classList.remove('dragging'); dragged=null; dragOriginTimeline=null; });
   elem.addEventListener('dragover',e=>e.preventDefault());
@@ -1007,7 +1037,7 @@ function enableDragAndDrop(elem){ if (READ_ONLY) return;
 
 /* New project + default template (now reads Settings.data.defaultTimeline if present) */
 document.getElementById('new-project-btn').addEventListener('click',()=>{
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   const projectName=prompt("Project Name:"); if(!projectName) return;
   const robot=normalizeRobot(prompt("Robot (UR/Fanuc):","UR")) || 'UR';
   const customer=prompt("Customer:") || '';
@@ -1051,7 +1081,7 @@ function refreshProjectTaskIcons(projectElem){
 }
 
 function editProject(ev, btn){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   const project=btn.closest('.project');
   ensureProjectPid(project);
@@ -1089,7 +1119,7 @@ function editProject(ev, btn){
   contextMenu.style.display='block';
 }
 
-/* INVOICE EMAIL GENERATOR (unchanged) */
+/* INVOICE EMAIL GENERATOR (unchanged gating via visibility) */
 const invBackdrop = document.getElementById('invoice-modal-backdrop');
 const invClose = document.getElementById('invoice-modal-close');
 const invSubject = document.getElementById('invoice-subject');
@@ -1114,7 +1144,7 @@ function getProjectDetails(taskElem){
   return { total, projName, ...parsed, robot: project.dataset.robot || parsed.robot || '' };
 }
 function openInvoiceModal(taskElem){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   invoiceTaskRef = taskElem;
 
   const { total, projName, customer, application, poNumber:po, salesOrder:so } = getProjectDetails(taskElem);
@@ -1377,7 +1407,7 @@ function loadState(state){
 }
 
 async function saveToGoogle({silent=false} = ''){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   const payload=serializeState();
   try{
     const res=await fetch(GOOGLE_URL,{ method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
@@ -1410,7 +1440,7 @@ async function loadFromGoogle({forceApply=true} = {}){
 }
 
 /* Print helpers (unchanged) */
-function collectStyleText() { return Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\n'); }
+function collectStyleText() { return Array.from(document.querySelectorAll('style')).map(s => s.innerHTML).join('\\n'); }
 function exportPDFFit(size) {
   const page = (size === 'tabloid')
     ? { wIn: 17, hIn: 11, label: '17in 11in' }
@@ -1478,7 +1508,7 @@ ${contentHTML}
   w.focus();
 }
 
-/* Date/Duration editor modal logic (unchanged) */
+/* Date/Duration editor modal logic */
 const dateBackdrop = document.getElementById('date-modal-backdrop');
 const dateClose = document.getElementById('date-modal-close');
 const dateCancel = document.getElementById('date-cancel');
@@ -1490,14 +1520,14 @@ const durInput = document.getElementById('dur-input');
 let dateCtx = null;
 
 function openDateModalForTask(taskElem){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   dateCtx = { type:'task', taskElem };
   dateInput.value = taskElem.dataset.date || '';
   durInput.value = taskElem.dataset.dateText || '';
   dateBackdrop.style.display = 'flex';
 }
 function openDateModalForSubtask(taskElem, index){
-  if (READ_ONLY) return;
+  if (!IS_ADMIN) return;
   dateCtx = { type:'sub', taskElem, subIndex:index };
   const st = taskElem._subtasks[index];
   dateInput.value = st.date || '';
@@ -1566,6 +1596,7 @@ const assignmentsBtn = document.getElementById('assignmentsBtn');
 /* Attach listeners */
 if (saveBtn) saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
 if (loadBtn) loadBtn.addEventListener('click', async ()=>{
+  if (!IS_ADMIN) return;
   if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
   showLoading(true);
   try { await loadFromGoogle({forceApply:true}); } finally { showLoading(false); }
@@ -1786,7 +1817,7 @@ function openSettings(){
   settingsBackdrop.style.display = 'flex';
 }
 function closeSettings(){ settingsBackdrop.style.display = 'none'; }
-if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (!READ_ONLY) openSettings(); });
+if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (IS_ADMIN) openSettings(); });
 if (settingsClose) settingsClose.addEventListener('click', closeSettings);
 if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
 
@@ -1821,14 +1852,7 @@ if (settingsSave) settingsSave.addEventListener('click', async ()=>{
   await loadFromGoogle({forceApply:true});
 });
 
-/* Unsaved-changes prompt */
-window.addEventListener('beforeunload', (e)=>{
-  if (READ_ONLY || !hasLocalEdits) return;
-  e.preventDefault();
-  e.returnValue = '';
-});
-
-/* -------- NEW: Assignments Report logic -------- */
+/* ================= Assignments Report ================= */
 const assnBackdrop = document.getElementById('assignments-backdrop');
 const assnCloseBtn = document.getElementById('assignments-close');
 const assnCloseBtn2 = document.getElementById('assn-close');
@@ -2056,9 +2080,9 @@ function renderAssignmentsTable(){
       cb.disabled = true; // base row with subtasks: completion controlled by subtasks
     } else {
       cb.checked = !!r.done;
-      cb.disabled = READ_ONLY;
+      cb.disabled = !(IS_ENGINEER || IS_ADMIN); // engineer+admin can mark complete
       cb.addEventListener('change', ()=>{
-        if (READ_ONLY) return;
+        if (!(IS_ENGINEER || IS_ADMIN)) return;
         if (r.subIndex>=0) {
           const st = r.taskElem._subtasks[r.subIndex];
           st.done = !!cb.checked;
@@ -2079,12 +2103,13 @@ function renderAssignmentsTable(){
     const tdActions = document.createElement('td');
     tdActions.className = 'assn-actions';
 
+    // + Hours (engineer + admin)
     const btnHours = document.createElement('button');
     btnHours.className = 'btn-icon';
     btnHours.textContent = '+ Hours';
-    if (READ_ONLY) btnHours.disabled = true;
+    btnHours.disabled = !(IS_ENGINEER || IS_ADMIN);
     btnHours.addEventListener('click', ()=>{
-      if (READ_ONLY) return;
+      if (!(IS_ENGINEER || IS_ADMIN)) return;
       const addRaw = prompt(`Add hours to ${r.subIndex>=0 ? 'subtask' : 'task base'}:`, '0');
       const add = Number(addRaw);
       if (!Number.isFinite(add) || add<=0) return;
@@ -2102,28 +2127,28 @@ function renderAssignmentsTable(){
       renderAssignmentsTable();
     });
 
+    // ✎ Owner (admin only)
     const btnOwner = document.createElement('button');
     btnOwner.className = 'btn-icon';
     btnOwner.textContent = '✎ Owner';
-    if (READ_ONLY) btnOwner.disabled = true;
-    btnOwner.addEventListener('click', ()=>{
-      if (READ_ONLY) return;
-      const cur = r.subIndex>=0 ? (r.taskElem._subtasks[r.subIndex].owner||'') : (r.taskElem.dataset.owner||'');
-      const v = prompt('Owner name:', cur);
-      if (v===null) return;
-      if (r.subIndex>=0) {
-        r.taskElem._subtasks[r.subIndex].owner = v.trim();
-      } else {
-        r.taskElem.dataset.owner = v.trim();
-        updateTaskMetaDisplay(r.taskElem);
-      }
-      markDirty();
-      assnState.rows = gatherAssignmentData();
-      // Update meta for display
-      updateSubtaskHours(r.taskElem);
-      renderOwnerChips();
-      renderAssignmentsTable();
-    });
+    if (IS_ADMIN) {
+      btnOwner.addEventListener('click', ()=>{
+        const cur = r.subIndex>=0 ? (r.taskElem._subtasks[r.subIndex].owner||'') : (r.taskElem.dataset.owner||'');
+        const v = prompt('Owner name:', cur);
+        if (v===null) return;
+        if (r.subIndex>=0) {
+          r.taskElem._subtasks[r.subIndex].owner = v.trim();
+        } else {
+          r.taskElem.dataset.owner = v.trim();
+          updateTaskMetaDisplay(r.taskElem);
+        }
+        markDirty();
+        assnState.rows = gatherAssignmentData();
+        updateSubtaskHours(r.taskElem);
+        renderOwnerChips();
+        renderAssignmentsTable();
+      });
+    }
 
     const btnOpen = document.createElement('button');
     btnOpen.className = 'btn-icon';
@@ -2134,7 +2159,7 @@ function renderAssignmentsTable(){
     });
 
     tdActions.appendChild(btnHours);
-    tdActions.appendChild(btnOwner);
+    if (IS_ADMIN) tdActions.appendChild(btnOwner);
     tdActions.appendChild(btnOpen);
 
     tr.appendChild(tdOwner);
@@ -2157,7 +2182,7 @@ function copyAssignmentsCSV(){
   rows.forEach(r=>{
     lines.push([r.owner, r.projName, r.taskName, r.subIndex>=0 ? r.subName : '— base —', r.hours||0, r.done===null ? '' : (r.done? 'TRUE':'FALSE')].map(esc).join(','));
   });
-  const csv = lines.join('\n');
+  const csv = lines.join('\\n');
   navigator.clipboard.writeText(csv).then(()=> alert('Copied CSV for current view.'));
 }
 function printAssignmentsView(){
@@ -2179,29 +2204,41 @@ function printAssignmentsView(){
   w.document.write('</tbody></table></body></html>');
   w.document.close();
   w.focus();
-  w.print();
 }
 
-if (assignmentsBtn) assignmentsBtn.addEventListener('click', ()=> openAssignments());
+// Button wiring
+if (assignmentsBtn) assignmentsBtn.addEventListener('click', ()=> {
+  if (IS_VIEW) return;          // view mode: no access
+  openAssignments();            // engineer + admin
+});
 assnCloseBtn.addEventListener('click', closeAssignments);
 assnCloseBtn2.addEventListener('click', closeAssignments);
-assnBackdrop.addEventListener('click', e=>{ if(e.target===assnBackdrop) openAssignments(); });
+assnBackdrop.addEventListener('click', e=>{ if(e.target===assnBackdrop) closeAssignments(); });
 assnStatus.addEventListener('change', ()=>{ assnState.status = assnStatus.value; renderAssignmentsTable(); });
 assnSearch.addEventListener('input', ()=>{ assnState.query = (assnSearch.value||'').trim().toLowerCase(); renderAssignmentsTable(); });
 assnCopy.addEventListener('click', copyAssignmentsCSV);
 assnPrint.addEventListener('click', printAssignmentsView);
 
-/* Initial load */
+/* -------------------- INIT -------------------- */
 (function init(){
   initTabs();
 
-  if (READ_ONLY) {
+  // Role-based badge + visibility
+  if (IS_VIEW) {
     document.body.classList.add('ro');
     viewBadge.style.display = 'block';
-    ['saveGoogleBtn','new-project-btn','settingsBtn'].forEach(id=>{
+  }
+
+  // Hide editing controls for non-admin (engineer + view), but keep Assignments visible for engineer
+  if (!IS_ADMIN) {
+    ['saveGoogleBtn','loadGoogleBtn','new-project-btn','settingsBtn'].forEach(id=>{
       const el = document.getElementById(id);
       if (el) { el.style.display='none'; el.disabled = true; el.setAttribute('aria-hidden','true'); }
     });
+    if (IS_VIEW) { // view-only: also hide Assignments
+      const el = document.getElementById('assignmentsBtn');
+      if (el) { el.style.display='none'; el.disabled = true; el.setAttribute('aria-hidden','true'); }
+    }
   }
 
   showLoading(true);
@@ -2209,7 +2246,8 @@ assnPrint.addEventListener('click', printAssignmentsView);
   (async () => {
     try {
       await loadFromGoogle({forceApply:true});
-      if (READ_ONLY) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
+      // Hide inline project edit buttons for non-admin
+      if (!IS_ADMIN) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
       document.querySelectorAll('.timeline-item').forEach(updateTaskIcon);
     } catch (e) {
       console.error('Load failure:', e);
