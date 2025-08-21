@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard – ProjectTracker (top) + Orders (bottom)</title>
+<style>
+  :root{
+    --bar: 44px;
+    --gutter: 10px;
+    --ui-bg:#f6f8fb;
+    --ui-border:#d9e1ec;
+    --text:#0b2b50;
+    --link:#0b5ed7;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    height:100vh;
+    display:grid;
+    grid-template-rows: var(--bar) 1fr var(--gutter) 40%;
+    background:#eef3f9;
+    color:var(--text);
+    font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  /* Top controls */
+  .topbar{
+    display:flex;align-items:center;gap:8px;
+    padding:6px 8px;
+    background:var(--ui-bg);
+    border-bottom:1px solid var(--ui-border);
+  }
+  .group{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--ui-border);border-radius:8px;padding:6px 8px;}
+  label{font-size:12px;color:#3b557a}
+  input[type="range"], select{border:1px solid var(--ui-border);background:#fff;padding:4px 6px;border-radius:6px;font-size:13px;color:var(--text);}
+  .btn{border:1px solid var(--ui-border);background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--link);}
+  .btn:hover{background:#f3f6fb}
+  .spacer{flex:1}
+  /* Panes */
+  .pane{position:relative;background:#fff;overflow:hidden;border-bottom:1px solid var(--ui-border);}
+  .pane:last-of-type{border-bottom:0}
+  .frame-wrap{position:absolute;inset:0;overflow:auto;background:#fff}
+  .scaler{width:100%;height:100%;transform-origin:0 0;}
+  iframe{width:100%;height:120vh;border:0;display:block} /* big so scaling has room */
+  /* Horizontal gutter */
+  .gutter{
+    display:grid;place-items:center;background:#e8eef9;cursor:row-resize;
+  }
+  .gutter::after{content:"";width:28px;height:3px;background:#c9d6eb;border-radius:2px;}
+  /* Labels */
+  .pane-label{position:absolute;top:6px;left:8px;background:rgba(255,255,255,.85);border:1px solid var(--ui-border);padding:2px 6px;border-radius:6px;font-size:11px;color:#4a6aa1;z-index:2;pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="group">
+      <strong>Dashboard</strong>
+      <span>|</span>
+      <span>Top: <em>ProjectTracker.html</em></span>
+      <button class="btn" id="openTop">Open Top ↗</button>
+    </div>
+    <div class="group">
+      <label for="bottomZoom">Bottom zoom</label>
+      <input id="bottomZoom" type="range" min="60" max="130" step="5" value="90" />
+      <span id="bottomZoomVal">90%</span>
+      <button class="btn" id="openBottom">Open Bottom ↗</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="fit50">50/50</button>
+    <button class="btn" id="fit60">60/40</button>
+    <button class="btn" id="fit70">70/30</button>
+    <button class="btn" id="resetBtn">Reset</button>
+  </div>
+
+  <!-- TOP (ProjectTracker) -->
+  <div class="pane" id="topPane">
+    <div class="pane-label">Top • ProjectTracker.html</div>
+    <div class="frame-wrap">
+      <div class="scaler" id="topScaler" style="transform:scale(1)">
+        <iframe id="topFrame" src="ProjectTracker.html" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUTTER -->
+  <div class="gutter" id="gutter" aria-label="Resize"></div>
+
+  <!-- BOTTOM (orders) -->
+  <div class="pane" id="bottomPane">
+    <div class="pane-label">Bottom • orders.html</div>
+    <div class="frame-wrap">
+      <div class="scaler" id="bottomScaler" style="transform:scale(0.9)">
+        <iframe id="bottomFrame" src="orders.html" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const STORE_KEY = 'tbDashboard_v1';
+  const DEFAULTS = { splitPctTop: 60, bottomZoom: 90 };
+
+  const body = document.body;
+  const gutter = document.getElementById('gutter');
+  const bottomZoom = document.getElementById('bottomZoom');
+  const bottomZoomVal = document.getElementById('bottomZoomVal');
+  const bottomScaler = document.getElementById('bottomScaler');
+  const topFrame = document.getElementById('topFrame');
+  const bottomFrame = document.getElementById('bottomFrame');
+  const openTop = document.getElementById('openTop');
+  const openBottom = document.getElementById('openBottom');
+  const resetBtn = document.getElementById('resetBtn');
+  const fit50 = document.getElementById('fit50');
+  const fit60 = document.getElementById('fit60');
+  const fit70 = document.getElementById('fit70');
+
+  let state = loadState() || { ...DEFAULTS };
+
+  // Apply initial layout (CSS grid row sizes)
+  function applySplit(topPct){
+    const clamped = Math.max(20, Math.min(85, +topPct|0)); // keep usable
+    body.style.gridTemplateRows = `var(--bar) ${clamped}% var(--gutter) ${100 - clamped}%`;
+  }
+  function applyZoom(pct){
+    pct = Math.max(60, Math.min(130, +pct|0));
+    bottomScaler.style.transform = `scale(${pct/100})`;
+    bottomZoom.value = pct;
+    bottomZoomVal.textContent = pct + '%';
+  }
+  function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  function loadState(){
+    try{ const raw = localStorage.getItem(STORE_KEY); return raw? JSON.parse(raw): null; }catch(e){ return null; }
+  }
+
+  // Init from state
+  applySplit(state.splitPctTop ?? DEFAULTS.splitPctTop);
+  applyZoom(state.bottomZoom ?? DEFAULTS.bottomZoom);
+
+  // Drag to resize rows
+  let dragging = false;
+  gutter.addEventListener('mousedown', (e)=>{
+    e.preventDefault(); dragging = true; document.body.style.userSelect='none';
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(dragging){ dragging=false; document.body.style.userSelect=''; save(); }
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if(!dragging) return;
+    const rect = body.getBoundingClientRect();
+    const y = e.clientY - rect.top - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar'));
+    const avail = rect.height - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar')) - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter'));
+    const pct = Math.round((y/avail)*100);
+    state.splitPctTop = pct;
+    applySplit(pct);
+  });
+
+  // Bottom zoom control
+  bottomZoom.addEventListener('input', ()=>{
+    state.bottomZoom = +bottomZoom.value;
+    applyZoom(state.bottomZoom);
+    save();
+  });
+
+  // Quick layout buttons
+  fit50.addEventListener('click', ()=>{ state.splitPctTop = 50; applySplit(50); save(); });
+  fit60.addEventListener('click', ()=>{ state.splitPctTop = 60; applySplit(60); save(); });
+  fit70.addEventListener('click', ()=>{ state.splitPctTop = 70; applySplit(70); save(); });
+
+  // Open in new tab
+  openTop.addEventListener('click', ()=> window.open(topFrame.src, '_blank'));
+  openBottom.addEventListener('click', ()=> window.open(bottomFrame.src, '_blank'));
+
+  // Reset
+  resetBtn.addEventListener('click', ()=>{
+    state = { ...DEFAULTS };
+    applySplit(state.splitPctTop);
+    applyZoom(state.bottomZoom);
+    save();
+  });
+})();
+</script>
+</body>
+</html>
