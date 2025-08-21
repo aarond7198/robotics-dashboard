@@ -152,6 +152,15 @@
     .project { page-break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
     @page { size: 11in 8.5in; margin: 0.5in; }
   }
+
+  /* === Saving Overlay (admin & engineer) === */
+  #savingOverlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.35); z-index: 99999; font-size: 16px; font-weight: 700; color: #fff; pointer-events: all; }
+  #savingOverlay .panel { background: rgba(0,0,0,0.55); padding: 16px 20px; border-radius: 10px; display: flex; align-items: center; gap: 10px; }
+  #savingOverlay .spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.5); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
+
 </style>
 </head>
 <body>
@@ -170,7 +179,8 @@
   <div id="context-menu"></div>
   <div id="viewBadge">VIEW ONLY</div>
 
-  <div id="loadingOverlay"><div class="spinner"></div>Loading from Google…</div>
+  <div id="loadingOverlay"><div class="spinner"></div>
+  <div id="savingOverlay"><div class="panel"><div class="spinner"></div>Saving…</div></div>Loading from Google…</div>
 
   <!-- Subtask Modal -->
   <div id="subtask-modal-backdrop" class="modal-backdrop">
@@ -2258,6 +2268,109 @@ assnPrint.addEventListener('click', printAssignmentsView);
   })();
 })();
 </script>
+
+
+<script>
+// === Strong Save Driver (admin & engineer) + Unsaved Prompt + Overlay ===
+(function(){
+  var btn = document.getElementById('saveGoogleBtn');
+  var overlay = document.getElementById('savingOverlay');
+  function showOverlay(on){ if (overlay) overlay.style.display = on ? 'flex' : 'none'; }
+
+  // Helper: get mode defensively
+  function getMode() {
+    try {
+      if (typeof APP_MODE !== 'undefined' && APP_MODE) return APP_MODE;
+      var usp = new URLSearchParams(location.search);
+      return (usp.get('mode')||'').toLowerCase();
+    } catch(_) { return ''; }
+  }
+
+  // Ensure engineer can see/click the same button
+  try {
+    var mode = getMode();
+    if (mode === 'engineer' && btn) {
+      btn.removeAttribute('disabled');
+      btn.style.display = 'inline-block';
+      btn.style.pointerEvents = 'auto';
+    }
+  } catch(_) {}
+
+  // Prompt on close if unsaved
+  window.addEventListener('beforeunload', function(e){
+    try {
+      if (typeof hasLocalEdits !== 'undefined' && hasLocalEdits) {
+        e.preventDefault(); e.returnValue = ''; return '';
+      }
+    } catch(_) {}
+  });
+
+  // Direct engineer save using same payload/endpoint as admin
+  async function engineerSaveFlow() {
+    if (typeof serializeState !== 'function') { alert('⚠️ Cannot save: serializeState() missing.'); return; }
+    var payload = serializeState();
+    try {
+      var res = await fetch(GOOGLE_URL, { method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
+      var text = await res.text();
+      var data = null; try { data = JSON.parse(text); } catch {}
+      if (data && data.ok) {
+        alert(`✅ Saved ${data.saved} project(s) to Google.`);
+        if (typeof hasLocalEdits !== 'undefined') hasLocalEdits = false;
+      } else if (data && data.blocked) {
+        alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.');
+      } else if (data && data.ignored) {
+        alert('⚠️ Save response not recognized.'); 
+      } else {
+        alert('⚠️ Save response not recognized.');
+      }
+    } catch (e) {
+      alert('❌ Save failed: ' + e.message);
+    }
+  }
+
+  function adminSaveFlow() {
+    if (typeof window.saveToGoogle === 'function') {
+      return window.saveToGoogle(); // preserves your existing flow and alerts
+    }
+    // Fallback: click native handler if any
+    if (btn) btn.click();
+  }
+
+  if (btn) {
+    // Capture phase to preempt other handlers and guarantee overlay
+    btn.addEventListener('click', function(e){
+      // Always take ownership to keep behavior consistent
+      e.preventDefault(); e.stopImmediatePropagation();
+      showOverlay(true);
+
+      var mode = getMode();
+      var p;
+      if (mode === 'admin') {
+        try { p = adminSaveFlow(); } catch(_) {}
+      } else if (mode === 'engineer') {
+        p = engineerSaveFlow();
+      } else {
+        // default to admin flow for safety
+        try { p = adminSaveFlow(); } catch(_) {}
+      }
+
+      // Normalize to promise-ish for overlay handling
+      try {
+        if (p && typeof p.then === 'function') {
+          p.finally(function(){ showOverlay(false); });
+        } else {
+          // if not a promise, just hide overlay shortly after
+          setTimeout(function(){ showOverlay(false); }, 1200);
+        }
+      } catch(_) {
+        setTimeout(function(){ showOverlay(false); }, 1200);
+      }
+    }, true);
+  }
+
+})();
+</script>
+
 </body>
 </html>
 
