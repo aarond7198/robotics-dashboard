@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+# Update the dashboard with "fit bottom to width" scaling that preserves full-width content after scale.
+updated_html = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -14,9 +15,10 @@
     --link:#0b5ed7;
   }
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{
     margin:0;
-    height:100vh;
+    min-height:100%;
     display:grid;
     grid-template-rows: var(--bar) 1fr var(--gutter) 40%;
     background:#eef3f9;
@@ -26,13 +28,11 @@
   /* Top controls */
   .topbar{
     display:flex;align-items:center;gap:8px;
-    padding:6px 8px;
-    background:var(--ui-bg);
-    border-bottom:1px solid var(--ui-border);
+    padding:6px 8px;background:var(--ui-bg);border-bottom:1px solid var(--ui-border);
   }
-  .group{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--ui-border);border-radius:8px;padding:6px 8px;}
+  .group{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--ui-border);border-radius:8px;padding:6px 10px;}
   label{font-size:12px;color:#3b557a}
-  input[type="range"], select{border:1px solid var(--ui-border);background:#fff;padding:4px 6px;border-radius:6px;font-size:13px;color:var(--text);}
+  input[type="range"]{border:1px solid var(--ui-border);background:#fff;padding:4px 6px;border-radius:6px;font-size:13px;color:var(--text);width:140px}
   .btn{border:1px solid var(--ui-border);background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--link);}
   .btn:hover{background:#f3f6fb}
   .spacer{flex:1}
@@ -40,15 +40,20 @@
   .pane{position:relative;background:#fff;overflow:hidden;border-bottom:1px solid var(--ui-border);}
   .pane:last-of-type{border-bottom:0}
   .frame-wrap{position:absolute;inset:0;overflow:auto;background:#fff}
-  .scaler{width:100%;height:100%;transform-origin:0 0;}
-  iframe{width:100%;height:120vh;border:0;display:block} /* big so scaling has room */
+  .frame-wrap.fit-x{overflow-x:hidden} /* hide horizontal scroll when fitting width */
+  .scaler{height:100%;transform-origin:0 0;}
+  iframe{width:100%;height:120vh;border:0;display:block}
   /* Horizontal gutter */
-  .gutter{
-    display:grid;place-items:center;background:#e8eef9;cursor:row-resize;
-  }
+  .gutter{display:grid;place-items:center;background:#e8eef9;cursor:row-resize;}
   .gutter::after{content:"";width:28px;height:3px;background:#c9d6eb;border-radius:2px;}
-  /* Labels */
+  /* Labels + fallback */
   .pane-label{position:absolute;top:6px;left:8px;background:rgba(255,255,255,.85);border:1px solid var(--ui-border);padding:2px 6px;border-radius:6px;font-size:11px;color:#4a6aa1;z-index:2;pointer-events:none}
+  .fallback{
+    position:absolute;inset:36px 8px auto 8px;z-index:3;
+    background:#fff;border:1px dashed #cfd9ea;border-radius:8px;padding:10px;
+    font-size:13px;color:#365a8f;display:none;
+  }
+  .fallback a{color:#0b5ed7}
 </style>
 </head>
 <body>
@@ -61,8 +66,12 @@
     </div>
     <div class="group">
       <label for="bottomZoom">Bottom zoom</label>
-      <input id="bottomZoom" type="range" min="60" max="130" step="5" value="90" />
-      <span id="bottomZoomVal">90%</span>
+      <input id="bottomZoom" type="range" min="60" max="140" step="5" value="85" />
+      <span id="bottomZoomVal">85%</span>
+      <label style="display:inline-flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="fitWidth" checked />
+        Fit bottom width
+      </label>
       <button class="btn" id="openBottom">Open Bottom ↗</button>
     </div>
     <div class="spacer"></div>
@@ -75,9 +84,19 @@
   <!-- TOP (ProjectTracker) -->
   <div class="pane" id="topPane">
     <div class="pane-label">Top • ProjectTracker.html</div>
+    <div class="fallback" id="topFallback">
+      If this panel stays blank, the page might be blocking iframes or needs a direct open.
+      <a id="topDirect" href="/robotics-dashboard/ProjectTracker.html" target="_blank" rel="noopener">Open ProjectTracker in a new tab</a>.
+    </div>
     <div class="frame-wrap">
-      <div class="scaler" id="topScaler" style="transform:scale(1)">
-        <iframe id="topFrame" src="/robotics-dashboard/ProjectTracker.html" loading="lazy"></iframe>
+      <div class="scaler" id="topScaler" style="transform:scale(1);width:100%;">
+        <iframe
+          id="topFrame"
+          src="/robotics-dashboard/ProjectTracker.html"
+          loading="lazy"
+          allow="clipboard-read; clipboard-write; fullscreen; geolocation; microphone; camera; payment; serial; usb; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; autoplay; popups; popups-to-escape-sandbox"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
       </div>
     </div>
   </div>
@@ -88,23 +107,35 @@
   <!-- BOTTOM (orders) -->
   <div class="pane" id="bottomPane">
     <div class="pane-label">Bottom • orders.html</div>
-    <div class="frame-wrap">
-      <div class="scaler" id="bottomScaler" style="transform:scale(0.9)">
-        <iframe id="bottomFrame" src="/robotics-dashboard/orders.html" loading="lazy"></iframe>
+    <div class="fallback" id="bottomFallback">
+      If this panel stays blank, the page might be blocking iframes or needs a direct open.
+      <a id="bottomDirect" href="/robotics-dashboard/orders.html" target="_blank" rel="noopener">Open orders in a new tab</a>.
+    </div>
+    <div class="frame-wrap fit-x" id="bottomWrap">
+      <div class="scaler" id="bottomScaler" style="transform:scale(0.85);width:117.65%">
+        <iframe
+          id="bottomFrame"
+          src="/robotics-dashboard/orders.html"
+          loading="lazy"
+          allow="clipboard-read; clipboard-write; fullscreen; geolocation; microphone; camera; payment; serial; usb; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; autoplay; popups; popups-to-escape-sandbox"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
       </div>
     </div>
   </div>
 
 <script>
 (function(){
-  const STORE_KEY = 'tbDashboard_v1';
-  const DEFAULTS = { splitPctTop: 60, bottomZoom: 90 };
+  const STORE_KEY = 'tbDashboard_fitWidth_v1';
+  const DEFAULTS = { splitPctTop: 60, bottomZoom: 85, fitWidth: true };
 
   const body = document.body;
   const gutter = document.getElementById('gutter');
   const bottomZoom = document.getElementById('bottomZoom');
   const bottomZoomVal = document.getElementById('bottomZoomVal');
   const bottomScaler = document.getElementById('bottomScaler');
+  const bottomWrap = document.getElementById('bottomWrap');
+  const fitWidthChk = document.getElementById('fitWidth');
   const topFrame = document.getElementById('topFrame');
   const bottomFrame = document.getElementById('bottomFrame');
   const openTop = document.getElementById('openTop');
@@ -113,28 +144,42 @@
   const fit50 = document.getElementById('fit50');
   const fit60 = document.getElementById('fit60');
   const fit70 = document.getElementById('fit70');
+  const topFallback = document.getElementById('topFallback');
+  const bottomFallback = document.getElementById('bottomFallback');
 
   let state = loadState() || { ...DEFAULTS };
 
-  // Apply initial layout (CSS grid row sizes)
   function applySplit(topPct){
-    const clamped = Math.max(20, Math.min(85, +topPct|0)); // keep usable
+    const clamped = Math.max(20, Math.min(85, +topPct|0));
     body.style.gridTemplateRows = `var(--bar) ${clamped}% var(--gutter) ${100 - clamped}%`;
   }
-  function applyZoom(pct){
-    pct = Math.max(60, Math.min(130, +pct|0));
-    bottomScaler.style.transform = `scale(${pct/100})`;
+
+  // Fit-to-width aware zoom: adjust scaler width so visual width == container width
+  function applyBottomZoom(pct, fitWidth){
+    pct = Math.max(60, Math.min(140, +pct|0));
+    const s = pct/100;
+    bottomScaler.style.transform = `scale(${s})`;
+    if (fitWidth){
+      const widthPct = (100 / s).toFixed(2); // e.g., 0.85 -> 117.65%
+      bottomScaler.style.width = widthPct + '%';
+      bottomWrap.classList.add('fit-x');
+    } else {
+      bottomScaler.style.width = '100%';
+      bottomWrap.classList.remove('fit-x');
+    }
     bottomZoom.value = pct;
     bottomZoomVal.textContent = pct + '%';
   }
+
   function save(){ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
   function loadState(){
     try{ const raw = localStorage.getItem(STORE_KEY); return raw? JSON.parse(raw): null; }catch(e){ return null; }
   }
 
-  // Init from state
+  // Init
   applySplit(state.splitPctTop ?? DEFAULTS.splitPctTop);
-  applyZoom(state.bottomZoom ?? DEFAULTS.bottomZoom);
+  applyBottomZoom(state.bottomZoom ?? DEFAULTS.bottomZoom, state.fitWidth ?? DEFAULTS.fitWidth);
+  fitWidthChk.checked = !!(state.fitWidth ?? DEFAULTS.fitWidth);
 
   // Drag to resize rows
   let dragging = false;
@@ -147,37 +192,59 @@
   window.addEventListener('mousemove', (e)=>{
     if(!dragging) return;
     const rect = body.getBoundingClientRect();
-    const y = e.clientY - rect.top - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar'));
-    const avail = rect.height - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar')) - parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter'));
+    const bar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--bar')) || 44;
+    const gut = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gutter')) || 10;
+    const y = e.clientY - rect.top - bar;
+    const avail = rect.height - bar - gut;
     const pct = Math.round((y/avail)*100);
-    state.splitPctTop = pct;
-    applySplit(pct);
+    state.splitPctTop = pct; applySplit(pct);
   });
 
   // Bottom zoom control
   bottomZoom.addEventListener('input', ()=>{
     state.bottomZoom = +bottomZoom.value;
-    applyZoom(state.bottomZoom);
+    applyBottomZoom(state.bottomZoom, fitWidthChk.checked);
+    state.fitWidth = fitWidthChk.checked;
     save();
   });
 
-  // Quick layout buttons
+  // Fit width toggle
+  fitWidthChk.addEventListener('change', ()=>{
+    state.fitWidth = fitWidthChk.checked;
+    applyBottomZoom(+bottomZoom.value, state.fitWidth);
+    save();
+  });
+
+  // Quick layouts
   fit50.addEventListener('click', ()=>{ state.splitPctTop = 50; applySplit(50); save(); });
   fit60.addEventListener('click', ()=>{ state.splitPctTop = 60; applySplit(60); save(); });
   fit70.addEventListener('click', ()=>{ state.splitPctTop = 70; applySplit(70); save(); });
 
-  // Open in new tab
-  openTop.addEventListener('click', ()=> window.open(topFrame.src, '_blank'));
-  openBottom.addEventListener('click', ()=> window.open(bottomFrame.src, '_blank'));
+  // Open direct
+  openTop.addEventListener('click', ()=> window.open('/robotics-dashboard/ProjectTracker.html', '_blank'));
+  openBottom.addEventListener('click', ()=> window.open('/robotics-dashboard/orders.html', '_blank'));
 
-  // Reset
-  resetBtn.addEventListener('click', ()=>{
-    state = { ...DEFAULTS };
-    applySplit(state.splitPctTop);
-    applyZoom(state.bottomZoom);
-    save();
-  });
+  // Simple blank detection → show a friendly hint if iframe has no heightful doc after a short delay
+  function showFallbackIfBlank(frame, fallbackEl){
+    const t = setTimeout(()=>{
+      try{
+        const doc = frame.contentDocument || frame.contentWindow?.document;
+        if (!doc || !doc.body || !doc.body.children.length){
+          fallbackEl.style.display = 'block';
+        }
+      }catch(e){
+        fallbackEl.style.display = 'block';
+      }
+    }, 2000);
+    frame.addEventListener('load', ()=> { clearTimeout(t); fallbackEl.style.display = 'none'; }, { once:false });
+  }
+  showFallbackIfBlank(topFrame, topFallback);
+  showFallbackIfBlank(bottomFrame, bottomFallback);
 })();
 </script>
 </body>
 </html>
+"""
+with open('/mnt/data/dashboard.html', 'w', encoding='utf-8') as f:
+    f.write(updated_html)
+print("Updated file at /mnt/data/dashboard.html")
