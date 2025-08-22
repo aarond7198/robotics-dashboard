@@ -182,8 +182,8 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
   <div id="context-menu"></div>
   <div id="viewBadge">VIEW ONLY</div>
 
-  <div id="loadingOverlay"><div class="spinner"></div>
-  <div id="savingOverlay"><div class="panel"><div class="spinner"></div>Saving…</div></div>Loading from Google…</div>
+  <div id="loadingOverlay"><div class="spinner"></div>Loading from Google…</div>
+  <div id="savingOverlay" aria-live="polite" aria-busy="true" style="display:none;"><div class="panel"><div class="spinner"></div><span id="savingOverlayText">Saving…</span></div></div>
 
   <!-- Subtask Modal -->
   <div id="subtask-modal-backdrop" class="modal-backdrop">
@@ -2278,7 +2278,9 @@ assnPrint.addEventListener('click', printAssignmentsView);
 (function(){
   var btn = document.getElementById('saveGoogleBtn');
   var overlay = document.getElementById('savingOverlay');
-  function showOverlay(on){ if (overlay) overlay.style.display = on ? 'flex' : 'none'; }
+  var overlayText = document.getElementById('savingOverlayText');
+  function showOverlay(on){ if (!overlay) return; if (on){ if (overlayText) overlayText.textContent = 'Saving…'; overlay.style.display = 'flex'; } else { overlay.style.display = 'none'; } }
+  function setOverlayMessage(msg){ if (overlayText) overlayText.textContent = msg; }
 
   // Helper: get mode defensively
   function getMode() {
@@ -2360,13 +2362,15 @@ assnPrint.addEventListener('click', printAssignmentsView);
       // Normalize to promise-ish for overlay handling
       try {
         if (p && typeof p.then === 'function') {
-          p.finally(function(){ showOverlay(false); });
+          p.then(function(){ setOverlayMessage('Saved'); setTimeout(function(){ showOverlay(false); }, 650); })
+           .catch(function(){ setOverlayMessage('Error saving'); setTimeout(function(){ showOverlay(false); }, 1200); });
         } else {
-          // if not a promise, just hide overlay shortly after
-          setTimeout(function(){ showOverlay(false); }, 1200);
+          setOverlayMessage('Saved');
+          setTimeout(function(){ showOverlay(false); }, 650);
         }
       } catch(_) {
-        setTimeout(function(){ showOverlay(false); }, 1200);
+        setOverlayMessage('Saved');
+        setTimeout(function(){ showOverlay(false); }, 650);
       }
     }, true);
   }
