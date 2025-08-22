@@ -95,7 +95,7 @@
   body.mode-view #assignmentsBtn { display: none !important; }
 
   /* Engineer: hide admin-only controls (but keep Assignments visible) */
-  /*body.mode-engineer #saveGoogleBtn,*/
+  /**/
   body.mode-engineer #loadGoogleBtn,
   body.mode-engineer #new-project-btn,
   body.mode-engineer #settingsBtn,
@@ -161,6 +161,9 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
 
+
+/* Engineer mode: show Save button */
+body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
 </style>
 </head>
 <body>
