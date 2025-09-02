@@ -93,6 +93,13 @@
     .daycell{min-height:72px}
     .recipe-name{max-width:60vw}
   }
+
+  /* Mobile FAB for Auto Plan Range */
+  #mobilePlanFab{position:fixed;right:16px;bottom:16px;z-index:30;
+    display:none;align-items:center;gap:8px;padding:12px 14px;border-radius:999px;
+    background:var(--warn);color:#1f1300;border:none;box-shadow:var(--shadow);}
+  @media(max-width: 700px){ #mobilePlanFab{display:flex;} }
+
 </style>
 </head>
 <body>
@@ -102,11 +109,13 @@
     <div class="status"><span class="dot" id="saveDot"></span><span id="saveLabel">All changes saved</span></div>
     <div class="spacer"></div>
     <button class="btn" id="btnSettings">Settings</button>
-    <button class="btn" id="openPlannerBtn">Planner</button>
     <button class="btn" id="btnExport">Export</button>
     <label class="btn" for="importFile">Import</label><input id="importFile" type="file" accept="application/json" hidden />
     <button class="btn good" id="btnAddRecipe">+ Add Recipe</button>
   </div>
+
+<button class="btn warn" id="mobilePlanFab">Auto Plan Range</button>
+
 </header>
 
 <div class="wrap layout">
@@ -120,12 +129,12 @@
         <button class="btn ghost" id="nextWindow">▶</button>
         <div class="spacer"></div>
         <button class="btn" id="todayBtn">Today</button>
-        <button class="btn warn" id="planModeBtn">Plan Range</button>
+        <button class="btn warn" id="planModeBtn">Auto Plan Range</button>
         <button class="btn ghost" id="exitPlanModeBtn" style="display:none">Exit Plan</button>
       </div>
     </div>
     <div class="calendar">
-      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Plan Range</strong> to drag across dates for the Planner.</div>
+      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates for the Planner (works with touch).</div>
       <div class="cal-grid" id="calendarGrid"></div>
     </div>
   </section>
@@ -406,6 +415,9 @@ function renderCalendar(){
       cell.addEventListener('mousedown',(e)=>{ onDayMouseDown(e, iso, cell); });
       cell.addEventListener('mouseover',(e)=>{ onDayMouseOver(e, iso, cell); });
       cell.addEventListener('mouseup',(e)=>{ onDayMouseUp(e, iso, cell); });
+      cell.addEventListener('touchstart',(e)=>{ onDayTouchStart(e, iso, cell); }, {passive:false});
+      cell.addEventListener('touchmove',(e)=>{ onDayTouchMove(e, iso, cell); }, {passive:false});
+      cell.addEventListener('touchend',(e)=>{ onDayTouchEnd(e, iso, cell); });
       cell.addEventListener('dblclick', ()=>{ openDayModal(iso); });
       grid.appendChild(cell);
     }
@@ -437,18 +449,51 @@ function updatePlanModeUI(){
   if(btnOff) btnOff.style.display = planMode ? '' : 'none';
   if(hint) hint.innerHTML = planMode
     ? 'Drag across calendar days to select a range. Release to open the planner. Double-click any day to edit.'
-    : 'Tip: double-click a day to edit. Use <strong>Plan Range</strong> to drag across dates for the Planner.';
+    : 'Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates for the Planner (works with touch).';
 }
 function enterPlanMode(){ planMode=true; clearRangeSelection(); updatePlanModeUI(); }
 function exitPlanMode(){ planMode=false; clearRangeSelection(); updatePlanModeUI(); }
 document.getElementById('planModeBtn').onclick=enterPlanMode;
 document.getElementById('exitPlanModeBtn').onclick=exitPlanMode;
+const _fab=document.getElementById('mobilePlanFab'); if(_fab){ _fab.onclick=enterPlanMode; }
 function onDayMouseDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
   dragStartISO=iso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO); e.preventDefault();
 }
 function onDayMouseOver(e, iso, cell){ if(!planMode || !dragActive || !dragStartISO) return; markRangeOnCalendar(dragStartISO, iso); }
 function onDayMouseUp(e, iso, cell){
+/* Touch support for plan-mode drag selection */
+let touchStartISO=null;
+function touchCellIsoFromEvent(e){
+  const t = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : null);
+  if(!t) return null;
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const cell = el && el.closest ? el.closest('.daycell') : null;
+  return cell ? cell.dataset.iso : null;
+}
+function onDayTouchStart(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault();
+  const hitIso = touchCellIsoFromEvent(e) || iso;
+  dragStartISO = hitIso; touchStartISO = hitIso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO);
+}
+function onDayTouchMove(e, iso, cell){
+  if(!planMode || !dragActive || !dragStartISO) return;
+  e.preventDefault();
+  const overIso = touchCellIsoFromEvent(e) || iso;
+  if(overIso) markRangeOnCalendar(dragStartISO, overIso);
+}
+function onDayTouchEnd(e, iso, cell){
+  if(!planMode) return;
+  const endIso = touchCellIsoFromEvent(e) || iso || touchStartISO;
+  if(!dragStartISO || !endIso){ dragActive=false; return; }
+  const a = fromISO(dragStartISO), b = fromISO(endIso);
+  const startISO = toISO(a<b ? a : b), endISO = toISO(a<b ? b : a);
+  dragStartISO=null; dragActive=false; touchStartISO=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
   if(!planMode) return;
   if(!dragStartISO){ dragActive=false; return; }
   const a = fromISO(dragStartISO), b = fromISO(iso);
@@ -473,7 +518,7 @@ function openPlannerModal(startISO=null, endISO=null){
 }
 function closePlannerModal(){ const m=document.getElementById('plannerModalWrap'); if(m) m.style.display='none'; }
 document.getElementById('closePlannerModal').onclick=closePlannerModal;
-document.getElementById('openPlannerBtn').onclick=()=>openPlannerModal();
+if(document.getElementById('openPlannerBtn')){ document.getElementById('openPlannerBtn').onclick=()=>openPlannerModal(); }
 document.getElementById('plannerThisWeek').onclick=()=>{
   const now=new Date(); document.getElementById('plannerAnchor').value=toISO(startOfWeek(now,false));
   buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
