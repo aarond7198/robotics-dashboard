@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Meal Planner & Recipe Vault — v11</title>
+<style>
+  :root {
+    --bg:#0b1020; --bg2:#0b1226; --card:#0f1633; --card2:#121830;
+    --muted:#b9c7e7; --text:#f2f6ff; --line:#ffffff24;
+    --accent:#89b4ff; --accent2:#34d399; --warn:#f59e0b; --danger:#ef4444;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+       color:var(--text); background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+  header{position:sticky;top:0;z-index:20;background:#0b1020cc;backdrop-filter:blur(6px);
+         border-bottom:1px solid var(--line)}
+  .wrap{max-width:1400px;margin:0 auto;padding:14px 16px}
+  .titlebar{display:flex;align-items:center;gap:12px}
+  h1{margin:0;font-size:18px;letter-spacing:.2px}
+  .spacer{flex:1}
+  .status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%;background:#4b5563}
+  .dot.saving{background:var(--warn)} .dot.saved{background:var(--accent2)} .dot.error{background:var(--danger)}
+  .btn{cursor:pointer;border:1px solid var(--line);background:#192147;color:var(--text);
+       padding:8px 12px;border-radius:10px;transition:.2s}
+  .btn:hover{background:#1f2a57} .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.good{background:var(--accent2);color:#062012;border:none}
+  .btn.warn{background:var(--warn);color:#1f1300;border:none}
+  .btn.danger{background:var(--danger);color:#fff;border:none}
+  .btn.ghost{background:transparent;border-color:#ffffff33;color:var(--text)}
+  input,select,textarea{background:#0c1330;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px}
+  input::placeholder, textarea::placeholder{color:#d9e2ff7a}
+  input[type="date"]{padding:7px 8px}
+  .layout{display:grid;gap:16px;align-items:start;grid-template-columns:1.05fr .95fr}
+  @media(max-width:1200px){.layout{grid-template-columns:1fr}}
+  .card{background:var(--card2);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .card .head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .card .body{padding:14px 16px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  .calendar{padding:12px 16px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
+  .dow{font-size:12px;color:#ffffff;opacity:.85;text-align:center;letter-spacing:.2px}
+  .daycell{min-height:108px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+           padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:.15s}
+  .daycell:hover{transform:translateY(-1px)}
+  .today{outline:2px solid var(--accent)}
+  .off{color:#ffddb4}
+  .daytitle{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:#d7def6}
+  .mealname{font-size:12px;line-height:1.3}
+  .rangeSel{outline:2px dashed var(--accent); background:linear-gradient(180deg, #0f1633 0%, #14204c 100%)}
+  .planMode .daycell{cursor:crosshair}
+  .tabsbar{display:flex;gap:8px;padding:8px;background:#0c1434;border-bottom:1px solid var(--line);border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
+  .tbtn{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1736;cursor:pointer;font-size:13px;color:var(--text);font-weight:600}
+  .tbtn.active{outline:2px solid var(--accent);background:#111d46}
+  .workspace{border-top:1px solid var(--line);border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius)}
+  .pane{display:none;padding:14px 16px}
+  .pane.active{display:block}
+  .recipe-list{display:grid;gap:2px;max-height:58vh;overflow:auto}
+  .recipe-row{background:#0f1633;border:1px solid var(--line);border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .recipe-row.active{outline:2px solid var(--accent)}
+  .recipe-name{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{font-size:10px;color:var(--muted);white-space:nowrap;display:flex;gap:6px}
+  .pdf-view{height:420px;background:#0f1633;border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .pdf-view iframe, .pdf-view embed{width:100%;height:100%;border:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;background:#0f1736;border:1px solid #ffffff1f;border-radius:999px;font-size:12px}
+  .tag-preset{font-size:11px;padding:6px 8px;border:1px solid #ffffff24;border-radius:999px;background:#0d1431;color:var(--text);cursor:pointer}
+  .tag-preset.active{outline:2px solid var(--accent2)}
+  .pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;background:#0f1736;border:1px solid #ffffff1f;border-radius:999px;font-size:12px;color:var(--text)}
+  .toast{position:fixed;right:16px;bottom:16px;background:#111a3c;border:1px solid #ffffff24;padding:10px 14px;border-radius:10px;opacity:0;transform:translateY(12px);transition:.25s;z-index:100}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .modal-backdrop{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;z-index:50}
+  .modal{width:min(1000px,92vw);background:var(--card2);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);color:var(--text)}
+  .modal .head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .modal .body{padding:14px 16px;max-height:74vh;overflow:auto}
+  label{color:var(--text)}
+  /* Mobile tweaks */
+  @media(max-width: 900px){
+    .layout{grid-template-columns:1fr}
+    .btn{padding:10px 12px;font-size:14px;border-radius:12px}
+    .cal-grid{gap:6px}
+    .daycell{min-height:84px}
+    .pdf-view{height:300px}
+    .tbtn{padding:10px 12px;font-size:14px}
+    input,select,textarea{padding:10px;font-size:14px}
+  }
+  @media(max-width: 600px){
+    .wrap{padding:12px}
+    .daycell{min-height:72px}
+    .recipe-name{max-width:60vw}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap titlebar">
+    <h1>🍽️ Meal Planner & Recipe Vault</h1>
+    <div class="status"><span class="dot" id="saveDot"></span><span id="saveLabel">All changes saved</span></div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnSettings">Settings</button>
+    <button class="btn" id="openPlannerBtn">Planner</button>
+    <button class="btn" id="btnExport">Export</button>
+    <label class="btn" for="importFile">Import</label><input id="importFile" type="file" accept="application/json" hidden />
+    <button class="btn good" id="btnAddRecipe">+ Add Recipe</button>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <!-- Calendar -->
+  <section class="card">
+    <div class="head">
+      <h2>Calendar</h2>
+      <div class="row">
+        <button class="btn ghost" id="prevWindow">◀</button>
+        <h3 id="calTitle" style="margin:0;font-size:14px">Range</h3>
+        <button class="btn ghost" id="nextWindow">▶</button>
+        <div class="spacer"></div>
+        <button class="btn" id="todayBtn">Today</button>
+        <button class="btn warn" id="planModeBtn">Plan Range</button>
+        <button class="btn ghost" id="exitPlanModeBtn" style="display:none">Exit Plan</button>
+      </div>
+    </div>
+    <div class="calendar">
+      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Plan Range</strong> to drag across dates for the Planner.</div>
+      <div class="cal-grid" id="calendarGrid"></div>
+    </div>
+  </section>
+
+  <!-- Right-side: Recipes & Viewer -->
+  <section class="card">
+    <div class="tabsbar">
+      <button class="tbtn active" data-pane="recipesPane">Recipes</button>
+      <button class="tbtn" data-pane="viewerPane">Viewer</button>
+    </div>
+    <div class="workspace">
+      <div class="pane active" id="recipesPane">
+        <div class="row">
+          <input id="searchRecipes" type="text" placeholder="Search recipes or tags…" style="flex:1"/>
+          <button class="btn" id="btnViewSelected">View</button>
+          <button class="btn" id="btnEditSelected">Edit</button>
+          <button class="btn danger" id="btnDeleteSelected">Delete</button>
+        </div>
+        <div id="recipeList" class="recipe-list" style="margin-top:10px"></div>
+      </div>
+
+      <div class="pane" id="viewerPane">
+        <div class="row" style="justify-content:space-between">
+          <h3 id="viewerTitle" style="margin:0">Recipe Viewer</h3>
+          <div class="row">
+            <button class="btn" id="btnOpenPdfs">Open PDF(s)</button>
+          </div>
+        </div>
+        <div class="chips" id="attachmentTabs" style="margin:8px 0"></div>
+        <div class="pdf-view" id="pdfView"><div class="muted">Select a recipe to preview.</div></div>
+        <div class="row" style="margin-top:10px">
+          <div style="flex:1">
+            <label>Recipe Notes</label>
+            <textarea id="recipeNotes" placeholder="Notes…" style="width:100%;min-height:140px"></textarea>
+            <div class="row" style="margin-top:8px"><button class="btn good" id="btnSaveNotes">Save Notes</button></div>
+          </div>
+          <div style="flex:1">
+            <label>Tags</label>
+            <div id="selectedRecipeTags" class="chips" style="margin-top:6px"></div>
+            <div id="presetTagsViewer" class="chips" style="margin-top:8px"></div>
+            <div class="row" style="margin-top:8px">
+              <input id="addTagInput" type="text" placeholder="Add tag (Enter)" /><button class="btn" id="btnAddTag">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Day Editor Modal -->
+<div id="dayModalWrap" class="modal-backdrop">
+  <div class="modal">
+    <div class="head">
+      <h2 id="dayModalTitle">Edit Day</h2>
+      <button class="btn ghost" id="closeDayModal">✕</button>
+    </div>
+    <div class="body">
+      <div class="row" style="margin-bottom:8px">
+        <div style="min-width:160px"><label>Date</label><input id="dayDateIso" type="text" readonly /></div>
+        <label class="pill"><input type="checkbox" id="dayNeed"/> Need dinner</label>
+        <label class="pill"><input type="checkbox" id="dayFast"/> Quick only</label>
+        <label class="pill"><input type="checkbox" id="dayLock"/> Lock</label>
+      </div>
+      <div class="row">
+        <input id="dayPreferTags" type="text" placeholder="Prefer tags (comma-separated)" style="flex:1"/>
+        <input id="dayOffNote" type="text" placeholder="Off / Plans note" style="flex:1"/>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <label>Assign recipe</label>
+          <select id="dayPick" class="inline-select" style="width:100%"></select>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="dayReroll">Re-roll</button>
+            <button class="btn danger" id="dayClear">Clear / Delete record</button>
+            <div class="spacer"></div>
+            <button class="btn warn" id="dayPlanFrom">Open Planner for this week</button>
+            <button class="btn good" id="daySave">Save</button>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="muted">Current</div>
+          <div id="dayCurrent" style="margin-top:6px;font-size:14px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Planner Modal -->
+<div id="plannerModalWrap" class="modal-backdrop">
+  <div class="modal">
+    <div class="head">
+      <h2 id="plannerTitle">Planner</h2>
+      <button class="btn ghost" id="closePlannerModal">✕</button>
+    </div>
+    <div class="body">
+      <div class="row">
+        <label>Anchor</label><input id="plannerAnchor" type="date"/>
+        <button class="btn sm" id="plannerThisWeek">This Week</button>
+        <button class="btn sm" id="plannerNextWeek">Next Week</button>
+        <button class="btn warn sm" id="plannerPreviewFull">Preview Sun–Sat</button>
+        <button class="btn warn sm" id="plannerPreviewFrom">Preview From Anchor → Sat</button>
+        <div class="spacer"></div>
+        <span class="muted" id="plannerHint">Drag a range in Plan Range mode to preview that span here.</span>
+      </div>
+      <div id="plannerPreviewList" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn good" id="plannerApply">Apply to Calendar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Recipe Modal -->
+<div id="recipeModalWrap" class="modal-backdrop">
+  <div class="modal">
+    <div class="head">
+      <h2 id="recipeModalTitle">Add Recipe</h2>
+      <button class="btn ghost" id="closeRecipeModal">✕</button>
+    </div>
+    <div class="body">
+      <div class="row">
+        <input id="recName" type="text" placeholder="Recipe name e.g., Chicken Cordon Bleu" style="flex:2"/>
+        <label class="btn" for="recPdfs">+ PDFs</label><input id="recPdfs" type="file" accept="application/pdf" multiple hidden/>
+        <button class="btn" id="btnAddByLink">Add by Link → PDF</button>
+        <input id="recLinkUrl" type="url" placeholder="https://example.com/recipe" style="flex:1" />
+        <label class="pill"><input type="checkbox" id="recExcludedChk"/> Exclude from planner</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <textarea id="recNotes" placeholder="Notes…" style="flex:1;min-height:110px"></textarea>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <div class="muted">Attachments</div>
+          <div id="recAttachments" style="margin-top:6px"></div>
+        </div>
+        <div style="flex:1">
+          <div class="muted">Preview</div>
+          <div id="recPreview" class="pdf-view" style="height:260px;margin-top:6px"><div class="muted">PDF preview</div></div>
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:12px 0" />
+      <div class="row">
+        <div class="chips" id="recPresetTags"></div>
+        <input id="recTags" type="text" placeholder="Extra tags (comma-separated)" style="flex:1" />
+      </div>
+      <div class="row" style="margin-top:12px;justify-content:flex-end">
+        <button class="btn" id="btnResetRecipeForm">Reset</button>
+        <button class="btn good" id="btnSaveRecipe">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsWrap" class="modal-backdrop">
+  <div class="modal">
+    <div class="head"><h2>Settings • Google Drive</h2><button class="btn ghost" id="closeSettings">✕</button></div>
+    <div class="body">
+      <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%">
+        <div style="grid-column:1 / -1"><label>Apps Script URL</label><input id="setDataUrl" type="text" placeholder="Apps Script Web App URL (exec)" style="width:100%"/></div>
+        <div><label>Recipe PDFs Folder ID</label><input id="setPdfFolderId" type="text" placeholder="Folder ID (PDFs)" style="width:100%"/></div>
+        <div><label>Data Backups Folder ID</label><input id="setDataFolderId" type="text" placeholder="Folder ID (Data backups)" style="width:100%"/></div>
+        <div><label>Filename Prefix</label><input id="setFilePrefix" type="text" placeholder="Filename prefix, e.g., meal-planner" style="width:100%"/></div>
+        <div><label>No-Repeat Window (weeks)</label><input id="setNoRepeatWeeks" type="number" value="2" min="0" max="12" style="width:100%" /></div>
+      </div>
+      <div class="row" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%">
+        <div style="display:flex;align-items:center"><label class="pill"><input type="checkbox" id="setAutoLoad"/> Auto-load from Drive on startup</label></div>
+        <div><label>Preset Tags</label><input id="setTagPresets" type="text" placeholder="Quick, Fast, Light, Heavy, Chicken, Steak, Mexican, ..." style="width:100%"/></div>
+        <div style="grid-column:1 / -1;display:flex;justify-content:flex-end"><button class="btn good" id="btnSaveSettings">Save Settings</button></div>
+      </div>
+      <div class="row" style="margin-top:8px"><small class="muted">Autosave uploads PDFs automatically if a PDFs folder is set.</small></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">Saved</div>
+
+<script>
+/* ===== Defaults & Utils ===== */
+const FIRST_BOOT_DEFAULTS = {
+  dataUrl: "https://script.google.com/macros/s/AKfycbx1pAGf0m3Qnoa9ajk7Oz2rGBiGzkkRv-r8uKRNBFnbE2UEuucBh0aGEhQpmdU5Q0B91A/exec",
+  pdfFolderId: "1sM7RnBCjvTzAQPrF5BpVTfxQToO9rdtL",
+  dataFolderId: "1uo95dPg3ydMRjSVqcJuW_sJhF1fQd0_U",
+  prefix: "meal-planner",
+  noRepeatWeeks: 2,
+  autoLoad: true,
+  tagPresets: ['Quick','Fast','Light','Heavy','Mexican','Italian','Chicken','Beef','Seafood','Vegetarian','Grill','Slow Cooker','One Pot','Soup','Pasta','Steak','Pork','Tacos','Curry','Salad']
+};
+function uuid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&0x3|0x8);return v.toString(16);});}
+function escapeHtml(str){const d=document.createElement('div'); d.textContent=String(str||''); return d.innerHTML;}
+function toISO(d){return d.toISOString().slice(0,10);} function fromISO(s){const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c);}
+function startOfWeek(d,mon=false){const g=d.getDay();const diff=mon?(g===0?-6:1-g):-g;const x=new Date(d);x.setDate(x.getDate()+diff);x.setHours(0,0,0,0);return x;}
+function endOfWeek(d){const s=startOfWeek(d,false);return new Date(s.getFullYear(),s.getMonth(),s.getDate()+6);}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function formatRange(a,b){const f=new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric'});return f.format(a)+' – '+f.format(b);}
+function splitTags(str){return (str||'').split(',').map(s=>s.trim()).filter(Boolean);}
+function blobToBase64(blob){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob);});}
+function base64ToBlob(b64,type){const bin=atob(b64);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type});}
+
+/* ===== IndexedDB ===== */
+const DB_NAME='MealPlannerDB_v11_clean';
+const DB_VERSION=1; let db;
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('recipes')){const s=d.createObjectStore('recipes',{keyPath:'id'});s.createIndex('name','name',{unique:false});s.createIndex('tags','tags',{multiEntry:true});}if(!d.objectStoreNames.contains('plans'))d.createObjectStore('plans',{keyPath:'dateISO'});if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'});};r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error);});}
+function tx(s,m='readonly'){return db.transaction(s,m).objectStore(s);}
+function put(store,val){return new Promise((res,rej)=>{const r=tx(store,'readwrite').put(val);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+function get(store,key){return new Promise((res,rej)=>{const r=tx(store).get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function getAll(store){return new Promise((res,rej)=>{const r=tx(store).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error);});}
+function del(store,key){return new Promise((res,rej)=>{const r=tx(store,'readwrite').delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+function clearStore(name){return new Promise((res,rej)=>{const r=db.transaction(name,'readwrite').objectStore(name).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+
+/* ===== State ===== */
+const DEFAULT_PRESETS=['Quick','Fast','Light','Heavy','Mexican','Italian','Chicken','Beef','Seafood','Vegetarian','Grill','Slow Cooker','One Pot','Soup','Pasta','Steak','Pork','Tacos','Curry','Salad'];
+const DEFAULT_DAY=()=>({needDinner:true,fastOnly:false,locked:false,preferTags:[]});
+let selectedRecipeId=null, editingRecipeId=null, activeAttachmentId=null;
+let autoSaveDebounce=null, syncInFlight=false, unsyncedChanges=false;
+let settingsCache={};
+let rollingStartDate=null;
+let previewState=[];
+
+/* ===== Status & Toast ===== */
+function setStatus(state,label){const dot=document.getElementById('saveDot');const lab=document.getElementById('saveLabel');if(!dot||!lab)return;dot.className='dot '+(state==='saving'?'saving':state==='saved'?'saved':state==='error'?'error':'');lab.textContent=label;}
+function toast(msg){const t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* ===== Settings ===== */
+async function saveSettings(){
+  const du=document.getElementById('setDataUrl').value.trim();
+  const pdfF=document.getElementById('setPdfFolderId').value.trim();
+  const dataF=document.getElementById('setDataFolderId').value.trim();
+  const pref=document.getElementById('setFilePrefix').value.trim()||'meal-planner';
+  const nrw=Math.max(0,Math.min(12,parseInt(document.getElementById('setNoRepeatWeeks').value||'2',10)));
+  const autoLoad=document.getElementById('setAutoLoad').checked;
+  const presets=splitTags(document.getElementById('setTagPresets').value);
+  const obj={key:'drive',dataUrl:du,pdfFolderId:pdfF,dataFolderId:dataF,prefix:pref,noRepeatWeeks:nrw,autoLoad,tagPresets:presets};
+  await put('settings',obj); settingsCache=obj; toast('Settings saved'); closeSettings(); markDirtyAndScheduleSync();
+}
+async function loadSettings(){
+  let s=await get('settings','drive');
+  if(!s){
+    s={key:'drive', ...FIRST_BOOT_DEFAULTS};
+    await put('settings', s);
+  }
+  // Populate UI
+  const ids=['setDataUrl','setPdfFolderId','setDataFolderId','setFilePrefix','setNoRepeatWeeks','setAutoLoad','setTagPresets'];
+  ids.forEach(id=>{ if(!document.getElementById(id)) return; });
+  document.getElementById('setDataUrl').value=s.dataUrl||'';
+  document.getElementById('setPdfFolderId').value=s.pdfFolderId||'';
+  document.getElementById('setDataFolderId').value=s.dataFolderId||'';
+  document.getElementById('setFilePrefix').value=s.prefix||'meal-planner';
+  document.getElementById('setNoRepeatWeeks').value=s.noRepeatWeeks??2;
+  document.getElementById('setAutoLoad').checked=!!s.autoLoad;
+  document.getElementById('setTagPresets').value=(s.tagPresets&&s.tagPresets.length?s.tagPresets:DEFAULT_PRESETS).join(', ');
+  settingsCache=s; return s;
+}
+function openSettings(){const m=document.getElementById('settingsWrap'); if(m){ m.style.display='flex'; loadSettings(); }}
+function closeSettings(){const m=document.getElementById('settingsWrap'); if(m) m.style.display='none';}
+function currentPresets(){return settingsCache.tagPresets && settingsCache.tagPresets.length ? settingsCache.tagPresets : DEFAULT_PRESETS;}
+
+/* ===== Calendar ===== */
+function renderCalendar(){
+  try{
+    const grid=document.getElementById('calendarGrid'); if(!grid){console.warn('calendarGrid not found'); return;}
+    grid.innerHTML='';
+    const start=rollingStartDate||addDays(startOfWeek(new Date(),false),-7); const end=addDays(start,27);
+    document.getElementById('calTitle').textContent='Rolling view: '+formatRange(start,end);
+    ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(l=>{const d=document.createElement('div'); d.className='dow'; d.textContent=l; grid.appendChild(d);});
+    for(let i=0;i<28;i++){ const day=addDays(start,i); const iso=toISO(day);
+      const cell=document.createElement('div'); cell.className='daycell'; cell.dataset.iso=iso; if(toISO(new Date())===iso) cell.classList.add('today');
+      const t=document.createElement('div'); t.className='daytitle'; t.innerHTML=`<span>${day.getDate()}</span>`; cell.appendChild(t);
+      const meal=document.createElement('div'); meal.className='mealname muted'; meal.textContent='—'; cell.appendChild(meal);
+      get('plans', iso).then(async p=>{
+        if(!p) return;
+        if(!p.needDinner){ meal.textContent=p.offNote?`Off: ${p.offNote}`:'Off / No dinner'; meal.classList.add('off'); meal.classList.remove('muted'); return; }
+        if(p.recipeId){ const r=await get('recipes', p.recipeId); meal.textContent=r? r.name : 'Planned meal'; meal.classList.remove('muted'); }
+      });
+      // interactions
+      cell.addEventListener('mousedown',(e)=>{ onDayMouseDown(e, iso, cell); });
+      cell.addEventListener('mouseover',(e)=>{ onDayMouseOver(e, iso, cell); });
+      cell.addEventListener('mouseup',(e)=>{ onDayMouseUp(e, iso, cell); });
+      cell.addEventListener('dblclick', ()=>{ openDayModal(iso); });
+      grid.appendChild(cell);
+    }
+  }catch(err){ console.error('Calendar render failed:', err); const grid=document.getElementById('calendarGrid'); if(grid){ grid.innerHTML='<div class="muted">Calendar failed to render. Check console.</div>'; } }
+}
+
+/* ===== Range Selection / Plan Mode ===== */
+let planMode=false, dragStartISO=null, dragActive=false;
+function markRangeOnCalendar(aISO, bISO){
+  const a = fromISO(aISO), b = fromISO(bISO);
+  const start = a<b ? a : b, end = a<b ? b : a;
+  document.querySelectorAll('.daycell').forEach(c=>{
+    const iso = c.dataset.iso; if(!iso) return;
+    const d = fromISO(iso);
+    if(d>=start && d<=end) c.classList.add('rangeSel'); else c.classList.remove('rangeSel');
+  });
+}
+function clearRangeSelection(){
+  dragStartISO=null; dragActive=false;
+  document.querySelectorAll('.daycell').forEach(c=>c.classList.remove('rangeSel'));
+}
+function updatePlanModeUI(){
+  const body=document.body;
+  const btnOn=document.getElementById('planModeBtn');
+  const btnOff=document.getElementById('exitPlanModeBtn');
+  const hint=document.getElementById('planHint');
+  body.classList.toggle('planMode', planMode);
+  if(btnOn) btnOn.style.display = planMode ? 'none' : '';
+  if(btnOff) btnOff.style.display = planMode ? '' : 'none';
+  if(hint) hint.innerHTML = planMode
+    ? 'Drag across calendar days to select a range. Release to open the planner. Double-click any day to edit.'
+    : 'Tip: double-click a day to edit. Use <strong>Plan Range</strong> to drag across dates for the Planner.';
+}
+function enterPlanMode(){ planMode=true; clearRangeSelection(); updatePlanModeUI(); }
+function exitPlanMode(){ planMode=false; clearRangeSelection(); updatePlanModeUI(); }
+document.getElementById('planModeBtn').onclick=enterPlanMode;
+document.getElementById('exitPlanModeBtn').onclick=exitPlanMode;
+function onDayMouseDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  dragStartISO=iso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO); e.preventDefault();
+}
+function onDayMouseOver(e, iso, cell){ if(!planMode || !dragActive || !dragStartISO) return; markRangeOnCalendar(dragStartISO, iso); }
+function onDayMouseUp(e, iso, cell){
+  if(!planMode) return;
+  if(!dragStartISO){ dragActive=false; return; }
+  const a = fromISO(dragStartISO), b = fromISO(iso);
+  const startISO = toISO(a<b ? a : b), endISO = toISO(a<b ? b : a);
+  dragStartISO=null; dragActive=false;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
+/* ===== Planner Modal (Preview & Apply) ===== */
+function openPlannerModal(startISO=null, endISO=null){
+  const m=document.getElementById('plannerModalWrap'); if(!m) return;
+  m.style.display='flex';
+  const a=document.getElementById('plannerAnchor'); if(a) a.value = startISO || toISO(new Date());
+  if(startISO && endISO){
+    buildPreviewRangeInto(startISO, endISO, 'plannerPreviewList', 'plannerHint');
+    document.getElementById('plannerTitle').textContent = `Planner • ${startISO} → ${endISO}`;
+  }else{
+    buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
+    document.getElementById('plannerTitle').textContent = 'Planner';
+  }
+}
+function closePlannerModal(){ const m=document.getElementById('plannerModalWrap'); if(m) m.style.display='none'; }
+document.getElementById('closePlannerModal').onclick=closePlannerModal;
+document.getElementById('openPlannerBtn').onclick=()=>openPlannerModal();
+document.getElementById('plannerThisWeek').onclick=()=>{
+  const now=new Date(); document.getElementById('plannerAnchor').value=toISO(startOfWeek(now,false));
+  buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
+};
+document.getElementById('plannerNextWeek').onclick=()=>{
+  const start=addDays(startOfWeek(new Date(),false),7); document.getElementById('plannerAnchor').value=toISO(start);
+  buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
+};
+document.getElementById('plannerPreviewFull').onclick=()=>buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
+document.getElementById('plannerPreviewFrom').onclick=()=>buildPreviewFromAnchorInto(false, 'plannerPreviewList', 'plannerHint');
+document.getElementById('plannerApply').onclick=async()=>{ await applyPreviewToCalendar(); closePlannerModal(); };
+
+async function buildPreviewFromAnchorInto(fullWeek, listId, hintId){
+  const anchor = document.getElementById('plannerAnchor').value || toISO(new Date());
+  const start = fullWeek ? startOfWeek(fromISO(anchor), false) : fromISO(anchor);
+  const end = endOfWeek(start);
+  await buildPreviewGeneric(start, end, listId, hintId);
+}
+async function buildPreviewRangeInto(startISO, endISO, listId, hintId){
+  const start = fromISO(startISO); const end = fromISO(endISO);
+  await buildPreviewGeneric(start, end, listId, hintId);
+}
+async function buildPreviewGeneric(start, end, listId, hintId){
+  const used=new Set(); previewState=[];
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const list=document.getElementById(listId); const hint=document.getElementById(hintId);
+  if(list) list.innerHTML='';
+  const allRecipes=(await getAll('recipes')).filter(r=>!r.excluded);
+  for(let d=new Date(start); d<=end; d=addDays(d,1)){
+    const iso=toISO(d); const dow=dayNames[d.getDay()];
+    const plan=await get('plans', iso)||DEFAULT_DAY();
+    const conf={needDinner:plan.needDinner!==false,fastOnly:!!plan.fastOnly,locked:!!plan.locked,preferTags:plan.preferTags||[],offNote:plan.offNote||''};
+    const pick=await pickRecipeForDate(iso, conf, {forceReroll:true, avoidIds:used});
+    if(pick && pick.id) used.add(pick.id);
+    const obj={dateISO:iso, conf, pick};
+    previewState.push(obj);
+    if(list) list.insertAdjacentHTML('beforeend', previewRowTemplate(dow, obj, allRecipes));
+  }
+  if(list){
+    list.onclick=async(e)=>{
+      const btn=e.target.closest('button'); if(!btn) return;
+      const row=e.target.closest('planner-row,.planner-row'); const iso=row.dataset.date; const obj=previewState.find(x=>x.dateISO===iso);
+      obj.conf=readPreviewRowConfig(row);
+      if(btn.dataset.act==='reroll'){
+        const usedNow=new Set(previewState.filter(x=>x.pick).map(x=>x.pick.id));
+        const p=await pickRecipeForDate(iso, obj.conf, {forceReroll:true, avoidIds:usedNow}); obj.pick=p;
+        row.querySelector('.pickSel').value = p ? p.id : '';
+        row.querySelector('.pickLabel').textContent=p? p.name : (obj.conf.needDinner?'—':(obj.conf.offNote||'Off / No dinner'));
+      }
+    };
+    list.onchange=(e)=>{
+      const row=e.target.closest('planner-row,.planner-row'); if(!row) return;
+      const iso=row.dataset.date; const obj=previewState.find(x=>x.dateISO===iso);
+      obj.conf=readPreviewRowConfig(row);
+      if(e.target.classList.contains('pickSel')){
+        const selId=e.target.value||''; if(selId){ obj.pick=(list._allRecipes||allRecipes).find(r=>r.id===selId)||null; } else obj.pick=null;
+      }
+      row.querySelector('.pickLabel').textContent = obj.pick ? obj.pick.name : (obj.conf.needDinner?'—':(obj.conf.offNote||'Off / No dinner'));
+    };
+    list._allRecipes=allRecipes;
+  }
+  if(hint) hint.textContent = `Previewing ${toISO(start)} → ${toISO(end)}`;
+}
+function previewRowTemplate(dayLabel, data, recipeOptions){
+  const pickId = data.pick ? data.pick.id : '';
+  const pickLabel = data.pick ? escapeHtml(data.pick.name) : (data.conf.needDinner ? '—' : (data.conf.offNote||'Off / No dinner'));
+  const optsHtml = '<option value=\"\">— none —</option>' + recipeOptions.map(r=>`<option value=\"${r.id}\" ${r.id===pickId?'selected':''}>${escapeHtml(r.name)}</option>`).join('');
+  return `
+    <div class="planner-row" data-date="${data.dateISO}">
+      <div><strong>${dayLabel}</strong><div class="muted" style="font-size:11px">${data.dateISO}</div></div>
+      <div>
+        <div class="row mini">
+          <label class="pill"><input type="checkbox" class="needChk" ${data.conf.needDinner?'checked':''}/> Need</label>
+          <label class="pill"><input type="checkbox" class="fastChk" ${data.conf.fastOnly?'checked':''}/> Quick</label>
+          <label class="pill"><input type="checkbox" class="lockChk" ${data.conf.locked?'checked':''}/> Lock</label>
+          <input class="prefTags" type="text" placeholder="Prefer tags" value="${escapeHtml((data.conf.preferTags||[]).join(', '))}" style="min-width:160px"/>
+          <input class="offInput" type="text" placeholder="Off / Plans" value="${escapeHtml(data.conf.offNote||'')}" style="min-width:160px"/>
+          <select class="inline-select pickSel">${optsHtml}</select>
+          <button class="btn sm" data-act="reroll">Re-roll</button>
+        </div>
+        <div class="mini" style="margin-top:6px"><strong class="pickLabel">${pickLabel}</strong></div>
+      </div>
+    </div>`;
+}
+function readPreviewRowConfig(row){
+  return {
+    needDinner: row.querySelector('.needChk').checked,
+    fastOnly: row.querySelector('.fastChk').checked,
+    locked: row.querySelector('.lockChk').checked,
+    preferTags: splitTags(row.querySelector('.prefTags').value),
+    offNote: row.querySelector('.offInput').value.trim()
+  };
+}
+async function applyPreviewToCalendar(){
+  for(const item of previewState){
+    if(item.conf.locked){ continue; }
+    const patch = item.conf.needDinner
+      ? { ...item.conf, recipeId: item.pick ? item.pick.id : null }
+      : { ...item.conf, recipeId: null };
+    await savePlan(item.dateISO, patch);
+  }
+  renderCalendar();
+  toast('Applied preview to calendar');
+}
+
+/* ===== Randomizer logic ===== */
+async function pickRecipeForDate(iso, conf, opts={}){
+  if(typeof opts==='boolean') opts={forceReroll:opts};
+  const forceReroll=!!opts.forceReroll; const avoidIds=opts.avoidIds instanceof Set?opts.avoidIds:new Set();
+  if(!conf.needDinner) return null;
+  const all=await getAll('recipes'); if(!all.length){return null;}
+  const s=settingsCache||{}; const weeks=Number.isFinite(+s.noRepeatWeeks)?Math.max(0,+s.noRepeatWeeks):2; const windowDays=weeks*7;
+  const used=new Set(await recipesUsedInLastNDays(windowDays, iso));
+  let candidates=all.filter(r=>!r.excluded);
+  if(conf.fastOnly) candidates=candidates.filter(r=>{const t=(r.tags||[]).map(x=>x.toLowerCase());return t.includes('quick')||t.includes('fast')||t.includes('fast meal');});
+  let filtered=candidates.filter(r=>!used.has(r.id)&&!avoidIds.has(r.id)); if(!filtered.length) filtered=candidates.filter(r=>!avoidIds.has(r.id));
+  const prefer=new Set((conf.preferTags||[]).map(t=>t.trim().toLowerCase()).filter(Boolean));
+  const pool=[]; for(const r of filtered){let w=1; const tags=(r.tags||[]).map(t=>t.toLowerCase()); for(const t of prefer) if(tags.includes(t)) w+=3; const last=r.lastMadeDate?new Date(r.lastMadeDate):null; if(!last||(new Date(iso)-last)>1000*60*60*24*30) w+=1; for(let i=0;i<w;i++) pool.push(r);}
+  if(!pool.length) return null;
+  const current=await get('plans', iso); if(current && current.recipeId && !forceReroll){ const rec=await get('recipes', current.recipeId); if(rec && !rec.excluded && !avoidIds.has(rec.id)) return rec; }
+  return pool[Math.floor(Math.random()*pool.length)]||null;
+}
+async function recipesUsedInLastNDays(n, upToISO=null){const upto=upToISO?fromISO(upToISO):new Date();const start=addDays(upto,-n);const plans=await getAll('plans');const ids=[];for(const p of plans){const d=fromISO(p.dateISO);if(d>=start && d<=upto && p.recipeId) ids.push(p.recipeId);}return ids;}
+async function savePlan(iso, patch){
+  const existing=await get('plans', iso)||{dateISO:iso,...DEFAULT_DAY()};
+  const updated={...existing,...patch,dateISO:iso}; await put('plans', updated); markDirtyAndScheduleSync();
+  if(updated.recipeId){ const r=await get('recipes', updated.recipeId); if(r){ r.lastMadeDate=iso; r.timesMade=(r.timesMade||0)+1; await put('recipes', r); markDirtyAndScheduleSync(); } }
+}
+
+/* ===== Day Editor ===== */
+let dayModalISO=null;
+function openDayModal(iso){
+  dayModalISO=iso;
+  const w=document.getElementById('dayModalWrap'); if(!w) return;
+  w.style.display='flex';
+  document.getElementById('dayDateIso').value=iso;
+  populateDayModal(iso);
+}
+function closeDayModal(){ const w=document.getElementById('dayModalWrap'); if(w) w.style.display='none'; dayModalISO=null; }
+document.getElementById('closeDayModal').onclick=closeDayModal;
+
+async function populateDayModal(iso){
+  const plan = await get('plans', iso) || DEFAULT_DAY();
+  const recSel = document.getElementById('dayPick');
+  const curBox = document.getElementById('dayCurrent');
+  const recipes = (await getAll('recipes')).filter(r=>!r.excluded);
+  recSel.innerHTML = '<option value="">— none —</option>' + recipes.map(r=>`<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  document.getElementById('dayNeed').checked = plan.needDinner!==false;
+  document.getElementById('dayFast').checked = !!plan.fastOnly;
+  document.getElementById('dayLock').checked = !!plan.locked;
+  document.getElementById('dayPreferTags').value = (plan.preferTags||[]).join(', ');
+  document.getElementById('dayOffNote').value = plan.offNote||'';
+  if(plan.recipeId){ recSel.value = plan.recipeId; }
+  let label='—';
+  if(!plan.needDinner){ label = plan.offNote? `Off: ${escapeHtml(plan.offNote)}` : 'Off / No dinner'; }
+  else if(plan.recipeId){
+    const r = (await get('recipes', plan.recipeId));
+    label = r ? escapeHtml(r.name) : 'Planned meal';
+  }
+  curBox.innerHTML = label;
+}
+document.getElementById('dayReroll').onclick=async()=>{
+  if(!dayModalISO) return;
+  const conf = {
+    needDinner: document.getElementById('dayNeed').checked,
+    fastOnly: document.getElementById('dayFast').checked,
+    locked: document.getElementById('dayLock').checked,
+    preferTags: splitTags(document.getElementById('dayPreferTags').value),
+    offNote: document.getElementById('dayOffNote').value.trim()
+  };
+  const rec = await pickRecipeForDate(dayModalISO, conf, {forceReroll:true});
+  const sel=document.getElementById('dayPick');
+  sel.value = rec ? rec.id : '';
+  document.getElementById('dayCurrent').textContent = rec ? rec.name : (conf.needDinner ? '—' : (conf.offNote || 'Off / No dinner'));
+};
+document.getElementById('dayClear').onclick=async()=>{
+  if(!dayModalISO) return;
+  if(!confirm('Delete this day\'s record?')) return;
+  await del('plans', dayModalISO);
+  markDirtyAndScheduleSync();
+  renderCalendar();
+  toast('Day cleared');
+  closeDayModal();
+};
+document.getElementById('daySave').onclick=async()=>{
+  if(!dayModalISO) return;
+  const conf = {
+    needDinner: document.getElementById('dayNeed').checked,
+    fastOnly: document.getElementById('dayFast').checked,
+    locked: document.getElementById('dayLock').checked,
+    preferTags: splitTags(document.getElementById('dayPreferTags').value),
+    offNote: document.getElementById('dayOffNote').value.trim()
+  };
+  const pickId = document.getElementById('dayPick').value || null;
+  const patch = conf.needDinner ? { ...conf, recipeId: pickId } : { ...conf, recipeId: null };
+  await savePlan(dayModalISO, patch);
+  renderCalendar();
+  toast('Saved day changes');
+  closeDayModal();
+};
+document.getElementById('dayPlanFrom').onclick=()=>{
+  if(!dayModalISO) return;
+  openPlannerModal(dayModalISO, toISO(endOfWeek(fromISO(dayModalISO))));
+};
+
+/* ===== Recipes UI ===== */
+function clipName(s,n=64){return s.length>n?(s.slice(0,n-1)+'…'):s;}
+async function renderRecipeList(){
+  const list=document.getElementById('recipeList'); if(!list) return;
+  const q=(document.getElementById('searchRecipes').value||'').trim().toLowerCase();
+  const items=(await getAll('recipes'))
+    .filter(r=>!q || (r.name&&r.name.toLowerCase().includes(q)) || (r.tags||[]).some(t=>t.toLowerCase().includes(q)))
+    .sort((a,b)=>(b.timesMade||0)-(a.timesMade||0));
+  list.innerHTML='';
+  for(const r of items){
+    const row=document.createElement('div'); row.className='recipe-row'; row.dataset.id=r.id;
+    const hasNotes=!!(r.notes&&r.notes.trim().length);
+    const cloud=(r.attachments||[]).some(a=>a.driveId)?'☁️':'';
+    row.innerHTML=`<span class="recipe-name" title="${escapeHtml(r.name)}">${escapeHtml(clipName(r.name,42))}</span><span class="meta">${r.excluded?'🚫':''}${hasNotes?'📝':''}${cloud}</span>`;
+    row.onclick=()=>{selectedRecipeId=r.id;document.querySelectorAll('.recipe-row').forEach(x=>x.classList.remove('active'));row.classList.add('active');};
+    row.ondblclick=()=>{selectedRecipeId=r.id;document.querySelectorAll('.recipe-row').forEach(x=>x.classList.remove('active'));row.classList.add('active');activateTab('viewerPane');openSelectedRecipeInViewer();};
+    if(selectedRecipeId===r.id) row.classList.add('active');
+    list.appendChild(row);
+  }
+  renderSelectedRecipeMeta();
+  const rSel=await get('recipes', selectedRecipeId||''); buildPresetChips(document.getElementById('presetTagsViewer'), rSel?.tags||[], true);
+}
+document.addEventListener('input', (e)=>{ if(e.target && e.target.id==='searchRecipes'){ renderRecipeList(); }});
+document.getElementById('btnAddRecipe').onclick=()=>openRecipeModal();
+document.getElementById('btnViewSelected').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} activateTab('viewerPane'); openSelectedRecipeInViewer(); };
+document.getElementById('btnEditSelected').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} const r=await get('recipes', selectedRecipeId); if(!r) return; openRecipeModal(r); };
+document.getElementById('btnDeleteSelected').onclick=async()=>{
+  if(!selectedRecipeId){toast('Select a recipe');return;}
+  if(!confirm('Delete this recipe?')) return;
+  const id=selectedRecipeId; selectedRecipeId=null; await del('recipes', id);
+  markDirtyAndScheduleSync(); renderRecipeList(); document.getElementById('pdfView').innerHTML='<div class="muted">Select a recipe</div>'; document.getElementById('attachmentTabs').innerHTML='';
+  toast('Recipe deleted');
+};
+
+async function renderSelectedRecipeMeta(){
+  const wrap=document.getElementById('selectedRecipeTags'); if(!wrap) return; wrap.innerHTML='';
+  const notes=document.getElementById('recipeNotes'); if(notes) notes.value='';
+  if(!selectedRecipeId) return; const r=await get('recipes', selectedRecipeId); if(!r) return;
+  for(const t of (r.tags||[])){ wrap.appendChild(chipEl(t)); }
+  if(notes) notes.value=r.notes||'';
+}
+function chipEl(text){ const el=document.createElement('span'); el.className='chip'; el.textContent=text+' '; const x=document.createElement('button'); x.textContent='×'; x.onclick=async()=>{ const r=await get('recipes', selectedRecipeId); if(!r) return; r.tags=(r.tags||[]).filter(t=>t!==text); await put('recipes', r); markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); }; el.appendChild(x); return el; }
+document.getElementById('btnSaveNotes').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const r=await get('recipes', selectedRecipeId); if(!r) return; r.notes=document.getElementById('recipeNotes').value; await put('recipes', r); markDirtyAndScheduleSync(); toast('Notes saved'); renderRecipeList(); };
+document.getElementById('btnAddTag').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const input=document.getElementById('addTagInput'); const val=input.value.trim(); if(!val) return; const r=await get('recipes', selectedRecipeId); if(!r) return; r.tags=Array.from(new Set([...(r.tags||[]), val])); await put('recipes', r); input.value=''; markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); };
+
+/* ===== Add/Edit Recipe Modal ===== */
+function openRecipeModal(recipe=null){
+  const w=document.getElementById('recipeModalWrap'); if(!w) return;
+  w.style.display='flex';
+  buildPresetChips(document.getElementById('recPresetTags'), recipe ? (recipe.tags||[]) : []);
+  if(recipe){ document.getElementById('recipeModalTitle').textContent='Edit Recipe'; editingRecipeId=recipe.id; fillRecipeForm(recipe); }
+  else { document.getElementById('recipeModalTitle').textContent='Add Recipe'; editingRecipeId=null; resetRecipeForm(); }
+}
+function closeRecipeModal(){ const w=document.getElementById('recipeModalWrap'); if(w) w.style.display='none'; }
+document.getElementById('closeRecipeModal').onclick=closeRecipeModal;
+document.getElementById('btnResetRecipeForm').onclick=resetRecipeForm;
+
+function resetRecipeForm(){
+  ['recName','recTags','recNotes','recLinkUrl'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  document.getElementById('recExcludedChk').checked=false; document.getElementById('recAttachments').innerHTML='';
+  document.getElementById('recPreview').innerHTML='<div class="muted">PDF preview</div>';
+  const up=document.getElementById('recPdfs'); if(up) up.value='';
+}
+function fillRecipeForm(r){
+  document.getElementById('recName').value=r.name||'';
+  document.getElementById('recTags').value=(r.tags||[]).filter(t=>!currentPresets().includes(t)).join(', ');
+  document.getElementById('recNotes').value=r.notes||'';
+  document.getElementById('recExcludedChk').checked=!!r.excluded;
+  renderAttachmentList(r);
+  const first=(r.attachments||[])[0];
+  if(first){
+    if(first.driveId){ const url=`https://drive.google.com/file/d/${encodeURIComponent(first.driveId)}/preview`; document.getElementById('recPreview').innerHTML=`<iframe src="${url}" allow="autoplay"></iframe>`; }
+    else if(first.pendingBase64){ const blob=base64ToBlob(first.pendingBase64,'application/pdf'); const u=URL.createObjectURL(blob); document.getElementById('recPreview').innerHTML=`<embed src="${u}" type="application/pdf"/>`; }
+  } else document.getElementById('recPreview').innerHTML='<div class="muted">PDF preview</div>';
+}
+function renderAttachmentList(r){
+  const box=document.getElementById('recAttachments'); box.innerHTML='';
+  (r.attachments||[]).forEach(a=>{
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML=`<input data-id="${a.id}" class="attName" type="text" value="${escapeHtml(a.name||'PDF')}"/>
+      <button class="btn sm" data-id="${a.id}" data-act="del">Delete</button>
+      <span class="muted">${a.driveId?'☁️ Drive':'(staged)'}</span>`;
+    box.appendChild(row);
+  });
+  box.onclick=async(e)=>{
+    const btn=e.target.closest('button'); if(!btn) return;
+    const act=btn.dataset.act; const id=btn.dataset.id; const rec= editingRecipeId ? await get('recipes', editingRecipeId) : null; if(!rec) return;
+    if(act==='del'){ rec.attachments = (rec.attachments||[]).filter(x=>x.id!==id); await put('recipes', rec); markDirtyAndScheduleSync(); renderAttachmentList(rec); }
+  };
+  box.onchange=async(e)=>{
+    if(!e.target.classList.contains('attName')) return;
+    const id=e.target.dataset.id; const val=e.target.value.trim(); const rec= editingRecipeId ? await get('recipes', editingRecipeId) : null; if(!rec) return;
+    const att=(rec.attachments||[]).find(x=>x.id===id); if(att){ att.name=val||att.name; att._dirtyRename=true; await put('recipes', rec); markDirtyAndScheduleSync(); }
+  };
+}
+document.addEventListener('change', async (e)=>{
+  if(e.target && e.target.id==='recPdfs'){
+    const files=[...e.target.files]; if(!files.length) return;
+    let rec=null;
+    if(editingRecipeId){ rec=await get('recipes', editingRecipeId); }
+    if(!rec){
+      rec={ id: editingRecipeId || uuid(), name: document.getElementById('recName').value.trim() || 'Untitled', tags: [], notes:'', excluded:false, attachments:[], createdAt: Date.now(), timesMade:0 };
+      editingRecipeId=rec.id; await put('recipes', rec);
+    }
+    for(const f of files){
+      const base=(f.name||'PDF').replace(/\.pdf$/i,'');
+      (rec.attachments=rec.attachments||[]).push({ id: uuid(), name: base, pendingBase64: await blobToBase64(f) });
+    }
+    await put('recipes', rec); markDirtyAndScheduleSync(); renderAttachmentList(rec); fillRecipeForm(rec);
+  }
+});
+document.getElementById('btnAddByLink').onclick=async()=>{
+  const url=document.getElementById('recLinkUrl').value.trim(); if(!url){alert('Enter a link'); return;}
+  let rec = editingRecipeId ? await get('recipes', editingRecipeId) : null;
+  if(!rec){ rec={ id: uuid(), name: document.getElementById('recName').value.trim() || 'Untitled', tags: [], notes:'', excluded:false, attachments:[], createdAt: Date.now(), timesMade:0 }; editingRecipeId=rec.id; await put('recipes', rec); }
+  const attName='From Link';
+  (rec.attachments=rec.attachments||[]).push({ id: uuid(), name: attName, fromUrl: url, pendingBase64: null });
+  await put('recipes', rec); markDirtyAndScheduleSync(); renderAttachmentList(rec);
+};
+document.getElementById('btnSaveRecipe').onclick=saveRecipeFromModal;
+async function saveRecipeFromModal(){
+  const name=document.getElementById('recName').value.trim(); if(!name){alert('Enter a recipe name'); return;}
+  const presets=collectActivePresets(document.getElementById('recPresetTags')); const extra=splitTags(document.getElementById('recTags').value); const tags=Array.from(new Set([...presets, ...extra]));
+  const notes=document.getElementById('recNotes').value; const excluded=document.getElementById('recExcludedChk').checked;
+  let rec = editingRecipeId ? await get('recipes', editingRecipeId) : null;
+  if(rec){ rec.name=name; rec.tags=tags; rec.notes=notes; rec.excluded=excluded; await put('recipes', rec); selectedRecipeId=rec.id; }
+  else { rec={ id:uuid(), name, tags, notes, excluded, attachments:[], createdAt:Date.now(), timesMade:0 }; await put('recipes', rec); selectedRecipeId=rec.id; }
+  closeRecipeModal(); markDirtyAndScheduleSync(); renderRecipeList(); activateTab('viewerPane'); openSelectedRecipeInViewer();
+}
+
+/* ===== Tag Presets ===== */
+function buildPresetChips(container, activeTags=[], readOnlyViewer=false){
+  if(!container) return;
+  const presets=currentPresets(); container.innerHTML=''; const active=new Set((activeTags||[]).map(t=>t.toLowerCase()));
+  for(const t of presets){
+    const el=document.createElement('span'); el.className='tag-preset'+(active.has(t.toLowerCase())?' active':'');
+    el.textContent=t;
+    el.onclick=async()=>{
+      if(readOnlyViewer){
+        if(!selectedRecipeId) return; const r=await get('recipes', selectedRecipeId); if(!r) return;
+        const has=(r.tags||[]).some(x=>x.toLowerCase()===t.toLowerCase());
+        r.tags = has ? (r.tags||[]).filter(x=>x.toLowerCase()!==t.toLowerCase()) : Array.from(new Set([...(r.tags||[]), t]));
+        await put('recipes', r); markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); buildPresetChips(container, r.tags||[], true);
+      } else { el.classList.toggle('active'); }
+    };
+    container.appendChild(el);
+  }
+}
+function collectActivePresets(container){return Array.from(container.querySelectorAll('.tag-preset.active')).map(el=>el.textContent);}
+
+/* ===== Viewer ===== */
+async function openSelectedRecipeInViewer(){
+  const view=document.getElementById('pdfView'); const title=document.getElementById('viewerTitle');
+  const tabs=document.getElementById('attachmentTabs'); if(!view||!title||!tabs) return; tabs.innerHTML='';
+  if(!selectedRecipeId){view.innerHTML='<div class="muted">Select a recipe</div>'; title.textContent='Recipe Viewer'; return;}
+  const r=await get('recipes', selectedRecipeId); if(!r){view.innerHTML='<div class="muted">Not found</div>'; return;}
+  title.textContent=r.name||'Recipe Viewer';
+  const atts=r.attachments||[];
+  for(const a of atts){
+    const el=document.createElement('span'); el.className='tag-preset'+(a.id===activeAttachmentId?' active':'');
+    el.textContent=a.name||'PDF'; el.onclick=()=>{activeAttachmentId=a.id; openSelectedRecipeInViewer();};
+    tabs.appendChild(el);
+  }
+  const active = atts.find(a=>a.id===activeAttachmentId) || atts[0];
+  if(active) activeAttachmentId=active.id;
+  if(active){
+    if(active.driveId){
+      const url=`https://drive.google.com/file/d/${encodeURIComponent(active.driveId)}/preview`;
+      view.innerHTML=`<iframe src="${url}" allow="autoplay"></iframe>`;
+    } else if(active.pendingBase64){
+      const blob=base64ToBlob(active.pendingBase64,'application/pdf');
+      const url=URL.createObjectURL(blob);
+      view.innerHTML=`<embed src="${url}" type="application/pdf"/>`;
+    } else view.innerHTML='<div class="muted">Attachment staged but missing data</div>';
+  } else {
+    view.innerHTML='<div class="muted">No attachments — PDFs optional.</div>';
+  }
+  renderSelectedRecipeMeta();
+}
+document.getElementById('btnOpenPdfs').onclick=async()=>{
+  if(!selectedRecipeId){toast('Select a recipe');return;}
+  const r=await get('recipes', selectedRecipeId); if(!r) return;
+  const atts=r.attachments||[];
+  if(!atts.length){toast('No PDFs');return;}
+  for(const a of atts){
+    if(a.driveId){ window.open(`https://drive.google.com/file/d/${encodeURIComponent(a.driveId)}/preview`,'_blank'); }
+    else if(a.pendingBase64){ const url=URL.createObjectURL(base64ToBlob(a.pendingBase64,'application/pdf')); window.open(url,'_blank'); }
+  }
+};
+
+/* ===== Drive Sync ===== */
+const FIXED_FILENAME = () => `${(settingsCache.prefix||'meal-planner')}-data.json`;
+async function buildExportPayload(){ const recipes=await getAll('recipes'); const plans=await getAll('plans'); const settings=await getAll('settings'); return { exportedAt:new Date().toISOString(), recipes, plans, settings }; }
+function markDirtyAndScheduleSync(){ unsyncedChanges=true; setStatus('saving','Saving…'); if(autoSaveDebounce) clearTimeout(autoSaveDebounce); autoSaveDebounce=setTimeout(()=>flushSyncNow(), 800); }
+function desiredAttachmentFilename(recipeName, attachmentName){
+  const base = `${(recipeName||'Recipe').trim()}, ${(attachmentName||'Attachment').trim()}`.replace(/[\\/:*?"<>|]+/g,'_');
+  return base + '.pdf';
+}
+async function ensureAttachmentsUploaded(){
+  const s=settingsCache||{}; if(!s.dataUrl || !s.pdfFolderId) return;
+  const all=await getAll('recipes');
+  for(const r of all){
+    let changed=false;
+    for(const a of (r.attachments||[])){
+      if(!a.driveId && a.fromUrl && !a.pendingBase64){
+        try{
+          const fd=new FormData();
+          fd.append('action','captureUrlToPdf');
+          fd.append('url', a.fromUrl);
+          fd.append('filename', desiredAttachmentFilename(r.name, a.name));
+          fd.append('folderId', s.pdfFolderId);
+          const resp=await fetch(s.dataUrl, { method:'POST', body: fd });
+          const json=await resp.json().catch(()=>null);
+          if(resp.ok && json && json.ok && json.fileId){ a.driveId=json.fileId; a.driveLink=json.webViewLink; a.driveName=desiredAttachmentFilename(r.name, a.name); changed=true; }
+        }catch(_){}
+      }
+      if(!a.driveId && a.pendingBase64){
+        try{
+          const fd=new FormData();
+          fd.append('action','uploadPdf');
+          fd.append('filename', desiredAttachmentFilename(r.name, a.name));
+          fd.append('base64', a.pendingBase64);
+          fd.append('folderId', s.pdfFolderId);
+          const resp=await fetch(s.dataUrl,{method:'POST', body: fd}); const json=await resp.json().catch(()=>null);
+          if(resp.ok && json && json.ok && json.fileId){ a.driveId=json.fileId; a.driveLink=json.webViewLink; a.pendingBase64=null; a.driveName=desiredAttachmentFilename(r.name, a.name); changed=true; }
+        }catch(_){}
+      }
+      if(a.driveId){
+        const wantName = desiredAttachmentFilename(r.name, a.name);
+        if(a.driveName && a.driveName!==wantName){
+          try{
+            const fd=new FormData();
+            fd.append('action','renameFile');
+            fd.append('fileId', a.driveId);
+            fd.append('newName', wantName);
+            const resp=await fetch(s.dataUrl,{method:'POST', body: fd});
+            const json=await resp.json().catch(()=>null);
+            if(resp.ok && json && json.ok){ a.driveName=wantName; changed=true; }
+          }catch(_){}
+        }
+      }
+    }
+    if(changed){ await put('recipes', r); }
+  }
+}
+async function flushSyncNow(){
+  if(syncInFlight) return;
+  const s=settingsCache||{}; if(!s.dataUrl){ setStatus('error','Set Apps Script URL'); return; }
+  try{
+    syncInFlight=true; setStatus('saving','Saving…');
+    await ensureAttachmentsUploaded();
+    const payload=await buildExportPayload();
+    const fd=new FormData();
+    fd.append('action','saveData'); fd.append('filename', FIXED_FILENAME()); fd.append('content', JSON.stringify(payload));
+    if(s.dataFolderId) fd.append('folderId', s.dataFolderId);
+    const resp=await fetch(s.dataUrl,{method:'POST', body: fd}); const json=await resp.json().catch(()=>null);
+    if(!resp.ok || !json || !json.ok || !json.fileId) throw new Error('Save failed');
+    unsyncedChanges=false; setStatus('saved','Saved to Drive');
+  }catch(e){ console.error(e); setStatus('error','Save failed (will retry)'); }
+  finally{ syncInFlight=false; }
+}
+async function loadRemoteDataIfEnabled(){
+  const s=settingsCache; if(!s || !s.autoLoad || !s.dataUrl) return;
+  try{
+    const fd=new FormData(); fd.append('action','loadData'); fd.append('filename', FIXED_FILENAME()); if(s.dataFolderId) fd.append('folderId', s.dataFolderId);
+    const resp=await fetch(s.dataUrl,{method:'POST', body: fd}); if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const json=await resp.json();
+    if(json && json.ok && json.content){
+      const data=JSON.parse(json.content);
+      await clearStore('recipes'); await clearStore('plans'); await clearStore('settings');
+      for(const r of (data.recipes||[])) await put('recipes', r);
+      for(const p of (data.plans||[])) await put('plans', p);
+      for(const st of (data.settings||[])) await put('settings', st);
+      settingsCache = await get('settings','drive') || s;
+      toast('Loaded latest backup from Drive');
+      renderCalendar(); renderRecipeList();
+    }
+  }catch(e){ console.warn('Auto-load failed:', e); }
+}
+
+/* ===== Tabs & Header Buttons ===== */
+function activateTab(paneId){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active', b.dataset.pane===paneId));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active', p.id===paneId));
+}
+document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.pane)));
+document.getElementById('btnSettings').onclick=openSettings;
+document.getElementById('closeSettings').onclick=closeSettings;
+document.getElementById('btnSaveSettings').onclick=saveSettings;
+document.getElementById('prevWindow').onclick=()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),-7); renderCalendar(); };
+document.getElementById('nextWindow').onclick=()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),+7); renderCalendar(); };
+document.getElementById('todayBtn').onclick=()=>{ rollingStartDate=addDays(startOfWeek(new Date(),false),-7); renderCalendar(); };
+
+/* ===== Export/Import & Exit Guard ===== */
+document.getElementById('btnExport').onclick=async()=>{ const data=await buildExportPayload(); const blob=new Blob([JSON.stringify(data)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='meal-planner-export.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); };
+document.getElementById('importFile').addEventListener('change', async (e)=>{ const file=e.target.files[0]; if(!file) return; try{ const data=JSON.parse(await file.text()); await clearStore('recipes'); await clearStore('plans'); await clearStore('settings'); for(const r of (data.recipes||[])) await put('recipes', r); for(const p of (data.plans||[])) await put('plans', p); for(const st of (data.settings||[])) await put('settings', st); toast('Import complete'); renderRecipeList(); renderCalendar(); markDirtyAndScheduleSync(); }catch(err){ alert('Import error: '+err.message); } e.target.value=''; });
+window.addEventListener('beforeunload', (e)=>{ if(syncInFlight || unsyncedChanges){ e.preventDefault(); e.returnValue='Changes are still saving to Drive.'; } });
+
+/* ===== Init ===== */
+(async function init(){
+  try{
+    await openDB();
+    await loadSettings();
+    settingsCache = await get('settings','drive') || settingsCache;
+    await loadRemoteDataIfEnabled();
+  }catch(e){ console.warn('Init load settings failed', e); }
+  rollingStartDate=addDays(startOfWeek(new Date(),false),-7);
+  renderCalendar();
+  renderRecipeList();
+  setStatus('saved','All changes saved');
+})();
+</script>
+</body>
+</html>
