@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Meal Planner & Recipe Vault — v11</title>
+<title>Meal Planner & Recipe Vault — v16</title>
 <style>
   :root {
     --bg:#0b1020; --bg2:#0b1226; --card:#0f1633; --card2:#121830;
@@ -14,18 +14,18 @@
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-       color:var(--text); background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%)}
+       color:var(--text); background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%); overflow-x:hidden; overscroll-behavior-x:contain}
   header{position:sticky;top:0;z-index:20;background:#0b1020cc;backdrop-filter:blur(6px);
          border-bottom:1px solid var(--line)}
   .wrap{max-width:1400px;margin:0 auto;padding:14px 16px}
-  .titlebar{display:flex;align-items:center;gap:12px}
+  .titlebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   h1{margin:0;font-size:18px;letter-spacing:.2px}
   .spacer{flex:1}
   .status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
   .dot{width:8px;height:8px;border-radius:50%;background:#4b5563}
   .dot.saving{background:var(--warn)} .dot.saved{background:var(--accent2)} .dot.error{background:var(--danger)}
   .btn{cursor:pointer;border:1px solid var(--line);background:#192147;color:var(--text);
-       padding:8px 12px;border-radius:10px;transition:.2s}
+       padding:8px 12px;border-radius:10px;transition:.2s;display:inline-flex;align-items:center;justify-content:center}
   .btn:hover{background:#1f2a57} .btn.sm{padding:6px 10px;font-size:12px}
   .btn.good{background:var(--accent2);color:#062012;border:none}
   .btn.warn{background:var(--warn);color:#1f1300;border:none}
@@ -45,14 +45,14 @@
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
   .dow{font-size:12px;color:#ffffff;opacity:.85;text-align:center;letter-spacing:.2px}
   .daycell{min-height:108px;background:var(--card);border:1px solid var(--line);border-radius:12px;
-           padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:.15s}
+           padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:.15s; touch-action:pan-y}
   .daycell:hover{transform:translateY(-1px)}
   .today{outline:2px solid var(--accent)}
   .off{color:#ffddb4}
   .daytitle{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:#d7def6}
   .mealname{font-size:12px;line-height:1.3}
   .rangeSel{outline:2px dashed var(--accent); background:linear-gradient(180deg, #0f1633 0%, #14204c 100%)}
-  .planMode .daycell{cursor:crosshair}
+  .planMode .daycell{cursor:crosshair; touch-action:none}
   .tabsbar{display:flex;gap:8px;padding:8px;background:#0c1434;border-bottom:1px solid var(--line);border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
   .tbtn{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1736;cursor:pointer;font-size:13px;color:var(--text);font-weight:600}
   .tbtn.active{outline:2px solid var(--accent);background:#111d46}
@@ -78,6 +78,8 @@
   .modal .head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
   .modal .body{padding:14px 16px;max-height:74vh;overflow:auto}
   label{color:var(--text)}
+  /* Plan banner */
+  #planBanner{display:none;margin:8px 0;padding:8px 10px;border:1px dashed #ffffff33;border-radius:10px}
   /* Mobile tweaks */
   @media(max-width: 900px){
     .layout{grid-template-columns:1fr}
@@ -88,48 +90,20 @@
     .tbtn{padding:10px 12px;font-size:14px}
     input,select,textarea{padding:10px;font-size:14px}
   }
-  @media(max-width: 600px){
-    .wrap{padding:12px}
-    .daycell{min-height:72px}
-    .recipe-name{max-width:60vw}
-  }
-
-  /* Mobile FAB for Auto Plan Range */
-  #mobilePlanFab{position:fixed;right:16px;bottom:16px;z-index:30;
-    display:none;align-items:center;gap:8px;padding:12px 14px;border-radius:999px;
-    background:var(--warn);color:#1f1300;border:none;box-shadow:var(--shadow);}
-  @media(max-width: 700px){ #mobilePlanFab{display:flex;} }
-
-
-  /* Prevent horizontal scroll and accidental side pan */
-  html, body { overflow-x:hidden; overscroll-behavior-x: contain; }
-  /* During Auto Plan Range, disable browser gestures in the grid so drag is precise */
-  .planMode .cal-grid, .planMode .daycell { touch-action: none; }
-  /* Outside plan mode, allow vertical scroll; we still avoid horizontal pan */
-  .cal-grid, .daycell { touch-action: pan-y; }
-  /* Header wraps better on mobile */
   @media(max-width: 700px){
-    header .titlebar{flex-wrap:wrap}
     header .titlebar .status{order:3; width:100%; margin-top:6px}
-    /* Hide header Auto Plan Range to avoid duplicate with FAB */
+    /* Hide header Auto Plan on phones; keep FAB */
     #planModeBtn{display:none}
-    /* Make buttons shrink/wrap more gracefully */
-    header .titlebar .btn{flex:1 1 auto; min-width:120px}
+    /* Keep Add Recipe visible by hiding export/import on very narrow */
+    #btnExport, label[for="importFile"]{ display:none; }
   }
-
-
-  /* Make Exit Plan stand out on mobile while active */
-  .planMode #exitPlanModeBtn{outline:2px solid var(--warn)}
-  @media(max-width: 520px){
-    header .titlebar .btn#btnExport, header .titlebar label[for="importFile"]{ display:none; } /* keep Add Recipe visible */
-    #mobilePlanFab{ right: 12px; bottom: 12px; }
-  }
-  /* Additional guard to prevent gestures while in plan mode */
-  .planMode body, .planMode .calendar, .planMode .cal-grid { touch-action: none; }
-
-
+  /* Mobile FAB for Auto Plan Range */
+  #mobilePlanFab{position:fixed;right:12px;bottom:12px;z-index:30;
+    display:flex;align-items:center;gap:8px;padding:12px 14px;border-radius:999px;
+    background:var(--warn);color:#1f1300;border:none;box-shadow:var(--shadow);}
+  @media(min-width: 701px){ #mobilePlanFab{display:none;} }
+  /* Plan mode hardening */
   .planMode * { user-select: none; -webkit-user-select: none; }
-
 </style>
 </head>
 <body>
@@ -139,14 +113,14 @@
     <div class="status"><span class="dot" id="saveDot"></span><span id="saveLabel">All changes saved</span></div>
     <div class="spacer"></div>
     <button class="btn" id="btnSettings">Settings</button>
+    <button class="btn" id="planModeBtn">Auto Plan Range</button>
+    <button class="btn ghost" id="exitPlanModeBtn" style="display:none">Exit Plan</button>
     <button class="btn" id="btnExport">Export</button>
     <label class="btn" for="importFile">Import</label><input id="importFile" type="file" accept="application/json" hidden />
     <button class="btn good" id="btnAddRecipe">+ Add Recipe</button>
   </div>
-
-<button class="btn warn" id="mobilePlanFab">Auto Plan Range</button>
-
 </header>
+<button class="btn warn" id="mobilePlanFab">Auto Plan Range</button>
 
 <div class="wrap layout">
   <!-- Calendar -->
@@ -159,13 +133,10 @@
         <button class="btn ghost" id="nextWindow">▶</button>
         <div class="spacer"></div>
         <button class="btn" id="todayBtn">Today</button>
-        <button class="btn warn" id="planModeBtn">Auto Plan Range</button>
-        <button class="btn ghost" id="exitPlanModeBtn" style="display:none">Exit Plan</button>
       </div>
     </div>
     <div class="calendar">
-      <div id="planBanner" class="muted" style="display:none;margin-bottom:8px;padding:8px 10px;border:1px dashed #ffffff33;border-radius:10px">Auto Plan Mode: drag to select a date range, then release. Tap <strong>Exit Plan</strong> to cancel.</div>
-      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates (tap the floating button on mobile).</div>
+      <div id="planBanner" class="muted">Auto Plan: drag to select a range, or tap a day to plan just that date. Tap <strong>Exit Plan</strong> to cancel.</div>
       <div class="cal-grid" id="calendarGrid"></div>
     </div>
   </section>
@@ -242,7 +213,6 @@
             <button class="btn" id="dayReroll">Re-roll</button>
             <button class="btn danger" id="dayClear">Clear / Delete record</button>
             <div class="spacer"></div>
-            <button class="btn warn" id="dayPlanFrom">Open Planner for this week</button>
             <button class="btn good" id="daySave">Save</button>
           </div>
         </div>
@@ -270,7 +240,7 @@
         <button class="btn warn sm" id="plannerPreviewFull">Preview Sun–Sat</button>
         <button class="btn warn sm" id="plannerPreviewFrom">Preview From Anchor → Sat</button>
         <div class="spacer"></div>
-        <span class="muted" id="plannerHint">Drag a range in Plan Range mode to preview that span here.</span>
+        <span class="muted" id="plannerHint">Drag a range in Auto Plan mode to preview that span here.</span>
       </div>
       <div id="plannerPreviewList" style="margin-top:10px"></div>
       <div class="row" style="margin-top:10px;justify-content:flex-end">
@@ -368,7 +338,7 @@ function blobToBase64(blob){return new Promise((res,rej)=>{const fr=new FileRead
 function base64ToBlob(b64,type){const bin=atob(b64);const arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);return new Blob([arr],{type});}
 
 /* ===== IndexedDB ===== */
-const DB_NAME='MealPlannerDB_v11_clean';
+const DB_NAME='MealPlannerDB_v16_stable';
 const DB_VERSION=1; let db;
 function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VERSION);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('recipes')){const s=d.createObjectStore('recipes',{keyPath:'id'});s.createIndex('name','name',{unique:false});s.createIndex('tags','tags',{multiEntry:true});}if(!d.objectStoreNames.contains('plans'))d.createObjectStore('plans',{keyPath:'dateISO'});if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'});};r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error);});}
 function tx(s,m='readonly'){return db.transaction(s,m).objectStore(s);}
@@ -405,13 +375,7 @@ async function saveSettings(){
 }
 async function loadSettings(){
   let s=await get('settings','drive');
-  if(!s){
-    s={key:'drive', ...FIRST_BOOT_DEFAULTS};
-    await put('settings', s);
-  }
-  // Populate UI
-  const ids=['setDataUrl','setPdfFolderId','setDataFolderId','setFilePrefix','setNoRepeatWeeks','setAutoLoad','setTagPresets'];
-  ids.forEach(id=>{ if(!document.getElementById(id)) return; });
+  if(!s){ s={key:'drive', ...FIRST_BOOT_DEFAULTS}; await put('settings', s); }
   document.getElementById('setDataUrl').value=s.dataUrl||'';
   document.getElementById('setPdfFolderId').value=s.pdfFolderId||'';
   document.getElementById('setDataFolderId').value=s.dataFolderId||'';
@@ -431,7 +395,8 @@ function renderCalendar(){
     const grid=document.getElementById('calendarGrid'); if(!grid){console.warn('calendarGrid not found'); return;}
     grid.innerHTML='';
     const start=rollingStartDate||addDays(startOfWeek(new Date(),false),-7); const end=addDays(start,27);
-    document.getElementById('calTitle').textContent='Rolling view: '+formatRange(start,end);
+    const titleEl=document.getElementById('calTitle'); if(titleEl) titleEl.textContent='Rolling view: '+formatRange(start,end);
+    // DOW
     ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(l=>{const d=document.createElement('div'); d.className='dow'; d.textContent=l; grid.appendChild(d);});
     for(let i=0;i<28;i++){ const day=addDays(start,i); const iso=toISO(day);
       const cell=document.createElement('div'); cell.className='daycell'; cell.dataset.iso=iso; if(toISO(new Date())===iso) cell.classList.add('today');
@@ -442,22 +407,33 @@ function renderCalendar(){
         if(!p.needDinner){ meal.textContent=p.offNote?`Off: ${p.offNote}`:'Off / No dinner'; meal.classList.add('off'); meal.classList.remove('muted'); return; }
         if(p.recipeId){ const r=await get('recipes', p.recipeId); meal.textContent=r? r.name : 'Planned meal'; meal.classList.remove('muted'); }
       });
-      // interactions
-      cell.addEventListener('pointerdown',(e)=>{ onDayPointerDown(e, iso, cell); });
-      cell.addEventListener('pointermove',(e)=>{ onDayPointerMove(e, iso, cell); });
-      cell.addEventListener('pointerup',(e)=>{ onDayPointerUp(e, iso, cell); });
-      cell.addEventListener('mousedown',(e)=>{ onDayMouseDown(e, iso, cell); });
-      cell.addEventListener('mouseover',(e)=>{ onDayMouseOver(e, iso, cell); });
-      cell.addEventListener('mouseup',(e)=>{ onDayMouseUp(e, iso, cell); });
-      if(!window.PointerEvent){
-      cell.addEventListener('touchstart',(e)=>{ onDayTouchStart(e, iso, cell); }, {passive:false});
-      cell.addEventListener('touchmove',(e)=>{ onDayTouchMove(e, iso, cell); }, {passive:false});
-      cell.addEventListener('touchend',(e)=>{ onDayTouchEnd(e, iso, cell); });
-    }
-      cell.addEventListener('dblclick', ()=>{ if(!planMode){ openDayModal(iso); } });
+      // Interactions (added later in wireInteractions())
       grid.appendChild(cell);
     }
+    wireCalendarCellInteractions();
   }catch(err){ console.error('Calendar render failed:', err); const grid=document.getElementById('calendarGrid'); if(grid){ grid.innerHTML='<div class="muted">Calendar failed to render. Check console.</div>'; } }
+}
+function wireCalendarCellInteractions(){
+  const grid=document.getElementById('calendarGrid'); if(!grid) return;
+  grid.querySelectorAll('.daycell').forEach(cell=>{
+    const iso=cell.dataset.iso;
+    // Pointer-first
+    cell.addEventListener('pointerdown', (e)=>onDayPointerDown(e, iso, cell));
+    cell.addEventListener('pointermove', (e)=>onDayPointerMove(e, iso, cell));
+    cell.addEventListener('pointerup',   (e)=>onDayPointerUp(e, iso, cell));
+    // Mouse fallback
+    cell.addEventListener('mousedown', (e)=>onDayMouseDown(e, iso, cell));
+    cell.addEventListener('mouseover', (e)=>onDayMouseOver(e, iso, cell));
+    cell.addEventListener('mouseup',   (e)=>onDayMouseUp(e, iso, cell));
+    // Touch fallback only if no pointer events
+    if(!window.PointerEvent){
+      cell.addEventListener('touchstart',(e)=>onDayTouchStart(e, iso, cell), {passive:false});
+      cell.addEventListener('touchmove', (e)=>onDayTouchMove(e, iso, cell), {passive:false});
+      cell.addEventListener('touchend',  (e)=>onDayTouchEnd(e, iso, cell));
+    }
+    // Dblclick editor (disabled in plan mode)
+    cell.addEventListener('dblclick', ()=>{ if(!planMode){ openDayModal(iso); } });
+  });
 }
 
 /* ===== Range Selection / Plan Mode ===== */
@@ -476,119 +452,34 @@ function clearRangeSelection(){
   document.querySelectorAll('.daycell').forEach(c=>c.classList.remove('rangeSel'));
 }
 function updatePlanModeUI(){
-  updatePlanBanner();
   const body=document.body;
   const btnOn=document.getElementById('planModeBtn');
   const btnOff=document.getElementById('exitPlanModeBtn');
-  const hint=document.getElementById('planHint');
+  const banner=document.getElementById('planBanner');
+  const fab=document.getElementById('mobilePlanFab');
   body.classList.toggle('planMode', planMode);
   if(btnOn) btnOn.style.display = planMode ? 'none' : '';
   if(btnOff) btnOff.style.display = planMode ? '' : 'none';
-  if(hint) hint.innerHTML = planMode
-    ? 'Drag across calendar days to select a range. Release to open the planner. Double-click any day to edit.'
-    : 'Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates (tap the floating button on mobile).';
+  if(banner) banner.style.display = planMode ? 'block' : 'none';
+  if(fab) fab.textContent = planMode ? 'Exit Plan' : 'Auto Plan Range';
 }
 function enterPlanMode(){ planMode=true; clearRangeSelection(); updatePlanModeUI(); }
 function exitPlanMode(){ planMode=false; clearRangeSelection(); updatePlanModeUI(); }
 
-function updatePlanBanner(){
-  const banner=document.getElementById('planBanner');
-  const fab=document.getElementById('mobilePlanFab');
-  if(banner) banner.style.display = planMode ? 'block' : 'none';
-  if(fab) fab.textContent = planMode ? 'Exit Plan' : 'Auto Plan Range';
-}
-
-document.getElementById('planModeBtn').onclick=enterPlanMode;
-document.getElementById('exitPlanModeBtn').onclick=exitPlanMode;
-const _fab=document.getElementById('mobilePlanFab'); 
-if(_fab){ 
-  _fab.onclick=()=>{ if(planMode){ exitPlanMode();
-
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
-let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
-function onDayPointerDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault();
-  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
-  markRangeOnCalendar(pointerStartISO, pointerStartISO);
-}
-function onDayPointerMove(e, iso, cell){
-  if(!planMode || !pointerSelecting || !pointerStartISO) return;
-  e.preventDefault();
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const over=el && el.closest ? el.closest('.daycell') : null;
-  const overIso = over ? over.dataset.iso : iso;
-  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
-}
-function onDayPointerUp(e, iso, cell){
-  if(!planMode) return;
-  e.preventDefault();
-  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
-  let endIso = iso;
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const endCell=el && el.closest ? el.closest('.daycell') : null;
-  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
-  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
-  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-}
-
-
-exitPlanMode();
-
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
-let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
-function onDayPointerDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault();
-  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
-  markRangeOnCalendar(pointerStartISO, pointerStartISO);
-}
-function onDayPointerMove(e, iso, cell){
-  if(!planMode || !pointerSelecting || !pointerStartISO) return;
-  e.preventDefault();
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const over=el && el.closest ? el.closest('.daycell') : null;
-  const overIso = over ? over.dataset.iso : iso;
-  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
-}
-function onDayPointerUp(e, iso, cell){
-  if(!planMode) return;
-  e.preventDefault();
-  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
-  let endIso = iso;
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const endCell=el && el.closest ? el.closest('.daycell') : null;
-  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
-  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
-  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-}
-
-}
- } else { enterPlanMode(); } };
-}
-function onDayMouseDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  dragStartISO=iso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO); e.preventDefault();
-}
+/* Mouse fallback */
+function onDayMouseDown(e, iso, cell){ if(!planMode){ openDayModal(iso); return; } dragStartISO=iso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO); e.preventDefault(); }
 function onDayMouseOver(e, iso, cell){ if(!planMode || !dragActive || !dragStartISO) return; markRangeOnCalendar(dragStartISO, iso); }
 function onDayMouseUp(e, iso, cell){
-/* Touch support for plan-mode drag selection */
+  if(!planMode) return;
+  if(!dragStartISO){ dragActive=false; return; }
+  const a = fromISO(dragStartISO), b = fromISO(iso);
+  const startISO = toISO(a<b ? a : b), endISO = toISO(a<b ? b : a);
+  dragStartISO=null; dragActive=false;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
+/* Touch fallback */
 let touchStartISO=null;
 function touchCellIsoFromEvent(e){
   const t = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : null);
@@ -618,8 +509,9 @@ function onDayTouchEnd(e, iso, cell){
   dragStartISO=null; dragActive=false; touchStartISO=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+}
 
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+/* Pointer Events (tap vs drag) */
 let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
 function onDayPointerDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
@@ -644,145 +536,14 @@ function onDayPointerUp(e, iso, cell){
   const el=document.elementFromPoint(e.clientX, e.clientY);
   const endCell=el && el.closest ? el.closest('.daycell') : null;
   if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  // was it a tap?
+  let isTap=true; if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x), dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
   if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
   const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
   const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
   pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
-}
-
-
-exitPlanMode();
-
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
-let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
-function onDayPointerDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault();
-  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
-  markRangeOnCalendar(pointerStartISO, pointerStartISO);
-}
-function onDayPointerMove(e, iso, cell){
-  if(!planMode || !pointerSelecting || !pointerStartISO) return;
-  e.preventDefault();
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const over=el && el.closest ? el.closest('.daycell') : null;
-  const overIso = over ? over.dataset.iso : iso;
-  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
-}
-function onDayPointerUp(e, iso, cell){
-  if(!planMode) return;
-  e.preventDefault();
-  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
-  let endIso = iso;
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const endCell=el && el.closest ? el.closest('.daycell') : null;
-  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
-  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
-  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-}
-
-}
-
-}
-
-  if(!planMode) return;
-  if(!dragStartISO){ dragActive=false; return; }
-  const a = fromISO(dragStartISO), b = fromISO(iso);
-  const startISO = toISO(a<b ? a : b), endISO = toISO(a<b ? b : a);
-  dragStartISO=null; dragActive=false;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
-let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
-function onDayPointerDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault();
-  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
-  markRangeOnCalendar(pointerStartISO, pointerStartISO);
-}
-function onDayPointerMove(e, iso, cell){
-  if(!planMode || !pointerSelecting || !pointerStartISO) return;
-  e.preventDefault();
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const over=el && el.closest ? el.closest('.daycell') : null;
-  const overIso = over ? over.dataset.iso : iso;
-  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
-}
-function onDayPointerUp(e, iso, cell){
-  if(!planMode) return;
-  e.preventDefault();
-  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
-  let endIso = iso;
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const endCell=el && el.closest ? el.closest('.daycell') : null;
-  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
-  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
-  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-}
-
-
-exitPlanMode();
-
-/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
-let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
-function onDayPointerDown(e, iso, cell){
-  if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault();
-  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
-  markRangeOnCalendar(pointerStartISO, pointerStartISO);
-}
-function onDayPointerMove(e, iso, cell){
-  if(!planMode || !pointerSelecting || !pointerStartISO) return;
-  e.preventDefault();
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const over=el && el.closest ? el.closest('.daycell') : null;
-  const overIso = over ? over.dataset.iso : iso;
-  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
-}
-function onDayPointerUp(e, iso, cell){
-  if(!planMode) return;
-  e.preventDefault();
-  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
-  let endIso = iso;
-  const el=document.elementFromPoint(e.clientX, e.clientY);
-  const endCell=el && el.closest ? el.closest('.daycell') : null;
-  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
-  // Determine if this was a tap (very small movement)
-  let isTap=true;
-  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
-  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
-  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
-  openPlannerModal(startISO, endISO);
-  exitPlanMode();
-}
-
-}
-
 }
 
 /* ===== Planner Modal (Preview & Apply) ===== */
@@ -799,20 +560,17 @@ function openPlannerModal(startISO=null, endISO=null){
   }
 }
 function closePlannerModal(){ const m=document.getElementById('plannerModalWrap'); if(m) m.style.display='none'; }
-document.getElementById('closePlannerModal').onclick=closePlannerModal;
-if(document.getElementById('openPlannerBtn')){ document.getElementById('openPlannerBtn').onclick=()=>openPlannerModal(); }
-document.getElementById('plannerThisWeek').onclick=()=>{
-  const now=new Date(); document.getElementById('plannerAnchor').value=toISO(startOfWeek(now,false));
-  buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
-};
-document.getElementById('plannerNextWeek').onclick=()=>{
-  const start=addDays(startOfWeek(new Date(),false),7); document.getElementById('plannerAnchor').value=toISO(start);
-  buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
-};
-document.getElementById('plannerPreviewFull').onclick=()=>buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint');
-document.getElementById('plannerPreviewFrom').onclick=()=>buildPreviewFromAnchorInto(false, 'plannerPreviewList', 'plannerHint');
-document.getElementById('plannerApply').onclick=async()=>{ await applyPreviewToCalendar(); closePlannerModal(); };
-
+function bindPlannerButtons(){
+  const map=[
+    ['closePlannerModal', ()=>closePlannerModal()],
+    ['plannerThisWeek', ()=>{ const now=new Date(); const s=toISO(startOfWeek(now,false)); const a=document.getElementById('plannerAnchor'); if(a) a.value=s; buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint'); }],
+    ['plannerNextWeek', ()=>{ const s=addDays(startOfWeek(new Date(),false),7); const a=document.getElementById('plannerAnchor'); if(a) a.value=toISO(s); buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint'); }],
+    ['plannerPreviewFull', ()=>buildPreviewFromAnchorInto(true, 'plannerPreviewList', 'plannerHint')],
+    ['plannerPreviewFrom', ()=>buildPreviewFromAnchorInto(false, 'plannerPreviewList', 'plannerHint')],
+    ['plannerApply', async ()=>{ await applyPreviewToCalendar(); closePlannerModal(); }]
+  ];
+  map.forEach(([id,fn])=>{ const el=document.getElementById(id); if(el) el.onclick=fn; });
+}
 async function buildPreviewFromAnchorInto(fullWeek, listId, hintId){
   const anchor = document.getElementById('plannerAnchor').value || toISO(new Date());
   const start = fullWeek ? startOfWeek(fromISO(anchor), false) : fromISO(anchor);
@@ -842,7 +600,7 @@ async function buildPreviewGeneric(start, end, listId, hintId){
   if(list){
     list.onclick=async(e)=>{
       const btn=e.target.closest('button'); if(!btn) return;
-      const row=e.target.closest('planner-row,.planner-row'); const iso=row.dataset.date; const obj=previewState.find(x=>x.dateISO===iso);
+      const row=e.target.closest('.planner-row'); const iso=row.dataset.date; const obj=previewState.find(x=>x.dateISO===iso);
       obj.conf=readPreviewRowConfig(row);
       if(btn.dataset.act==='reroll'){
         const usedNow=new Set(previewState.filter(x=>x.pick).map(x=>x.pick.id));
@@ -852,7 +610,7 @@ async function buildPreviewGeneric(start, end, listId, hintId){
       }
     };
     list.onchange=(e)=>{
-      const row=e.target.closest('planner-row,.planner-row'); if(!row) return;
+      const row=e.target.closest('.planner-row'); if(!row) return;
       const iso=row.dataset.date; const obj=previewState.find(x=>x.dateISO===iso);
       obj.conf=readPreviewRowConfig(row);
       if(e.target.classList.contains('pickSel')){
@@ -940,8 +698,51 @@ function openDayModal(iso){
   populateDayModal(iso);
 }
 function closeDayModal(){ const w=document.getElementById('dayModalWrap'); if(w) w.style.display='none'; dayModalISO=null; }
-document.getElementById('closeDayModal').onclick=closeDayModal;
-
+function bindDayModalButtons(){
+  const map=[
+    ['closeDayModal', ()=>closeDayModal()],
+    ['dayReroll', async ()=>{
+      if(!dayModalISO) return;
+      const conf = {
+        needDinner: document.getElementById('dayNeed').checked,
+        fastOnly: document.getElementById('dayFast').checked,
+        locked: document.getElementById('dayLock').checked,
+        preferTags: splitTags(document.getElementById('dayPreferTags').value),
+        offNote: document.getElementById('dayOffNote').value.trim()
+      };
+      const rec = await pickRecipeForDate(dayModalISO, conf, {forceReroll:true});
+      const sel=document.getElementById('dayPick');
+      sel.value = rec ? rec.id : '';
+      document.getElementById('dayCurrent').textContent = rec ? rec.name : (conf.needDinner ? '—' : (conf.offNote || 'Off / No dinner'));
+    }],
+    ['dayClear', async ()=>{
+      if(!dayModalISO) return;
+      if(!confirm('Delete this day\\'s record?')) return;
+      await del('plans', dayModalISO);
+      markDirtyAndScheduleSync();
+      renderCalendar();
+      toast('Day cleared');
+      closeDayModal();
+    }],
+    ['daySave', async ()=>{
+      if(!dayModalISO) return;
+      const conf = {
+        needDinner: document.getElementById('dayNeed').checked,
+        fastOnly: document.getElementById('dayFast').checked,
+        locked: document.getElementById('dayLock').checked,
+        preferTags: splitTags(document.getElementById('dayPreferTags').value),
+        offNote: document.getElementById('dayOffNote').value.trim()
+      };
+      const pickId = document.getElementById('dayPick').value || null;
+      const patch = conf.needDinner ? { ...conf, recipeId: pickId } : { ...conf, recipeId: null };
+      await savePlan(dayModalISO, patch);
+      renderCalendar();
+      toast('Saved day changes');
+      closeDayModal();
+    }],
+  ];
+  map.forEach(([id,fn])=>{ const el=document.getElementById(id); if(el) el.onclick=fn; });
+}
 async function populateDayModal(iso){
   const plan = await get('plans', iso) || DEFAULT_DAY();
   const recSel = document.getElementById('dayPick');
@@ -962,49 +763,6 @@ async function populateDayModal(iso){
   }
   curBox.innerHTML = label;
 }
-document.getElementById('dayReroll').onclick=async()=>{
-  if(!dayModalISO) return;
-  const conf = {
-    needDinner: document.getElementById('dayNeed').checked,
-    fastOnly: document.getElementById('dayFast').checked,
-    locked: document.getElementById('dayLock').checked,
-    preferTags: splitTags(document.getElementById('dayPreferTags').value),
-    offNote: document.getElementById('dayOffNote').value.trim()
-  };
-  const rec = await pickRecipeForDate(dayModalISO, conf, {forceReroll:true});
-  const sel=document.getElementById('dayPick');
-  sel.value = rec ? rec.id : '';
-  document.getElementById('dayCurrent').textContent = rec ? rec.name : (conf.needDinner ? '—' : (conf.offNote || 'Off / No dinner'));
-};
-document.getElementById('dayClear').onclick=async()=>{
-  if(!dayModalISO) return;
-  if(!confirm('Delete this day\'s record?')) return;
-  await del('plans', dayModalISO);
-  markDirtyAndScheduleSync();
-  renderCalendar();
-  toast('Day cleared');
-  closeDayModal();
-};
-document.getElementById('daySave').onclick=async()=>{
-  if(!dayModalISO) return;
-  const conf = {
-    needDinner: document.getElementById('dayNeed').checked,
-    fastOnly: document.getElementById('dayFast').checked,
-    locked: document.getElementById('dayLock').checked,
-    preferTags: splitTags(document.getElementById('dayPreferTags').value),
-    offNote: document.getElementById('dayOffNote').value.trim()
-  };
-  const pickId = document.getElementById('dayPick').value || null;
-  const patch = conf.needDinner ? { ...conf, recipeId: pickId } : { ...conf, recipeId: null };
-  await savePlan(dayModalISO, patch);
-  renderCalendar();
-  toast('Saved day changes');
-  closeDayModal();
-};
-document.getElementById('dayPlanFrom').onclick=()=>{
-  if(!dayModalISO) return;
-  openPlannerModal(dayModalISO, toISO(endOfWeek(fromISO(dayModalISO))));
-};
 
 /* ===== Recipes UI ===== */
 function clipName(s,n=64){return s.length>n?(s.slice(0,n-1)+'…'):s;}
@@ -1028,18 +786,22 @@ async function renderRecipeList(){
   renderSelectedRecipeMeta();
   const rSel=await get('recipes', selectedRecipeId||''); buildPresetChips(document.getElementById('presetTagsViewer'), rSel?.tags||[], true);
 }
-document.addEventListener('input', (e)=>{ if(e.target && e.target.id==='searchRecipes'){ renderRecipeList(); }});
-document.getElementById('btnAddRecipe').onclick=()=>openRecipeModal();
-document.getElementById('btnViewSelected').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} activateTab('viewerPane'); openSelectedRecipeInViewer(); };
-document.getElementById('btnEditSelected').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} const r=await get('recipes', selectedRecipeId); if(!r) return; openRecipeModal(r); };
-document.getElementById('btnDeleteSelected').onclick=async()=>{
-  if(!selectedRecipeId){toast('Select a recipe');return;}
-  if(!confirm('Delete this recipe?')) return;
-  const id=selectedRecipeId; selectedRecipeId=null; await del('recipes', id);
-  markDirtyAndScheduleSync(); renderRecipeList(); document.getElementById('pdfView').innerHTML='<div class="muted">Select a recipe</div>'; document.getElementById('attachmentTabs').innerHTML='';
-  toast('Recipe deleted');
-};
-
+function wireRecipesButtons(){
+  const map=[
+    ['btnAddRecipe', ()=>openRecipeModal()],
+    ['btnViewSelected', async ()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} activateTab('viewerPane'); openSelectedRecipeInViewer(); }],
+    ['btnEditSelected', async ()=>{ if(!selectedRecipeId){toast('Select a recipe'); return;} const r=await get('recipes', selectedRecipeId); if(!r) return; openRecipeModal(r); }],
+    ['btnDeleteSelected', async ()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} if(!confirm('Delete this recipe?')) return; const id=selectedRecipeId; selectedRecipeId=null; await del('recipes', id); markDirtyAndScheduleSync(); renderRecipeList(); document.getElementById('pdfView').innerHTML='<div class="muted">Select a recipe</div>'; document.getElementById('attachmentTabs').innerHTML=''; toast('Recipe deleted'); }],
+    ['btnSaveNotes', async ()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const r=await get('recipes', selectedRecipeId); if(!r) return; r.notes=document.getElementById('recipeNotes').value; await put('recipes', r); markDirtyAndScheduleSync(); toast('Notes saved'); renderRecipeList(); }],
+    ['btnAddTag', async ()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const input=document.getElementById('addTagInput'); const val=input.value.trim(); if(!val) return; const r=await get('recipes', selectedRecipeId); if(!r) return; r.tags=Array.from(new Set([...(r.tags||[]), val])); await put('recipes', r); input.value=''; markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); }],
+    ['closeRecipeModal', ()=>closeRecipeModal()],
+    ['btnResetRecipeForm', ()=>resetRecipeForm()],
+    ['btnSaveRecipe', ()=>saveRecipeFromModal()],
+    ['btnOpenPdfs', async ()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const r=await get('recipes', selectedRecipeId); if(!r) return; const atts=r.attachments||[]; if(!atts.length){toast('No PDFs');return;} for(const a of atts){ if(a.driveId){ window.open(`https://drive.google.com/file/d/${encodeURIComponent(a.driveId)}/preview`,'_blank'); } else if(a.pendingBase64){ const url=URL.createObjectURL(base64ToBlob(a.pendingBase64,'application/pdf')); window.open(url,'_blank'); } } }],
+  ];
+  map.forEach(([id,fn])=>{ const el=document.getElementById(id); if(el) el.onclick=fn; });
+  const search=document.getElementById('searchRecipes'); if(search){ search.addEventListener('input', ()=>renderRecipeList()); }
+}
 async function renderSelectedRecipeMeta(){
   const wrap=document.getElementById('selectedRecipeTags'); if(!wrap) return; wrap.innerHTML='';
   const notes=document.getElementById('recipeNotes'); if(notes) notes.value='';
@@ -1048,10 +810,8 @@ async function renderSelectedRecipeMeta(){
   if(notes) notes.value=r.notes||'';
 }
 function chipEl(text){ const el=document.createElement('span'); el.className='chip'; el.textContent=text+' '; const x=document.createElement('button'); x.textContent='×'; x.onclick=async()=>{ const r=await get('recipes', selectedRecipeId); if(!r) return; r.tags=(r.tags||[]).filter(t=>t!==text); await put('recipes', r); markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); }; el.appendChild(x); return el; }
-document.getElementById('btnSaveNotes').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const r=await get('recipes', selectedRecipeId); if(!r) return; r.notes=document.getElementById('recipeNotes').value; await put('recipes', r); markDirtyAndScheduleSync(); toast('Notes saved'); renderRecipeList(); };
-document.getElementById('btnAddTag').onclick=async()=>{ if(!selectedRecipeId){toast('Select a recipe');return;} const input=document.getElementById('addTagInput'); const val=input.value.trim(); if(!val) return; const r=await get('recipes', selectedRecipeId); if(!r) return; r.tags=Array.from(new Set([...(r.tags||[]), val])); await put('recipes', r); input.value=''; markDirtyAndScheduleSync(); renderSelectedRecipeMeta(); renderRecipeList(); };
 
-/* ===== Add/Edit Recipe Modal ===== */
+/* Add/Edit Recipe Modal logic */
 function openRecipeModal(recipe=null){
   const w=document.getElementById('recipeModalWrap'); if(!w) return;
   w.style.display='flex';
@@ -1059,16 +819,14 @@ function openRecipeModal(recipe=null){
   if(recipe){ document.getElementById('recipeModalTitle').textContent='Edit Recipe'; editingRecipeId=recipe.id; fillRecipeForm(recipe); }
   else { document.getElementById('recipeModalTitle').textContent='Add Recipe'; editingRecipeId=null; resetRecipeForm(); }
 }
-function closeRecipeModal(){ const w=document.getElementById('recipeModalWrap'); if(w) w.style.display='none'; }
-document.getElementById('closeRecipeModal').onclick=closeRecipeModal;
-document.getElementById('btnResetRecipeForm').onclick=resetRecipeForm;
-
 function resetRecipeForm(){
   ['recName','recTags','recNotes','recLinkUrl'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
-  document.getElementById('recExcludedChk').checked=false; document.getElementById('recAttachments').innerHTML='';
-  document.getElementById('recPreview').innerHTML='<div class="muted">PDF preview</div>';
+  const ex=document.getElementById('recExcludedChk'); if(ex) ex.checked=false;
+  const box=document.getElementById('recAttachments'); if(box) box.innerHTML='';
+  const prev=document.getElementById('recPreview'); if(prev) prev.innerHTML='<div class="muted">PDF preview</div>';
   const up=document.getElementById('recPdfs'); if(up) up.value='';
 }
+function closeRecipeModal(){ const w=document.getElementById('recipeModalWrap'); if(w) w.style.display='none'; }
 function fillRecipeForm(r){
   document.getElementById('recName').value=r.name||'';
   document.getElementById('recTags').value=(r.tags||[]).filter(t=>!currentPresets().includes(t)).join(', ');
@@ -1082,7 +840,7 @@ function fillRecipeForm(r){
   } else document.getElementById('recPreview').innerHTML='<div class="muted">PDF preview</div>';
 }
 function renderAttachmentList(r){
-  const box=document.getElementById('recAttachments'); box.innerHTML='';
+  const box=document.getElementById('recAttachments'); if(!box) return; box.innerHTML='';
   (r.attachments||[]).forEach(a=>{
     const row=document.createElement('div'); row.className='row';
     row.innerHTML=`<input data-id="${a.id}" class="attName" type="text" value="${escapeHtml(a.name||'PDF')}"/>
@@ -1125,7 +883,6 @@ document.getElementById('btnAddByLink').onclick=async()=>{
   (rec.attachments=rec.attachments||[]).push({ id: uuid(), name: attName, fromUrl: url, pendingBase64: null });
   await put('recipes', rec); markDirtyAndScheduleSync(); renderAttachmentList(rec);
 };
-document.getElementById('btnSaveRecipe').onclick=saveRecipeFromModal;
 async function saveRecipeFromModal(){
   const name=document.getElementById('recName').value.trim(); if(!name){alert('Enter a recipe name'); return;}
   const presets=collectActivePresets(document.getElementById('recPresetTags')); const extra=splitTags(document.getElementById('recTags').value); const tags=Array.from(new Set([...presets, ...extra]));
@@ -1185,16 +942,6 @@ async function openSelectedRecipeInViewer(){
   }
   renderSelectedRecipeMeta();
 }
-document.getElementById('btnOpenPdfs').onclick=async()=>{
-  if(!selectedRecipeId){toast('Select a recipe');return;}
-  const r=await get('recipes', selectedRecipeId); if(!r) return;
-  const atts=r.attachments||[];
-  if(!atts.length){toast('No PDFs');return;}
-  for(const a of atts){
-    if(a.driveId){ window.open(`https://drive.google.com/file/d/${encodeURIComponent(a.driveId)}/preview`,'_blank'); }
-    else if(a.pendingBase64){ const url=URL.createObjectURL(base64ToBlob(a.pendingBase64,'application/pdf')); window.open(url,'_blank'); }
-  }
-};
 
 /* ===== Drive Sync ===== */
 const FIXED_FILENAME = () => `${(settingsCache.prefix||'meal-planner')}-data.json`;
@@ -1291,21 +1038,37 @@ function activateTab(paneId){
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('active', b.dataset.pane===paneId));
   document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active', p.id===paneId));
 }
-document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.pane)));
-document.getElementById('btnSettings').onclick=openSettings;
-document.getElementById('closeSettings').onclick=closeSettings;
-document.getElementById('btnSaveSettings').onclick=saveSettings;
-document.getElementById('prevWindow').onclick=()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),-7); renderCalendar(); };
-document.getElementById('nextWindow').onclick=()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),+7); renderCalendar(); };
-document.getElementById('todayBtn').onclick=()=>{ rollingStartDate=addDays(startOfWeek(new Date(),false),-7); renderCalendar(); };
-
-/* ===== Export/Import & Exit Guard ===== */
-document.getElementById('btnExport').onclick=async()=>{ const data=await buildExportPayload(); const blob=new Blob([JSON.stringify(data)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='meal-planner-export.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); };
-document.getElementById('importFile').addEventListener('change', async (e)=>{ const file=e.target.files[0]; if(!file) return; try{ const data=JSON.parse(await file.text()); await clearStore('recipes'); await clearStore('plans'); await clearStore('settings'); for(const r of (data.recipes||[])) await put('recipes', r); for(const p of (data.plans||[])) await put('plans', p); for(const st of (data.settings||[])) await put('settings', st); toast('Import complete'); renderRecipeList(); renderCalendar(); markDirtyAndScheduleSync(); }catch(err){ alert('Import error: '+err.message); } e.target.value=''; });
-window.addEventListener('beforeunload', (e)=>{ if(syncInFlight || unsyncedChanges){ e.preventDefault(); e.returnValue='Changes are still saving to Drive.'; } });
+function wireHeaderButtons(){
+  const map=[
+    ['btnSettings', ()=>openSettings()],
+    ['closeSettings', ()=>closeSettings()],
+    ['btnSaveSettings', ()=>saveSettings()],
+    ['prevWindow', ()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),-7); renderCalendar(); }],
+    ['nextWindow', ()=>{ rollingStartDate=addDays(rollingStartDate||addDays(startOfWeek(new Date(),false),-7),+7); renderCalendar(); }],
+    ['todayBtn',   ()=>{ rollingStartDate=addDays(startOfWeek(new Date(),false),-7); renderCalendar(); }],
+    ['planModeBtn', ()=>enterPlanMode()],
+    ['exitPlanModeBtn', ()=>exitPlanMode()],
+    ['mobilePlanFab', ()=>{ if(planMode){ exitPlanMode(); } else { enterPlanMode(); } }],
+    ['btnExport', async ()=>{ const data=await buildExportPayload(); const blob=new Blob([JSON.stringify(data)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='meal-planner-export.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); }],
+  ];
+  map.forEach(([id,fn])=>{ const el=document.getElementById(id); if(el) el.onclick=fn; });
+  document.getElementById('importFile')?.addEventListener('change', async (e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    try{
+      const data=JSON.parse(await file.text());
+      await clearStore('recipes'); await clearStore('plans'); await clearStore('settings');
+      for(const r of (data.recipes||[])) await put('recipes', r);
+      for(const p of (data.plans||[])) await put('plans', p);
+      for(const st of (data.settings||[])) await put('settings', st);
+      toast('Import complete'); renderRecipeList(); renderCalendar(); markDirtyAndScheduleSync();
+    }catch(err){ alert('Import error: '+err.message); }
+    e.target.value='';
+  });
+  document.querySelectorAll('.tbtn').forEach(b=>b.addEventListener('click',()=>activateTab(b.dataset.pane)));
+}
 
 /* ===== Init ===== */
-(async function init(){
+document.addEventListener('DOMContentLoaded', async ()=>{
   try{
     await openDB();
     await loadSettings();
@@ -1313,17 +1076,14 @@ window.addEventListener('beforeunload', (e)=>{ if(syncInFlight || unsyncedChange
     await loadRemoteDataIfEnabled();
   }catch(e){ console.warn('Init load settings failed', e); }
   rollingStartDate=addDays(startOfWeek(new Date(),false),-7);
+  wireHeaderButtons();
+  bindDayModalButtons();
+  bindPlannerButtons();
+  wireRecipesButtons();
   renderCalendar();
-  updatePlanModeUI();
   renderRecipeList();
   setStatus('saved','All changes saved');
-})();
-
-  // Reinforce: prevent default scrolling when in plan mode and touching the grid background
-  document.getElementById('calendarGrid').addEventListener('touchmove', (e)=>{
-    if(document.body.classList.contains('planMode')){ e.preventDefault(); }
-  }, {passive:false});
-
+});
 </script>
 </body>
 </html>
