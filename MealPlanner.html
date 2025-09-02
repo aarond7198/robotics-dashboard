@@ -127,6 +127,9 @@
   /* Additional guard to prevent gestures while in plan mode */
   .planMode body, .planMode .calendar, .planMode .cal-grid { touch-action: none; }
 
+
+  .planMode * { user-select: none; -webkit-user-select: none; }
+
 </style>
 </head>
 <body>
@@ -446,10 +449,12 @@ function renderCalendar(){
       cell.addEventListener('mousedown',(e)=>{ onDayMouseDown(e, iso, cell); });
       cell.addEventListener('mouseover',(e)=>{ onDayMouseOver(e, iso, cell); });
       cell.addEventListener('mouseup',(e)=>{ onDayMouseUp(e, iso, cell); });
+      if(!window.PointerEvent){
       cell.addEventListener('touchstart',(e)=>{ onDayTouchStart(e, iso, cell); }, {passive:false});
       cell.addEventListener('touchmove',(e)=>{ onDayTouchMove(e, iso, cell); }, {passive:false});
       cell.addEventListener('touchend',(e)=>{ onDayTouchEnd(e, iso, cell); });
-      cell.addEventListener('dblclick', ()=>{ openDayModal(iso); });
+    }
+      cell.addEventListener('dblclick', ()=>{ if(!planMode){ openDayModal(iso); } });
       grid.appendChild(cell);
     }
   }catch(err){ console.error('Calendar render failed:', err); const grid=document.getElementById('calendarGrid'); if(grid){ grid.innerHTML='<div class="muted">Calendar failed to render. Check console.</div>'; } }
@@ -499,12 +504,14 @@ const _fab=document.getElementById('mobilePlanFab');
 if(_fab){ 
   _fab.onclick=()=>{ if(planMode){ exitPlanMode();
 
-/* Pointer Events (works for mouse, touch, pen) */
-let pointerSelecting=false, pointerStartISO=null;
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
 function onDayPointerDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
 }
 function onDayPointerMove(e, iso, cell){
   if(!planMode || !pointerSelecting || !pointerStartISO) return;
@@ -516,16 +523,62 @@ function onDayPointerMove(e, iso, cell){
 }
 function onDayPointerUp(e, iso, cell){
   if(!planMode) return;
-  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
   const el=document.elementFromPoint(e.clientX, e.clientY);
   const endCell=el && el.closest ? el.closest('.daycell') : null;
-  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
-  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
   const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null;
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+}
+
+
+exitPlanMode();
+
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
 }
  } else { enterPlanMode(); } };
 }
@@ -566,12 +619,14 @@ function onDayTouchEnd(e, iso, cell){
   openPlannerModal(startISO, endISO);
   exitPlanMode();
 
-/* Pointer Events (works for mouse, touch, pen) */
-let pointerSelecting=false, pointerStartISO=null;
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
 function onDayPointerDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
 }
 function onDayPointerMove(e, iso, cell){
   if(!planMode || !pointerSelecting || !pointerStartISO) return;
@@ -583,16 +638,62 @@ function onDayPointerMove(e, iso, cell){
 }
 function onDayPointerUp(e, iso, cell){
   if(!planMode) return;
-  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
   const el=document.elementFromPoint(e.clientX, e.clientY);
   const endCell=el && el.closest ? el.closest('.daycell') : null;
-  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
-  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
   const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null;
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+}
+
+
+exitPlanMode();
+
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
 }
 
 }
@@ -605,12 +706,14 @@ function onDayPointerUp(e, iso, cell){
   openPlannerModal(startISO, endISO);
   exitPlanMode();
 
-/* Pointer Events (works for mouse, touch, pen) */
-let pointerSelecting=false, pointerStartISO=null;
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
 function onDayPointerDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
-  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
-  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
 }
 function onDayPointerMove(e, iso, cell){
   if(!planMode || !pointerSelecting || !pointerStartISO) return;
@@ -622,16 +725,62 @@ function onDayPointerMove(e, iso, cell){
 }
 function onDayPointerUp(e, iso, cell){
   if(!planMode) return;
-  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
   const el=document.elementFromPoint(e.clientX, e.clientY);
   const endCell=el && el.closest ? el.closest('.daycell') : null;
-  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
-  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
-  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
   const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
-  pointerSelecting=false; pointerStartISO=null;
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+}
+
+
+exitPlanMode();
+
+/* Pointer Events (mouse/touch/pen) with tap-vs-drag threshold */
+let pointerSelecting=false, pointerStartISO=null, pointerStartXY=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault();
+  try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; pointerStartXY={x:e.clientX, y:e.clientY};
+  markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault();
+  try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  let endIso = iso;
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  if(endCell && endCell.dataset.iso) endIso = endCell.dataset.iso;
+  // Determine if this was a tap (very small movement)
+  let isTap=true;
+  if(pointerStartXY){ const dx=Math.abs(e.clientX-pointerStartXY.x); const dy=Math.abs(e.clientY-pointerStartXY.y); if(dx>8 || dy>8) isTap=false; }
+  if(!pointerStartISO) { pointerSelecting=false; pointerStartXY=null; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso||pointerStartISO);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null; pointerStartXY=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
 }
 
 }
