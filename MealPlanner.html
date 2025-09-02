@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Meal Planner & Recipe Vault — v11</title>
 <style>
   :root {
@@ -100,6 +100,23 @@
     background:var(--warn);color:#1f1300;border:none;box-shadow:var(--shadow);}
   @media(max-width: 700px){ #mobilePlanFab{display:flex;} }
 
+
+  /* Prevent horizontal scroll and accidental side pan */
+  html, body { overflow-x:hidden; overscroll-behavior-x: contain; }
+  /* During Auto Plan Range, disable browser gestures in the grid so drag is precise */
+  .planMode .cal-grid, .planMode .daycell { touch-action: none; }
+  /* Outside plan mode, allow vertical scroll; we still avoid horizontal pan */
+  .cal-grid, .daycell { touch-action: pan-y; }
+  /* Header wraps better on mobile */
+  @media(max-width: 700px){
+    header .titlebar{flex-wrap:wrap}
+    header .titlebar .status{order:3; width:100%; margin-top:6px}
+    /* Hide header Auto Plan Range to avoid duplicate with FAB */
+    #planModeBtn{display:none}
+    /* Make buttons shrink/wrap more gracefully */
+    header .titlebar .btn{flex:1 1 auto; min-width:120px}
+  }
+
 </style>
 </head>
 <body>
@@ -134,7 +151,7 @@
       </div>
     </div>
     <div class="calendar">
-      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates for the Planner (works with touch).</div>
+      <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates (tap the floating button on mobile).</div>
       <div class="cal-grid" id="calendarGrid"></div>
     </div>
   </section>
@@ -449,7 +466,7 @@ function updatePlanModeUI(){
   if(btnOff) btnOff.style.display = planMode ? '' : 'none';
   if(hint) hint.innerHTML = planMode
     ? 'Drag across calendar days to select a range. Release to open the planner. Double-click any day to edit.'
-    : 'Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates for the Planner (works with touch).';
+    : 'Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates (tap the floating button on mobile).';
 }
 function enterPlanMode(){ planMode=true; clearRangeSelection(); updatePlanModeUI(); }
 function exitPlanMode(){ planMode=false; clearRangeSelection(); updatePlanModeUI(); }
@@ -1035,6 +1052,12 @@ window.addEventListener('beforeunload', (e)=>{ if(syncInFlight || unsyncedChange
   renderRecipeList();
   setStatus('saved','All changes saved');
 })();
+
+  // Reinforce: prevent default scrolling when in plan mode and touching the grid background
+  document.getElementById('calendarGrid').addEventListener('touchmove', (e)=>{
+    if(document.body.classList.contains('planMode')){ e.preventDefault(); }
+  }, {passive:false});
+
 </script>
 </body>
 </html>
