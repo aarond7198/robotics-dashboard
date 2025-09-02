@@ -117,6 +117,16 @@
     header .titlebar .btn{flex:1 1 auto; min-width:120px}
   }
 
+
+  /* Make Exit Plan stand out on mobile while active */
+  .planMode #exitPlanModeBtn{outline:2px solid var(--warn)}
+  @media(max-width: 520px){
+    header .titlebar .btn#btnExport, header .titlebar label[for="importFile"]{ display:none; } /* keep Add Recipe visible */
+    #mobilePlanFab{ right: 12px; bottom: 12px; }
+  }
+  /* Additional guard to prevent gestures while in plan mode */
+  .planMode body, .planMode .calendar, .planMode .cal-grid { touch-action: none; }
+
 </style>
 </head>
 <body>
@@ -151,6 +161,7 @@
       </div>
     </div>
     <div class="calendar">
+      <div id="planBanner" class="muted" style="display:none;margin-bottom:8px;padding:8px 10px;border:1px dashed #ffffff33;border-radius:10px">Auto Plan Mode: drag to select a date range, then release. Tap <strong>Exit Plan</strong> to cancel.</div>
       <div id="planHint" class="muted" style="font-size:12px;margin:4px 0 8px">Tip: double-click a day to edit. Use <strong>Auto Plan Range</strong> to drag across dates (tap the floating button on mobile).</div>
       <div class="cal-grid" id="calendarGrid"></div>
     </div>
@@ -429,6 +440,9 @@ function renderCalendar(){
         if(p.recipeId){ const r=await get('recipes', p.recipeId); meal.textContent=r? r.name : 'Planned meal'; meal.classList.remove('muted'); }
       });
       // interactions
+      cell.addEventListener('pointerdown',(e)=>{ onDayPointerDown(e, iso, cell); });
+      cell.addEventListener('pointermove',(e)=>{ onDayPointerMove(e, iso, cell); });
+      cell.addEventListener('pointerup',(e)=>{ onDayPointerUp(e, iso, cell); });
       cell.addEventListener('mousedown',(e)=>{ onDayMouseDown(e, iso, cell); });
       cell.addEventListener('mouseover',(e)=>{ onDayMouseOver(e, iso, cell); });
       cell.addEventListener('mouseup',(e)=>{ onDayMouseUp(e, iso, cell); });
@@ -457,6 +471,7 @@ function clearRangeSelection(){
   document.querySelectorAll('.daycell').forEach(c=>c.classList.remove('rangeSel'));
 }
 function updatePlanModeUI(){
+  updatePlanBanner();
   const body=document.body;
   const btnOn=document.getElementById('planModeBtn');
   const btnOff=document.getElementById('exitPlanModeBtn');
@@ -470,9 +485,50 @@ function updatePlanModeUI(){
 }
 function enterPlanMode(){ planMode=true; clearRangeSelection(); updatePlanModeUI(); }
 function exitPlanMode(){ planMode=false; clearRangeSelection(); updatePlanModeUI(); }
+
+function updatePlanBanner(){
+  const banner=document.getElementById('planBanner');
+  const fab=document.getElementById('mobilePlanFab');
+  if(banner) banner.style.display = planMode ? 'block' : 'none';
+  if(fab) fab.textContent = planMode ? 'Exit Plan' : 'Auto Plan Range';
+}
+
 document.getElementById('planModeBtn').onclick=enterPlanMode;
 document.getElementById('exitPlanModeBtn').onclick=exitPlanMode;
-const _fab=document.getElementById('mobilePlanFab'); if(_fab){ _fab.onclick=enterPlanMode; }
+const _fab=document.getElementById('mobilePlanFab'); 
+if(_fab){ 
+  _fab.onclick=()=>{ if(planMode){ exitPlanMode();
+
+/* Pointer Events (works for mouse, touch, pen) */
+let pointerSelecting=false, pointerStartISO=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
+  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+ } else { enterPlanMode(); } };
+}
 function onDayMouseDown(e, iso, cell){
   if(!planMode){ openDayModal(iso); return; }
   dragStartISO=iso; dragActive=true; markRangeOnCalendar(dragStartISO, dragStartISO); e.preventDefault();
@@ -509,6 +565,36 @@ function onDayTouchEnd(e, iso, cell){
   dragStartISO=null; dragActive=false; touchStartISO=null;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+
+/* Pointer Events (works for mouse, touch, pen) */
+let pointerSelecting=false, pointerStartISO=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
+  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
 }
 
   if(!planMode) return;
@@ -518,6 +604,36 @@ function onDayTouchEnd(e, iso, cell){
   dragStartISO=null; dragActive=false;
   openPlannerModal(startISO, endISO);
   exitPlanMode();
+
+/* Pointer Events (works for mouse, touch, pen) */
+let pointerSelecting=false, pointerStartISO=null;
+function onDayPointerDown(e, iso, cell){
+  if(!planMode){ openDayModal(iso); return; }
+  e.preventDefault(); try{ cell.setPointerCapture && cell.setPointerCapture(e.pointerId); }catch(_){}
+  pointerSelecting=true; pointerStartISO=iso; markRangeOnCalendar(pointerStartISO, pointerStartISO);
+}
+function onDayPointerMove(e, iso, cell){
+  if(!planMode || !pointerSelecting || !pointerStartISO) return;
+  e.preventDefault();
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const over=el && el.closest ? el.closest('.daycell') : null;
+  const overIso = over ? over.dataset.iso : iso;
+  if(overIso) markRangeOnCalendar(pointerStartISO, overIso);
+}
+function onDayPointerUp(e, iso, cell){
+  if(!planMode) return;
+  e.preventDefault(); try{ cell.releasePointerCapture && cell.releasePointerCapture(e.pointerId); }catch(_){}
+  const el=document.elementFromPoint(e.clientX, e.clientY);
+  const endCell=el && el.closest ? el.closest('.daycell') : null;
+  const endIso=endCell ? endCell.dataset.iso : iso || pointerStartISO;
+  if(!pointerStartISO || !endIso){ pointerSelecting=false; return; }
+  const a=fromISO(pointerStartISO), b=fromISO(endIso);
+  const startISO=toISO(a<b?a:b), endISO=toISO(a<b?b:a);
+  pointerSelecting=false; pointerStartISO=null;
+  openPlannerModal(startISO, endISO);
+  exitPlanMode();
+}
+
 }
 
 /* ===== Planner Modal (Preview & Apply) ===== */
@@ -1049,6 +1165,7 @@ window.addEventListener('beforeunload', (e)=>{ if(syncInFlight || unsyncedChange
   }catch(e){ console.warn('Init load settings failed', e); }
   rollingStartDate=addDays(startOfWeek(new Date(),false),-7);
   renderCalendar();
+  updatePlanModeUI();
   renderRecipeList();
   setStatus('saved','All changes saved');
 })();
