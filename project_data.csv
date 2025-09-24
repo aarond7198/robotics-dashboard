@@ -36,5 +36,7 @@ MCF,2501,Dual Lane Palletizing,I:\Departments\PCC Robotics\Customer Files\McClan
 ARP,2501,AirPro Welding System,I:\Departments\PCC Robotics\Customer Files\AirPro Fan\BOMs\AirPro Fan welding cobot BOM Jan 2025.xlsx,10146183,No
 MTC,2501,Metal Craft 4th Haas System,I:\Departments\PCC Robotics\Customer Files\Metal Craft\BOMs\Metal Craft - 4th Haas BOM May 2025.xlsx,10166143,No
 MRP,2501,UR15 ISI Retrofit,I:\Departments\PCC Robotics\Customer Files\MRPC\BOMs\Vision Inspection ISI\MRPC - UR15 Replacement Cell Vision and Hipot June 2025.xlsx,10191166,Yes
-LVL,2501,Plunger Demold,I:\Departments\PCC Robotics\Customer Files\Lavelle Rubber\BOMs\Plunger System\Lavelle UR20 System BOM February 2025.xlsx,,Yes
-MAC ,2501,UR8L Aluminum Welding,,,
+LVL,2501,Plunger Demold,I:\Departments\PCC Robotics\Customer Files\Lavelle Rubber\BOMs\Plunger System\Lavelle UR20 System BOM February 2025.xlsx,10218963,Yes
+MAC ,2501,UR8L Aluminum Welding,I:\Departments\PCC Robotics\Customer Files\Mac Metal\BOMs\Mac Metal welding cobot BOM Aug 2025.xlsx,10230383,Yes
+MCF,2502,50lb Bag UR30 Palletizer,I:\Departments\PCC Robotics\Customer Files\McClancy\BOMs\McClancy 50lb palletizer BOM Sep 2025.xlsx,10233233,Yes
+MCF,2503,Dual Lane Palleting Second Cell,I:\Departments\PCC Robotics\Customer Files\McClancy\BOMs\McClancy UR20 Second Palletizer September 2025.xlsx,10233236,Yes
