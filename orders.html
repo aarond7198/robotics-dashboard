@@ -4,101 +4,27 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Order Tracking Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet"/>
 <style>
-  body.mirror-mode {
-    background: transparent !important;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    transform: scale(0.5);
-    transform-origin: top left;
-  }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f9f9f9;
-    margin: 0;
-    padding: 40px 20px;
-    max-width: 1200px;
-    margin: 40px auto;
-    color: #333;
-  }
-  nav {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 30px;
-    gap: 10px;
-  }
-  nav a {
-    text-decoration: none;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 8px;
-    background-color: #e1ecf7;
-    color: #0078D4;
-  }
-  nav a.active {
-    background-color: #0078D4;
-    color: white;
-  }
-  .form-wrapper {
-    background: #f0f4f8;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 30px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  }
-  .dashboard {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.07);
-  }
-  .order-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 12px;
-  }
-  .order-card {
-    border: 2px solid #d0d0d0;
-    border-radius: 12px;
-    padding: 12px;
-    background: #fff;
-  }
-  .status-bar {
-    display: flex;
-    overflow: hidden;
-    border-radius: 12px;
-    margin: 12px 0;
-    box-shadow: inset 0 0 0 1px #ccc;
-  }
-  .status-segment {
-    flex: 1;
-    padding: 6px;
-    text-align: center;
-    font-size: 0.8rem;
-    background: #eee;
-  }
+  body.mirror-mode { background: transparent !important; margin: 0; padding: 0; overflow: hidden; transform: scale(0.5); transform-origin: top left; }
+  body { font-family: 'Inter', sans-serif; background: #f9f9f9; margin: 0; padding: 40px 20px; max-width: 1200px; margin: 40px auto; color: #333; }
+  nav { display: flex; justify-content: center; margin-bottom: 30px; gap: 10px; }
+  nav a { text-decoration: none; font-weight: 600; padding: 10px 20px; border-radius: 8px; background-color: #e1ecf7; color: #0078D4; }
+  nav a.active { background-color: #0078D4; color: white; }
+  .form-wrapper { background: #f0f4f8; padding: 15px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+  .dashboard { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.07); }
+  .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .order-card { border: 2px solid #d0d0d0; border-radius: 12px; padding: 12px; background: #fff; }
+  .status-bar { display: flex; overflow: hidden; border-radius: 12px; margin: 12px 0; box-shadow: inset 0 0 0 1px #ccc; }
+  .status-segment { flex: 1; padding: 6px; text-align: center; font-size: 0.8rem; background: #eee; }
   .status-complete { background: #4CAF50; color: white; }
   .status-current { background: #004B9E; color: white; }
-  .received-btn {
-    margin-top: 10px;
-    width: 100%;
-    padding: 10px;
-    background: #28a745;
-    color: white;
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
+  .received-btn { margin-top: 10px; width: 100%; padding: 10px; background: #28a745; color: white; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; }
   .form-row { margin-bottom: 10px; }
-  input, select {
-    padding: 6px;
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
+  input, select { padding: 6px; width: 100%; border: 1px solid #ccc; border-radius: 4px; }
+  #loadingNote { padding: 8px 12px; background:#fffbe6; border:1px solid #ffec99; border-radius:8px; margin-bottom:10px; display:none; }
+  #loadError { background:#ffe4e6;color:#b00020;padding:8px 12px;border-radius:8px;margin:10px 0;font-weight:600; display:none; }
+  #versionLabel { position: fixed; bottom: 10px; right: 20px; font-size: 1rem; color: #999; font-style: italic; z-index: 9999; }
 </style>
 </head>
 
@@ -109,45 +35,47 @@
 </nav>
 
 <div class="dashboard">
+  <div id="loadingNote">Loading orders…</div>
+  <div id="loadError"></div>
 
-<div id="form-section">
-  <div class="form-wrapper">
+  <div id="form-section" class="form-wrapper">
     <form id="orderForm">
       <div class="form-row">
         <label for="projectSelect">Project</label>
-        <select id="projectSelect" required="">
+        <select id="projectSelect" required>
           <option value="">-- Select Project --</option>
         </select>
       </div>
       <div class="form-row">
         <label for="supplier">Supplier</label>
-        <input id="supplier" required=""/>
+        <input id="supplier" required/>
       </div>
       <div class="form-row">
         <label for="manufacturer">Manufacturer</label>
-        <input id="manufacturer" required=""/>
+        <input id="manufacturer" required/>
       </div>
       <div class="form-row">
         <label for="partNumbers">Part Numbers</label>
-        <input id="partNumbers" required=""/>
+        <input id="partNumbers" required/>
       </div>
       <button type="submit">Add Order</button>
     </form>
   </div>
-</div>
-<hr/>
+  <hr/>
 
-<div id="open-orders-section">
-  <div class="order-grid" id="ordersContainer"></div>
+  <div id="open-orders-section">
+    <div class="order-grid" id="ordersContainer"></div>
+  </div>
+
+  <div id="closed-orders-section">
+    <h3>Recently Closed Orders</h3>
+    <div class="order-grid" id="archiveContainer"></div>
+  </div>
+
+  <button id="saveButton">💾 Save</button>
 </div>
 
-<div id="closed-orders-section">
-  <h3>Recently Closed Orders</h3>
-  <div class="order-grid" id="archiveContainer"></div>
-</div>
-
-<button id="saveButton">💾 Save</button>
-</div>
+<div id="versionLabel">v1.27</div>
 
 <script>
   // Mirror mode hides form & closed list (open-only visual)
@@ -160,17 +88,22 @@
     if (closed) closed.style.display = "none";
   }
 
-  // *** DATA SOURCES ***
-  // Orders now load via JSON (robust against commas). You can append ?openOnly=1 at the source.
+  // URLs
   const ORDERS_JSON_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec?openOnly=0";
-  // Projects still from CSV, but we’ll parse with an RFC-aware parser
+  const SAVE_URL        = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
   const PROJECTS_CSV_URL = "https://aarond7198.github.io/robotics-dashboard/project_data.csv";
-  // Save endpoint (unchanged)
-  const SAVE_URL = "https://script.google.com/macros/s/AKfycbwfjpdtAUG_i1al_Wk6lpS5rMyJ4xfXXuNoRjYH-tXqYgYYvtie-Idt-OJPzUkpZyE2/exec";
 
   let orders = [], archived = [], loadedOrders = [], projectMap = {};
 
-  // ---------- Robust CSV parsing (RFC-4180-ish: quotes, doubled quotes, commas) ----------
+  // Simple banners
+  function showLoading(show) { document.getElementById("loadingNote").style.display = show ? "block" : "none"; }
+  function showLoadError(msg) {
+    const el = document.getElementById("loadError");
+    el.textContent = "Data load problem: " + msg;
+    el.style.display = "block";
+  }
+
+  // RFC-4180 CSV parser (for projects CSV)
   function parseCsv(text) {
     const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
     const out = [];
@@ -181,38 +114,33 @@
     return out;
   }
   function parseCsvLine(line) {
-    const row = [];
-    let cur = "";
-    let inQuotes = false;
+    const row = []; let cur = ""; let inQuotes = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (inQuotes) {
         if (ch === '"') {
-          if (i + 1 < line.length && line[i + 1] === '"') {
-            cur += '"'; i++; // escaped quote
-          } else {
-            inQuotes = false; // closing quote
-          }
-        } else {
-          cur += ch;
-        }
+          if (i + 1 < line.length && line[i + 1] === '"') { cur += '"'; i++; }
+          else { inQuotes = false; }
+        } else { cur += ch; }
       } else {
-        if (ch === ',') {
-          row.push(cur); cur = "";
-        } else if (ch === '"') {
-          inQuotes = true;
-        } else {
-          cur += ch;
-        }
+        if (ch === ',') { row.push(cur); cur = ""; }
+        else if (ch === '"') { inQuotes = true; }
+        else { cur += ch; }
       }
     }
     row.push(cur);
     return row;
   }
 
-  async function loadCSV(url) {
-    const text = await fetch(url).then(r => r.text());
-    return parseCsv(text.trim());
+  async function fetchJson(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+  async function fetchText(url) {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.text();
   }
 
   function render() {
@@ -247,10 +175,7 @@
         input.value = o.po || "";
         input.addEventListener("change", e => {
           o.po = e.target.value;
-          if (o.po && o.po.trim()) {
-            o.status = "Ordered";
-            render();
-          }
+          if (o.po && o.po.trim()) { o.status = "Ordered"; render(); }
         });
         card.appendChild(input);
       } else if (o.status === "Ordered") {
@@ -263,35 +188,24 @@
         etaInput.value = o.eta || "";
         ackInput.addEventListener("change", e => {
           o.ackDate = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
+          if (o.ackDate && o.eta) { o.status = "In Progress"; render(); }
         });
         etaInput.addEventListener("change", e => {
           o.eta = e.target.value;
-          if (o.ackDate && o.eta) {
-            o.status = "In Progress";
-            render();
-          }
+          if (o.ackDate && o.eta) { o.status = "In Progress"; render(); }
         });
 
         const ackLabel = document.createElement("label");
         ackLabel.textContent = "ACK Date";
-        ackLabel.style.fontSize = "0.75rem";
-        ackLabel.style.display = "block";
-        ackLabel.style.marginTop = "6px";
+        ackLabel.style.cssText = "font-size:.75rem;display:block;margin-top:6px;";
         card.appendChild(ackLabel);
         card.appendChild(ackInput);
 
         const etaLabel = document.createElement("label");
         etaLabel.textContent = "ETA Date";
-        etaLabel.style.fontSize = "0.75rem";
-        etaLabel.style.display = "block";
-        etaLabel.style.marginTop = "6px";
+        etaLabel.style.cssText = "font-size:.75rem;display:block;margin-top:6px;";
         card.appendChild(etaLabel);
         card.appendChild(etaInput);
-
       } else if (o.status === "In Progress") {
         const recvBtn = document.createElement("button");
         recvBtn.className = "received-btn";
@@ -324,10 +238,79 @@
         ${o.partNumbers} [${o.manufacturer}] from ${o.supplier} for ${projectMap[o.project] || o.project}
       `;
       card.querySelector("button").onclick = () => restoreOrder(i);
-      archive.appendChild(card);
+      document.getElementById("archiveContainer").appendChild(card);
     });
   }
 
+  // Map JSON row to internal object
+  function mapOrderObject(o) {
+    return {
+      po: o["PO Number"] || "",
+      supplier: o["Supplier"] || "",
+      manufacturer: o["Manufacturer"] || "",
+      partNumbers: o["Part Numbers"] || "",
+      project: o["Project"] || "",
+      ackDate: o["Acknowledgement Date"] || "",
+      eta: o["Expected Delivery"] || "",
+      received: String(o["Received"] || "").trim().toLowerCase() === "true",
+      status: o["Status"] || "Ready to Order"
+    };
+  }
+
+  // Load projects and orders in parallel; render ASAP with orders
+  async function init() {
+    showLoading(true);
+
+    const ordersPromise = fetchJson(ORDERS_JSON_URL).then(arr => arr.map(mapOrderObject));
+    const projectsPromise = fetchText(PROJECTS_CSV_URL).then(text => {
+      const rows = parseCsv(text.trim());
+      const projectSelect = document.getElementById("projectSelect");
+
+      // Manual options
+      for (const [val, label] of [
+        ["INVENTORY-STOCK", "INVENTORY/STOCK"],
+        ["Customer_Direct_Order", "Customer Direct Order"]
+      ]) {
+        const opt = document.createElement("option");
+        opt.value = val; opt.textContent = label;
+        projectSelect.appendChild(opt);
+      }
+
+      // Columns: 0 Customer, 1 Project Code, 2 Description, 3 BOM Path, 4 Sales Order, 5 Dashboard Active?
+      rows.slice(1).forEach(row => {
+        const active = (row[5] || "").trim().toLowerCase();
+        if (active === "yes") {
+          const key = `${row[0]}-${row[1]}`;
+          const label = `${row[0]}-${row[1]} - ${row[2]}`;
+          projectMap[key] = label;
+          const opt = document.createElement("option");
+          opt.value = key; opt.textContent = label;
+          projectSelect.appendChild(opt);
+        }
+      });
+    }).catch(e => {
+      console.warn("Projects load failed:", e);
+    });
+
+    try {
+      const loaded = await ordersPromise;
+      loadedOrders = loaded;
+      orders = [];
+      archived = [];
+      loaded.forEach(o => ((o.status === "Closed") || o.received ? archived : orders).push(o));
+      render(); // show orders immediately
+    } catch (e) {
+      console.error("Orders load exception:", e);
+      showLoadError("Couldn’t load orders. Check JSON endpoint.");
+    } finally {
+      showLoading(false);
+    }
+
+    // When projects finish, re-render to upgrade labels
+    projectsPromise.then(() => render());
+  }
+
+  // Save and restore
   function saveData() {
     const toSave = [...orders, ...archived.slice(-10)];
     fetch(SAVE_URL, {
@@ -337,58 +320,12 @@
       body: JSON.stringify(toSave)
     }).then(() => alert("✅ Orders saved."));
   }
-
-  async function init() {
-    // ----- Load projects (CSV with robust parser) -----
-    const projectRows = await loadCSV(PROJECTS_CSV_URL);
-    const projectSelect = document.getElementById("projectSelect");
-
-    // Manual options
-    const manualOpt = document.createElement("option");
-    manualOpt.value = "INVENTORY-STOCK";
-    manualOpt.textContent = "INVENTORY/STOCK";
-    projectSelect.appendChild(manualOpt);
-
-    const custDirectOrder = document.createElement("option");
-    custDirectOrder.value = "Customer_Direct_Order";
-    custDirectOrder.textContent = "Customer Direct Order";
-    projectSelect.appendChild(custDirectOrder);
-
-    // project_data.csv columns (from your notes):
-    // 0 Customer Code, 1 Project Code, 2 Project Description, 3 BOM Path, 4 Sales Order, 5 Dashboard Active?
-    projectRows.slice(1).forEach(row => {
-      const active = (row[5] || "").trim().toLowerCase();
-      if (active === "yes") {
-        const key = `${row[0]}-${row[1]}`;
-        const label = `${row[0]}-${row[1]} - ${row[2]}`;
-        projectMap[key] = label;
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = label;
-        projectSelect.appendChild(opt);
-      }
-    });
-
-    // ----- Load orders (JSON, robust against commas) -----
-    const ordersJson = await fetch(ORDERS_JSON_URL).then(r => r.json());
-    // ordersJson is an array of objects using your sheet headers as keys
-
-    ordersJson.forEach(o => {
-      const order = {
-        po: o["PO Number"] || "",
-        supplier: o["Supplier"] || "",
-        manufacturer: o["Manufacturer"] || "",
-        partNumbers: o["Part Numbers"] || "",
-        project: o["Project"] || "",
-        ackDate: o["Acknowledgement Date"] || "",
-        eta: o["Expected Delivery"] || "",
-        received: String(o["Received"] || "").trim().toLowerCase() === "true",
-        status: o["Status"] || "Ready to Order"
-      };
-      loadedOrders.push(order);
-      ((order.status === "Closed") || order.received ? archived : orders).push(order);
-    });
-
+  function restoreOrder(indexFromEnd) {
+    const index = archived.length - 1 - indexFromEnd;
+    const order = archived.splice(index, 1)[0];
+    order.status = "In Progress";
+    order.received = false;
+    orders.push(order);
     render();
   }
 
@@ -408,32 +345,9 @@
     render();
     e.target.reset();
   };
-
   document.getElementById("saveButton").onclick = saveData;
-
-  function restoreOrder(indexFromEnd) {
-    const index = archived.length - 1 - indexFromEnd;
-    const order = archived.splice(index, 1)[0];
-    order.status = "In Progress";
-    order.received = false;
-    orders.push(order);
-    render();
-  }
 
   init();
 </script>
-
-<div id="versionLabel">v1.26</div>
-<style>
-#versionLabel {
-  position: fixed;
-  bottom: 10px;
-  right: 20px;
-  font-size: 1rem;
-  color: #999;
-  font-style: italic;
-  z-index: 9999;
-}
-</style>
 </body>
 </html>
