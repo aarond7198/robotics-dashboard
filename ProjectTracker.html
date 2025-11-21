@@ -44,12 +44,38 @@
   .current-tag { position: absolute; left: -6px; top: 6px; bottom: 6px; width: 4px; background: #007BFF; border-radius: 4px; }
   .current-text { position: absolute; left: -26px; top: 6px; font-size: 9px; writing-mode: vertical-rl; text-orientation: mixed; color: #007BFF; font-weight: 700; letter-spacing: 0.5px; user-select: none; }
 
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 2000; }
-  .modal { background: #fff; width: 800px; max-width: calc(100% - 32px); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden; }
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  .modal {
+    background: #fff;
+    width: 800px;
+    max-width: calc(100% - 32px);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
   /* Wider only for the Assignments modal */
-  .modal.assignments-modal { width: 1200px; max-width: calc(100% - 32px); }
+  .modal.assignments-modal {
+    width: 1200px;
+    max-width: calc(100% - 32px);
+  }
+  /* Slightly wider Activity modal */
+  #activity-backdrop .modal {
+    width: 1000px;
+    max-width: calc(100% - 32px);
+  }
   @media (max-width: 1300px) {
     .modal.assignments-modal { width: 95vw; }
+  }
+  @media (max-width: 1200px) {
+    #activity-backdrop .modal { width: 95vw; }
   }
 
   .modal-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
@@ -125,6 +151,79 @@
   .assn-actions { display:flex; gap:6px; flex-wrap:wrap; }
   .assn-note { font-size:11px; color:#666; margin-top:4px; }
 
+  /* Deadline pill */
+  .assn-deadline {
+    font-size:13px;
+    padding:2px 6px;
+    border-radius:999px;
+    display:inline-block;
+    min-width:70px;
+    text-align:center;
+  }
+  .assn-deadline.none  { background:#e0e0e0; color:#555; }
+  .assn-deadline.ok    { background:#c6f6d5; color:#065f46; }
+  .assn-deadline.soon  { background:#fef3c7; color:#b45309; }
+  .assn-deadline.past  { background:#fecaca; color:#991b1b; }
+
+  
+
+  /* Activity modal */
+  .activity-summary { font-size:12px; margin-bottom:8px; display:flex; flex-wrap:wrap; gap:12px; }
+  .activity-summary b { font-weight:700; }
+  .activity-note { font-size:11px; color:#666; margin-top:4px; }
+
+  .activity-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .activity-chip { padding:4px 8px; border-radius:999px; border:1px solid #ddd; background:#fafafa; cursor:pointer; font-size:12px; }
+  .activity-chip.active { background:#0b5ed7; color:#fff; border-color:#0b5ed7; }
+  .activity-extra {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .activity-extra select {
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+  }
+
+  .activity-view-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 4px 0 8px;
+    font-size: 12px;
+  }
+  .activity-view-tab {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #f5f5f5;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .activity-view-tab.active {
+    background: #0b5ed7;
+    color: #fff;
+    border-color: #0b5ed7;
+  }
+  .activity-panel-hidden {
+    display: none !important;
+  }
+
+  .activity-tables-wrap { display:grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1.4fr); gap:12px; }
+  @media (max-width: 1100px) {
+    .activity-tables-wrap { grid-template-columns: minmax(0,1fr); }
+  }
+  .activity-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .activity-table th, .activity-table td { border:1px solid #eee; padding:4px 6px; text-align:left; }
+  .activity-table th { background:#f7f7f7; position:sticky; top:0; z-index:1; }
+
+  body.mode-engineer #activityBtn,
+  body.mode-view #activityBtn { display:none !important; }
+
   /* Settings Tabs */
   .tabs { display:flex; gap:6px; border-bottom:1px solid #eee; margin: -4px -16px 12px; padding: 0 16px; position: sticky; top: 0; background: #fff; z-index: 1; }
   .tab-btn { padding:8px 12px; border-radius:8px 8px 0 0; border:1px solid transparent; background:transparent; cursor:pointer; font-size:13px; }
@@ -174,6 +273,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
     <button id="printTabloidBtn" class="btn">🖨️ Export PDF 11×17 (Fit)</button>
     <span class="spacer"></span>
     <button id="assignmentsBtn" class="btn">👥 Assignments</button>
+    <button id="activityBtn" class="btn">📊 Activity</button>
     <button id="settingsBtn" class="btn">⚙️ Settings</button>
   </div>
 
@@ -380,6 +480,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
                 <th style="min-width:160px;">Task</th>
                 <th style="min-width:180px;">Subtask</th>
                 <th style="min-width:80px;">Hours</th>
+                <th style="min-width:100px;">Deadline</th>
                 <th style="min-width:80px;">Done</th>
                 <th style="min-width:200px;">Actions</th>
               </tr>
@@ -392,6 +493,86 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
         <button id="assn-copy" class="btn">Copy CSV</button>
         <button id="assn-print" class="btn">Print</button>
         <button id="assn-close" class="btn btn-primary">Close</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Modal (Admin only) -->
+  <div id="activity-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="activity-title">
+      <div class="modal-header">
+        <div id="activity-title">Recent Activity</div>
+        <button id="activity-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="activity-chips" id="activity-range-chips">
+          <button class="activity-chip" data-range="today">Today</button>
+          <button class="activity-chip" data-range="week">This Week to Date</button>
+          <button class="activity-chip" data-range="7d">Last Week (Last 7 Days)</button>
+          <button class="activity-chip" data-range="30d">Last 30 Days</button>
+          <button class="activity-chip" data-range="month">This Month</button>
+        </div>
+        <div class="activity-extra">
+          <label style="font-size:12px;">
+            Owner:
+            <select id="activity-owner-filter">
+              <option value="all">All owners</option>
+            </select>
+          </label>
+        </div>
+        <div class="activity-view-tabs" id="activity-view-tabs">
+          <button class="activity-view-tab" data-view="owner">By Owner</button>
+          <button class="activity-view-tab active" data-view="user">By User</button>
+          <button class="activity-view-tab" data-view="project">By Project</button>
+          <button class="activity-view-tab" data-view="log">Recent Log</button>
+        </div>
+        <div class="activity-summary" id="activity-summary"></div>
+        <div class="activity-note">
+          Activity is based on engineer/admin saves and summarizes hours logged and completions per owner in the selected range.
+        </div>
+        <div class="activity-tables-wrap">
+          <div id="activity-agg-panel">
+            <div id="activity-agg-title" style="font-weight:600; font-size:13px; margin-bottom:4px;">By Owner</div>
+            <div style="max-height:260px; overflow:auto; border:1px solid #eee; border-radius:8px;">
+              <table class="activity-table" id="act-agg-table">
+                <thead>
+                  <tr>
+                    <th>Owner</th>
+                    <th>Hours Δ</th>
+                    <th>Subtasks Done</th>
+                    <th>Tasks Done</th>
+                    <th>Events</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="activity-events-panel">
+            <div style="font-weight:600; font-size:13px; margin-bottom:4px;">Recent Events</div>
+            <div style="max-height:260px; overflow:auto; border:1px solid #eee; border-radius:8px;">
+              <table class="activity-table" id="act-events-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Project</th>
+                    <th>Task / Subtask</th>
+                    <th>Owner</th>
+                    <th>Hours Δ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:1fr auto;">
+        <div></div>
+        <button id="activity-close-btn" class="btn btn-primary">Close</button>
       </div>
     </div>
   </div>
@@ -415,12 +596,99 @@ const APP_MODE = (() => {
   return m;
 })();
 
+// Optional identity of current user for activity tagging and assignments
+const APP_USER = (() => {
+  const q = new URLSearchParams(location.search);
+  const v = (q.get('user') || q.get('u') || '').trim();
+  return v;
+})();
+
+const APP_USER_KEY = (APP_USER || '').toLowerCase();
+
 const IS_ADMIN    = (APP_MODE === 'admin');
 const IS_ENGINEER = (APP_MODE === 'engineer');
 const IS_VIEW     = (APP_MODE === 'view');
 
 /* Keep legacy name so minimal downstream churn */
 const READ_ONLY = IS_VIEW;
+
+/* Last server state (for engineer patch saves) */
+let LAST_SERVER_STATE = null;
+
+function recordServerState(data){
+  if (!data || !Array.isArray(data.projects)) {
+    LAST_SERVER_STATE = null;
+    return;
+  }
+  try{
+    // shallow-safe clone via JSON; projects are plain data
+    LAST_SERVER_STATE = {
+      projects: JSON.parse(JSON.stringify(data.projects)),
+      settings: data.settings || {}
+    };
+  } catch(e){
+    LAST_SERVER_STATE = { projects: (data.projects || []), settings: data.settings || {} };
+  }
+}
+
+/* Compute field-level changes between last server snapshot and current state for engineer saves */
+function computeEngineerChanges(oldProjects, newProjects){
+  const changes = [];
+  if (!Array.isArray(oldProjects) || !Array.isArray(newProjects)) return changes;
+  const plen = Math.min(oldProjects.length, newProjects.length);
+  for (let pi = 0; pi < plen; pi++){
+    const op = oldProjects[pi] || {};
+    const np = newProjects[pi] || {};
+    const tasksOld = op.tasks || [];
+    const tasksNew = np.tasks || [];
+    const tlen = Math.min(tasksOld.length, tasksNew.length);
+    for (let ti = 0; ti < tlen; ti++){
+      const to = tasksOld[ti] || {};
+      const tn = tasksNew[ti] || {};
+      const fieldsTask = {};
+      const oldBase = Number(to.baseHours || 0);
+      const newBase = Number(tn.baseHours || 0);
+      if (oldBase !== newBase) fieldsTask.baseHours = newBase;
+      const oldComp = !!to.completed;
+      const newComp = !!tn.completed;
+      if (oldComp !== newComp) fieldsTask.completed = newComp;
+      if (Object.keys(fieldsTask).length){
+        changes.push({
+          projectIndex: pi,
+          projectName: np.name || '',
+          taskIndex: ti,
+          subIndex: -1,
+          fields: fieldsTask
+        });
+      }
+      const subsOld = to.subtasks || [];
+      const subsNew = tn.subtasks || [];
+      const slen = Math.min(subsOld.length, subsNew.length);
+      for (let si = 0; si < slen; si++){
+        const so = subsOld[si] || {};
+        const sn = subsNew[si] || {};
+        const fieldsSub = {};
+        const oldHours = Number(so.hours || 0);
+        const newHours = Number(sn.hours || 0);
+        if (oldHours !== newHours) fieldsSub.hours = newHours;
+        const oldDone = !!so.done;
+        const newDone = !!sn.done;
+        if (oldDone !== newDone) fieldsSub.done = newDone;
+        if (Object.keys(fieldsSub).length){
+          changes.push({
+            projectIndex: pi,
+            projectName: np.name || '',
+            taskIndex: ti,
+            subIndex: si,
+            fields: fieldsSub
+          });
+        }
+      }
+    }
+  }
+  return changes;
+}
+
 
 /* Apply body classes early */
 document.body.classList.toggle('ro', IS_VIEW);
@@ -565,6 +833,20 @@ function daysToLabel(d){
   if (d%30===0) return `${d/30}mo`;
   if (d%7===0) return `${Math.round(d/7)}w`;
   return `${d}d`;
+}
+
+function daysUntil(dateIso){
+  if (!dateIso) return null;
+  // Interpret as local date (no time)
+  const m = String(dateIso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = +m[1], mo = +m[2]-1, d = +m[3];
+  const target = new Date(y, mo, d);
+  if (isNaN(target.getTime())) return null;
+  const today = new Date();
+  const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diffMs = target.getTime() - todayLocal.getTime();
+  return Math.round(diffMs / 86400000);
 }
 function subtaskLabel(st){ return st.date ? formatDateShort(st.date) : (st.dateText||''); }
 
@@ -1420,35 +1702,109 @@ function loadState(state){
 }
 
 async function saveToGoogle({silent=false} = ''){
-  if (!IS_ADMIN) return;
-  const payload=serializeState();
-  try{
-    const res=await fetch(GOOGLE_URL,{ method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
-    const text=await res.text();
-    let data=null; try{ data=JSON.parse(text); }catch{}
-    if(!silent){
-      if(data && data.ok){ alert(`✅ Saved ${data.saved} project(s) to Google.`); hasLocalEdits = false; }
-      else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.'); }
-      else if (data && data.ignored) { alert('⚠️ Save response not recognized.'); }
-      else { alert('⚠️ Save response not recognized.'); }
+  const state = serializeState();
+
+  // Admin: full snapshot overwrite (current behavior)
+  if (IS_ADMIN){
+    const payload = { ...state, actor: (APP_USER || (IS_ADMIN ? 'Admin' : '')) };
+    try{
+      const res = await fetch(GOOGLE_URL,{
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data = null; try{ data = JSON.parse(text); }catch{}
+      if(!silent){
+        if(data && data.ok){
+          alert(`✅ Saved ${data.saved} project(s) to Google.`);
+          hasLocalEdits = false;
+          // Admin save becomes the new server baseline
+          recordServerState({ projects: state.projects || [], settings: state.settings || {} });
+        }
+        else if (data && data.blocked) { alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.'); }
+        else if (data && data.ignored) { alert('⚠️ Save response not recognized.'); }
+        else { alert('⚠️ Save response not recognized.'); }
+      }
+    } catch(e){
+      if(!silent) alert('❌ Save failed: ' + e.message);
     }
-  } catch(e){
-    if(!silent) alert('❌ Save failed: ' + e.message);
+    return;
   }
+
+  // Engineer: patch mode (field-level merge onto latest server snapshot)
+  if (IS_ENGINEER){
+    if (!LAST_SERVER_STATE || !Array.isArray(LAST_SERVER_STATE.projects)){
+      if (!silent) alert('Cannot save to Google yet: this browser has not loaded the latest data. Please click "Load (Google)" first.');
+      return;
+    }
+    const changes = computeEngineerChanges(LAST_SERVER_STATE.projects, state.projects || []);
+    if (!changes.length){
+      if (!silent) alert('No changes to save.');
+      return;
+    }
+    const payload = {
+      kind: 'ProjectTracker',
+      op: 'patch',
+      changes,
+      actor: (APP_USER || 'Engineer')
+    };
+    try{
+      const res = await fetch(GOOGLE_URL,{
+        method:'POST',
+        mode:'cors',
+        headers:{'Content-Type':'text/plain'},
+        body:JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let data = null; try{ data = JSON.parse(text); }catch{}
+      if(!silent){
+        if (data && data.ok){
+          alert('✅ Engineer changes saved to Google.');
+          hasLocalEdits = false;
+          // Our current state becomes the new local baseline for diffing
+          recordServerState({ projects: state.projects || [], settings: (LAST_SERVER_STATE && LAST_SERVER_STATE.settings) || {} });
+        } else if (data && data.blocked) {
+          alert('⚠️ Save blocked by server.');
+        } else if (data && data.ignored) {
+          alert('⚠️ Save response not recognized.');
+        } else {
+          alert('⚠️ Save response not recognized.');
+        }
+      }
+    } catch(e){
+      if(!silent) alert('❌ Save failed: ' + e.message);
+    }
+    return;
+  }
+
+  // View-only or unknown mode: no-op
 }
 
 async function loadFromGoogle({forceApply=true} = {}){
   try{
-    const res=await fetch(GOOGLE_URL,{ mode:'cors' });
-    const text=await res.text();
-    const data=JSON.parse(text);
+    const res = await fetch(GOOGLE_URL,{ mode:'cors' });
+    const text = await res.text();
+    const data = JSON.parse(text);
+    recordServerState(data);
     if (forceApply) { loadState(data); if(!READ_ONLY) hasLocalEdits = false; }
   } catch(e){
     try{
-      const cb='PT_JSONP_'+Date.now();
-      window[cb]=(data)=>{ try{ if (forceApply){ loadState(data); if(!READ_ONLY) hasLocalEdits=false; } } finally{ delete window[cb]; } };
-      const s=document.createElement('script'); s.src=GOOGLE_URL+'?callback='+cb; s.onerror=()=>{}; document.body.appendChild(s);
-    }catch(err){ /* noop */ }
+      const cb = 'PT_JSONP_' + Date.now();
+      window[cb] = (data)=>{ 
+        try{ 
+          recordServerState(data);
+          if (forceApply){ loadState(data); if(!READ_ONLY) hasLocalEdits=false; } 
+        } finally { 
+          delete window[cb]; 
+        } 
+      };
+      const s = document.createElement('script');
+      s.src = GOOGLE_URL + (GOOGLE_URL.includes('?') ? '&' : '?') + 'callback=' + cb;
+      s.onerror = ()=>{};
+      document.body.appendChild(s);
+    } catch(err){ /* noop */ }
   }
 }
 
@@ -1609,7 +1965,7 @@ const assignmentsBtn = document.getElementById('assignmentsBtn');
 /* Attach listeners */
 if (saveBtn) saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
 if (loadBtn) loadBtn.addEventListener('click', async ()=>{
-  if (!IS_ADMIN) return;
+  if (!(IS_ADMIN || IS_ENGINEER)) return;
   if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
   showLoading(true);
   try { await loadFromGoogle({forceApply:true}); } finally { showLoading(false); }
@@ -1899,46 +2255,71 @@ function canonicalOwnerListFromData(rows){
 }
 
 function gatherAssignmentData(){
-  const rows=[];
+  const rows = [];
   const projects = [...document.querySelectorAll('#project-container .project')];
-  projects.forEach(project=>{
+  projects.forEach(project => {
     const projName = project.querySelector('.project-header').childNodes[0].textContent.trim();
     const timeline = project.querySelector('.timeline');
     const tasks = [...timeline.querySelectorAll('.timeline-item')];
 
-    tasks.forEach((task)=>{
+    tasks.forEach(task => {
       const taskName = task.querySelector('.task-name').textContent.trim();
-      const baseHours = Number(task.dataset.baseHours||0);
-      const subs = task._subtasks||[];
-      const hasSubs = subs.length>0;
+      const baseHours = Number(task.dataset.baseHours || 0);
+      const subs = task._subtasks || [];
+      const hasSubs = subs.length > 0;
+
+      const taskDateIso = task.dataset.date || '';
+      const taskDateText = task.dataset.dateText || (taskDateIso ? formatDateShort(taskDateIso) : '');
+      const taskIsDeadline = task.dataset.isDeadline === 'true';
+      const taskDeadlineIso = taskIsDeadline ? taskDateIso : '';
+      const taskDeadlineText = taskIsDeadline ? taskDateText : '';
+      const taskDeadlineDays = taskDeadlineIso ? daysUntil(taskDeadlineIso) : null;
 
       // base row shown if baseHours>0 OR no subtasks (to represent standalone task work)
-      if (baseHours>0 || !hasSubs) {
-        const owner = (task.dataset.owner||'').trim();
+      if (baseHours > 0 || !hasSubs) {
+        const owner = (task.dataset.owner || '').trim();
         const ownerKey = owner ? owner.toLowerCase() : '';
         rows.push({
-          ownerKey, owner: owner || '(Unassigned)',
-          projName, projectElem: project,
-          taskElem: task, taskName,
+          ownerKey,
+          owner: owner || '(Unassigned)',
+          projName,
+          projectElem: project,
+          taskElem: task,
+          taskName,
           subName: '— base —',
           subIndex: -1,
           hours: baseHours,
-          done: hasSubs ? null : (task.dataset.completed==='true'),
-          hasSubs
+          done: hasSubs ? null : (task.dataset.completed === 'true'),
+          hasSubs,
+          deadlineIso: taskDeadlineIso,
+          deadlineText: taskDeadlineText,
+          deadlineDays: taskDeadlineDays
         });
       }
-      subs.forEach((st, sIndex)=>{
-        const owner = (st.owner||'').trim();
+
+      subs.forEach((st, sIndex) => {
+        const owner = (st.owner || '').trim();
         const ownerKey = owner ? owner.toLowerCase() : '';
+
+        const sDateIso = st.date || '';
+        const sDateText = st.dateText || (sDateIso ? formatDateShort(sDateIso) : '');
+        const sDeadlineDays = sDateIso ? daysUntil(sDateIso) : null;
+
         rows.push({
-          ownerKey, owner: owner || '(Unassigned)',
-          projName, projectElem: project,
-          taskElem: task, taskName,
+          ownerKey,
+          owner: owner || '(Unassigned)',
+          projName,
+          projectElem: project,
+          taskElem: task,
+          taskName,
           subName: st.name || '',
           subIndex: sIndex,
-          hours: Number(st.hours||0),
+          hours: Number(st.hours || 0),
           done: !!st.done,
-          hasSubs
+          hasSubs,
+          deadlineIso: sDateIso,
+          deadlineText: sDateText,
+          deadlineDays: sDeadlineDays
         });
       });
     });
@@ -1952,7 +2333,12 @@ function openAssignments(){
   const owners = canonicalOwnerListFromData(rows);
   assnState.rows = rows;
   assnState.owners = owners;
-  // Do NOT auto-select anyone. Start empty by design.
+  // If a user is provided (?user=...) and matches an owner, auto-select them
+  assnState.selected = new Set();
+  if (APP_USER_KEY) {
+    const match = owners.find(o => o && o.key === APP_USER_KEY);
+    if (match) assnState.selected.add(match.key);
+  }
   assnState.status = assnStatus.value || 'open';
   assnState.query = (assnSearch.value||'').trim().toLowerCase();
 
@@ -2050,8 +2436,11 @@ function renderAssignmentsTable(){
   assnTbody.innerHTML = '';
   const rows = assnState.rows.filter(rowMatchesFilters)
     .sort((a,b)=>{
-      // sort by owner, then project, then task name, then subIndex
+      // sort by owner, then by deadline (soonest first), then project, task, subindex
       const o = a.owner.localeCompare(b.owner, undefined, {sensitivity:'base'}); if (o) return o;
+      const da = (a.deadlineDays === null || a.deadlineDays === undefined) ? 99999 : a.deadlineDays;
+      const db = (b.deadlineDays === null || b.deadlineDays === undefined) ? 99999 : b.deadlineDays;
+      if (da !== db) return da - db;
       const p = a.projName.localeCompare(b.projName, undefined, {sensitivity:'base'}); if (p) return p;
       const t = a.taskName.localeCompare(b.taskName, undefined, {sensitivity:'base'}); if (t) return t;
       return (a.subIndex - b.subIndex);
@@ -2069,7 +2458,7 @@ function renderAssignmentsTable(){
   if (!rows.length){
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 7;
+    td.colSpan = 8;
     td.style.color = '#666';
     td.style.fontSize = '12px';
     td.textContent = 'No matching rows.';
@@ -2087,34 +2476,62 @@ function renderAssignmentsTable(){
     const tdSub   = document.createElement('td'); tdSub.textContent  = r.subIndex>=0 ? r.subName : '— base —';
     const tdHours = document.createElement('td'); tdHours.textContent = String(r.hours||0);
 
+    // Deadline pill
+    const tdDeadline = document.createElement('td');
+    const span = document.createElement('span');
+    span.classList.add('assn-deadline');
+    let label = '—';
+    let cls = 'none';
+    if (r.deadlineIso) {
+      label = r.deadlineText || formatDateShort(r.deadlineIso);
+      const d = r.deadlineDays;
+      if (d == null) {
+        cls = 'none';
+      } else if (d < 0) {
+        cls = 'past';
+      } else if (d <= 6) {
+        cls = 'soon';
+      } else {
+        cls = 'ok';
+      }
+    }
+    span.classList.add(cls);
+    span.textContent = label;
+    tdDeadline.appendChild(span);
+
+    // Done text (read-only)
     const tdDone  = document.createElement('td');
-    const cb = document.createElement('input'); cb.type = 'checkbox';
-    if (r.subIndex === -1 && r.hasSubs) {
-      cb.disabled = true; // base row with subtasks: completion controlled by subtasks
-    } else {
-      cb.checked = !!r.done;
-      cb.disabled = !(IS_ENGINEER || IS_ADMIN); // engineer+admin can mark complete
-      cb.addEventListener('change', ()=>{
+    tdDone.textContent = (r.done === null) ? '' : (r.done ? 'Yes' : '');
+
+    const tdActions = document.createElement('td');
+    tdActions.className = 'assn-actions';
+
+    // Complete (action button with confirmation)
+    const btnComplete = document.createElement('button');
+    btnComplete.className = 'btn-icon';
+    btnComplete.textContent = 'Complete';
+    const canComplete = (IS_ENGINEER || IS_ADMIN) && !(r.subIndex === -1 && r.hasSubs) && !r.done;
+    btnComplete.disabled = !canComplete;
+    if (canComplete) {
+      btnComplete.addEventListener('click', ()=>{
         if (!(IS_ENGINEER || IS_ADMIN)) return;
+        const hours = Number(r.hours) || 0;
+        const msg = `Are you sure you wish to mark this task complete?\n\nYou currently have ${hours} hours allocated.`;
+        if (!confirm(msg)) return;
         if (r.subIndex>=0) {
           const st = r.taskElem._subtasks[r.subIndex];
-          st.done = !!cb.checked;
+          st.done = true;
           updateSubtaskHours(r.taskElem);
           updateCurrentIndicator(r.taskElem.closest('.timeline'));
           applyCompletionStyle(r.taskElem);
           markDirty();
         } else {
-          setTaskComplete(r.taskElem, !!cb.checked);
+          setTaskComplete(r.taskElem, true);
         }
-        // reflect new state
         assnState.rows = gatherAssignmentData();
         renderAssignmentsTable();
       });
     }
-    tdDone.appendChild(cb);
-
-    const tdActions = document.createElement('td');
-    tdActions.className = 'assn-actions';
 
     // + Hours (engineer + admin)
     const btnHours = document.createElement('button');
@@ -2171,6 +2588,7 @@ function renderAssignmentsTable(){
       setTimeout(()=> openSubtaskModal(r.taskElem), 250);
     });
 
+    tdActions.appendChild(btnComplete);
     tdActions.appendChild(btnHours);
     if (IS_ADMIN) tdActions.appendChild(btnOwner);
     tdActions.appendChild(btnOpen);
@@ -2180,6 +2598,7 @@ function renderAssignmentsTable(){
     tr.appendChild(tdTask);
     tr.appendChild(tdSub);
     tr.appendChild(tdHours);
+    tr.appendChild(tdDeadline);
     tr.appendChild(tdDone);
     tr.appendChild(tdActions);
 
@@ -2190,14 +2609,23 @@ function renderAssignmentsTable(){
 function copyAssignmentsCSV(){
   const rows = assnState.rows.filter(rowMatchesFilters);
   const esc = s => `"${String(s).replace(/"/g,'""')}"`;
-  const header = ['Owner','Project','Task','Subtask','Hours','Done'];
+  const header = ['Owner','Project','Task','Subtask','Hours','Deadline','Done'];
   const lines = [header.map(esc).join(',')];
   rows.forEach(r=>{
-    lines.push([r.owner, r.projName, r.taskName, r.subIndex>=0 ? r.subName : '— base —', r.hours||0, r.done===null ? '' : (r.done? 'TRUE':'FALSE')].map(esc).join(','));
+    lines.push([
+      r.owner,
+      r.projName,
+      r.taskName,
+      r.subIndex>=0 ? r.subName : '— base —',
+      r.hours || 0,
+      r.deadlineIso || '',
+      r.done===null ? '' : (r.done ? 'TRUE' : 'FALSE')
+    ].map(esc).join(','));
   });
-  const csv = lines.join('\\n');
+  const csv = lines.join('\n');
   navigator.clipboard.writeText(csv).then(()=> alert('Copied CSV for current view.'));
 }
+
 function printAssignmentsView(){
   const rows = assnState.rows.filter(rowMatchesFilters);
   const w = window.open('', '_blank');
@@ -2210,9 +2638,17 @@ function printAssignmentsView(){
   `;
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Assignments</title><style>'+styles+'</style></head><body>');
   w.document.write('<h3>Assignments</h3>');
-  w.document.write('<table><thead><tr><th>Owner</th><th>Project</th><th>Task</th><th>Subtask</th><th>Hours</th><th>Done</th></tr></thead><tbody>');
+  w.document.write('<table><thead><tr><th>Owner</th><th>Project</th><th>Task</th><th>Subtask</th><th>Hours</th><th>Deadline</th><th>Done</th></tr></thead><tbody>');
   rows.forEach(r=>{
-    w.document.write('<tr><td>'+r.owner+'</td><td>'+r.projName+'</td><td>'+r.taskName+'</td><td>'+(r.subIndex>=0 ? r.subName : '— base —')+'</td><td>'+ (r.hours||0) +'</td><td>'+ (r.done===null ? '' : (r.done?'Yes':'No')) +'</td></tr>');
+    const deadline = r.deadlineIso ? (r.deadlineText || formatDateShort(r.deadlineIso)) : '—';
+    const doneText = (r.done===null ? '' : (r.done ? 'Yes' : ''));
+    w.document.write(
+      '<tr><td>'+r.owner+'</td><td>'+r.projName+'</td><td>'+r.taskName+
+      '</td><td>'+(r.subIndex>=0 ? r.subName : '— base —')+
+      '</td><td>'+(r.hours||0)+
+      '</td><td>'+deadline+
+      '</td><td>'+doneText+'</td></tr>'
+    );
   });
   w.document.write('</tbody></table></body></html>');
   w.document.close();
@@ -2312,25 +2748,10 @@ assnPrint.addEventListener('click', printAssignmentsView);
 
   // Direct engineer save using same payload/endpoint as admin
   async function engineerSaveFlow() {
-    if (typeof serializeState !== 'function') { alert('⚠️ Cannot save: serializeState() missing.'); return; }
-    var payload = serializeState();
-    try {
-      var res = await fetch(GOOGLE_URL, { method:'POST', mode:'cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload) });
-      var text = await res.text();
-      var data = null; try { data = JSON.parse(text); } catch {}
-      if (data && data.ok) {
-        alert(`✅ Saved ${data.saved} project(s) to Google.`);
-        if (typeof hasLocalEdits !== 'undefined') hasLocalEdits = false;
-      } else if (data && data.blocked) {
-        alert('⚠️ Save blocked: empty payload not allowed. Add a project before saving.');
-      } else if (data && data.ignored) {
-        alert('⚠️ Save response not recognized.'); 
-      } else {
-        alert('⚠️ Save response not recognized.');
-      }
-    } catch (e) {
-      alert('❌ Save failed: ' + e.message);
+    if (typeof window.saveToGoogle === 'function') {
+      return window.saveToGoogle();
     }
+    alert('⚠️ Cannot save: saveToGoogle() missing.');
   }
 
   function adminSaveFlow() {
@@ -2376,8 +2797,310 @@ assnPrint.addEventListener('click', printAssignmentsView);
   }
 
 })();
+
+  /* ========= Activity Modal Logic (Admin only) ========= */
+  (function(){
+    if (!IS_ADMIN) return;
+
+    var btn = document.getElementById('activityBtn');
+    var backdrop = document.getElementById('activity-backdrop');
+    var closeX = document.getElementById('activity-close');
+    var closeBtn = document.getElementById('activity-close-btn');
+    var chipsWrap = document.getElementById('activity-range-chips');
+    var summaryEl = document.getElementById('activity-summary');
+    var aggBody = document.querySelector('#act-agg-table tbody');
+    var eventsBody = document.querySelector('#act-events-table tbody');
+    var ownerFilterSelect = document.getElementById('activity-owner-filter');
+    var viewTabsWrap = document.getElementById('activity-view-tabs');
+    var aggPanel = document.getElementById('activity-agg-panel');
+    var eventsPanel = document.getElementById('activity-events-panel');
+    var aggTitleEl = document.getElementById('activity-agg-title');
+    var aggHead = document.querySelector('#act-agg-table thead tr');
+
+    var lastActivityData = null;
+    var lastRangeKey = 'week';
+    var currentView = 'user';
+
+    function openActivity(rangeKey) {
+      if (!backdrop) return;
+      backdrop.style.display = 'flex';
+      currentView = 'user';
+      setActiveViewTab(currentView);
+      lastRangeKey = rangeKey || 'week';
+      loadActivity(lastRangeKey);
+    }
+
+    function closeActivity() {
+      if (backdrop) backdrop.style.display = 'none';
+    }
+
+    function setActiveChip(rangeKey) {
+      if (!chipsWrap) return;
+      var chips = chipsWrap.querySelectorAll('.activity-chip');
+      chips.forEach(function(ch){
+        var rk = ch.getAttribute('data-range');
+        ch.classList.toggle('active', rk === rangeKey);
+      });
+    }
+
+    function setActiveViewTab(view) {
+      currentView = view || 'user';
+      if (!viewTabsWrap) return;
+      var tabs = viewTabsWrap.querySelectorAll('.activity-view-tab');
+      tabs.forEach(function(tab){
+        var v = tab.getAttribute('data-view');
+        tab.classList.toggle('active', v === currentView);
+      });
+    }
+
+    function buildOwnerFilterOptions() {
+      if (!ownerFilterSelect || !lastActivityData) return;
+      var data = lastActivityData;
+      var events = data.events || [];
+      var owners = [];
+
+      events.forEach(function(ev){
+        var name = ev.owner || '(Unassigned)';
+        if (owners.indexOf(name) === -1) owners.push(name);
+      });
+
+      if (!owners.length && data.summary && Array.isArray(data.summary.byOwner)) {
+        data.summary.byOwner.forEach(function(row){
+          var nm = row.owner || '(Unassigned)';
+          if (owners.indexOf(nm) === -1) owners.push(nm);
+        });
+      }
+
+      owners.sort();
+
+      var current = ownerFilterSelect.value || 'all';
+      ownerFilterSelect.innerHTML = '';
+      var optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = 'All owners';
+      ownerFilterSelect.appendChild(optAll);
+
+      owners.forEach(function(name){
+        var opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        ownerFilterSelect.appendChild(opt);
+      });
+
+      if (current && (current === 'all' || owners.indexOf(current) !== -1)) {
+        ownerFilterSelect.value = current;
+      }
+    }
+
+    function groupEventsBy(events, keyFn, selectedOwner) {
+      var map = {};
+      events.forEach(function(ev){
+        var ownerName = ev.owner || '(Unassigned)';
+        if (selectedOwner && selectedOwner !== 'all' && ownerName !== selectedOwner) return;
+
+        var key = keyFn(ev) || '(Unassigned)';
+        if (!map[key]) {
+          map[key] = {
+            label: key,
+            deltaHours: 0,
+            completedSubtasks: 0,
+            completedTasks: 0,
+            eventCount: 0
+          };
+        }
+        var rec = map[key];
+        var dh = (ev.deltaHours != null ? Number(ev.deltaHours) : 0);
+        if (!isNaN(dh)) rec.deltaHours += dh;
+        if (ev.type === 'subtask_complete') rec.completedSubtasks++;
+        if (ev.type === 'task_complete') rec.completedTasks++;
+        rec.eventCount++;
+      });
+      return Object.keys(map).map(function(k){ return map[k]; });
+    }
+
+    function renderActivityTables() {
+      if (!lastActivityData) return;
+
+      var data = lastActivityData;
+      var sum = data.summary || {};
+      var events = data.events || [];
+      var selectedOwner = ownerFilterSelect ? ownerFilterSelect.value : 'all';
+
+      // Summary (always full-range, not filtered by owner)
+      if (summaryEl) {
+        summaryEl.innerHTML = '';
+        var spanRange = document.createElement('span');
+        spanRange.innerHTML = '<b>Range:</b> ' + (data.rangeLabel || ((data.fromISO || '') + ' → ' + (data.toISO || '')));
+        var spanHours = document.createElement('span');
+        spanHours.innerHTML = '<b>Total hours Δ:</b> ' + (sum.totalDeltaHours != null ? Number(sum.totalDeltaHours).toFixed(2) : '0.00');
+        var spanSub = document.createElement('span');
+        spanSub.innerHTML = '<b>Subtasks done:</b> ' + (sum.totalCompletedSubtasks || 0);
+        var spanTask = document.createElement('span');
+        spanTask.innerHTML = '<b>Tasks done:</b> ' + (sum.totalCompletedTasks || 0);
+        summaryEl.append(spanRange, spanHours, spanSub, spanTask);
+      }
+
+      // Panel visibility
+      if (aggPanel) aggPanel.classList.remove('activity-panel-hidden');
+      if (eventsPanel) eventsPanel.classList.remove('activity-panel-hidden');
+
+      if (currentView === 'log') {
+        if (aggPanel) aggPanel.classList.add('activity-panel-hidden');
+      } else {
+        if (eventsPanel) eventsPanel.classList.add('activity-panel-hidden');
+      }
+
+      // Aggregated views: owner / user / project
+      if (aggBody && aggHead && aggTitleEl) {
+        aggBody.innerHTML = '';
+        aggHead.innerHTML = '';
+
+        if (currentView !== 'log') {
+          var rows = [];
+          var label = '';
+
+          if (currentView === 'owner') {
+            rows = groupEventsBy(events, function(ev){ return ev.owner || '(Unassigned)'; }, selectedOwner);
+            label = 'Owner';
+            aggTitleEl.textContent = 'By Owner';
+          } else if (currentView === 'user') {
+            rows = groupEventsBy(events, function(ev){ return ev.actor || '(Unknown user)'; }, selectedOwner);
+            label = 'User';
+            aggTitleEl.textContent = 'By User';
+          } else if (currentView === 'project') {
+            rows = groupEventsBy(events, function(ev){ return ev.project || '(No project)'; }, selectedOwner);
+            label = 'Project';
+            aggTitleEl.textContent = 'By Project';
+          }
+
+          var headers = [label, 'Hours Δ', 'Subtasks Done', 'Tasks Done', 'Events'];
+          headers.forEach(function(h){
+            var th = document.createElement('th');
+            th.textContent = h;
+            aggHead.appendChild(th);
+          });
+
+          rows.sort(function(a, b){
+            var ah = (a.deltaHours != null ? Number(a.deltaHours) : 0);
+            var bh = (b.deltaHours != null ? Number(b.deltaHours) : 0);
+            return bh - ah;
+          });
+
+          rows.forEach(function(row){
+            var tr = document.createElement('tr');
+            function addCell(val) {
+              var td = document.createElement('td');
+              td.textContent = val;
+              tr.appendChild(td);
+            }
+            addCell(row.label);
+            addCell(row.deltaHours != null ? Number(row.deltaHours).toFixed(2) : '0.00');
+            addCell(row.completedSubtasks || 0);
+            addCell(row.completedTasks || 0);
+            addCell(row.eventCount || 0);
+            aggBody.appendChild(tr);
+          });
+        }
+      }
+
+      // Recent log view
+      if (eventsBody) {
+        eventsBody.innerHTML = '';
+        if (currentView === 'log') {
+          var evList = events;
+          if (selectedOwner && selectedOwner !== 'all') {
+            evList = events.filter(function(ev){
+              var evOwner = ev.owner || '(Unassigned)';
+              return evOwner === selectedOwner;
+            });
+          }
+
+          evList.forEach(function(ev){
+            var tr = document.createElement('tr');
+            var tdWhen = document.createElement('td'); tdWhen.textContent = ev.savedAtISO || '';
+            var tdUser = document.createElement('td'); tdUser.textContent = ev.actor || '';
+            var tdType = document.createElement('td'); tdType.textContent = ev.type || '';
+            var tdProj = document.createElement('td'); tdProj.textContent = ev.project || '';
+            var tdTask = document.createElement('td'); tdTask.textContent = (ev.task || '') + (ev.sub ? ' / ' + ev.sub : '');
+            var tdOwner = document.createElement('td'); tdOwner.textContent = ev.owner || '(Unassigned)';
+            var tdHours = document.createElement('td'); tdHours.textContent = (ev.deltaHours != null ? Number(ev.deltaHours).toFixed(2) : '');
+            tr.append(tdWhen, tdUser, tdType, tdProj, tdTask, tdOwner, tdHours);
+            eventsBody.appendChild(tr);
+          });
+        }
+      }
+    }
+
+    async function loadActivity(rangeKey) {
+      try {
+        rangeKey = rangeKey || lastRangeKey || '7d';
+        lastRangeKey = rangeKey;
+
+        setActiveChip(rangeKey);
+        if (summaryEl) summaryEl.textContent = 'Loading…';
+        if (aggBody) aggBody.innerHTML = '';
+        if (eventsBody) eventsBody.innerHTML = '';
+
+        var url = GOOGLE_URL + (GOOGLE_URL.indexOf('?') >= 0 ? '&' : '?') + 'activity=1&range=' + encodeURIComponent(rangeKey || '7d');
+        var res = await fetch(url, { method: 'GET', mode: 'cors' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var text = await res.text();
+        var data = null;
+        try { data = JSON.parse(text); } catch (e) {}
+
+        if (!data || !data.ok) {
+          if (summaryEl) summaryEl.textContent = 'Unable to load activity.';
+          return;
+        }
+
+        lastActivityData = data;
+        buildOwnerFilterOptions();
+        renderActivityTables();
+
+      } catch (err) {
+        console.error('Activity load error', err);
+        if (summaryEl) summaryEl.textContent = 'Error loading activity: ' + err.message;
+      }
+    }
+
+    if (btn) {
+      btn.addEventListener('click', function(){
+        openActivity('week');
+      });
+    }
+    if (closeX) closeX.addEventListener('click', closeActivity);
+    if (closeBtn) closeBtn.addEventListener('click', closeActivity);
+    if (backdrop) {
+      backdrop.addEventListener('click', function(e){
+        if (e.target === backdrop) closeActivity();
+      });
+    }
+    if (chipsWrap) {
+      chipsWrap.addEventListener('click', function(e){
+        var chip = e.target.closest('.activity-chip');
+        if (!chip) return;
+        var range = chip.getAttribute('data-range');
+        if (!range) return;
+        loadActivity(range);
+      });
+    }
+    if (ownerFilterSelect) {
+      ownerFilterSelect.addEventListener('change', function(){
+        renderActivityTables();
+      });
+    }
+    if (viewTabsWrap) {
+      viewTabsWrap.addEventListener('click', function(e){
+        var tab = e.target.closest('.activity-view-tab');
+        if (!tab) return;
+        var v = tab.getAttribute('data-view') || 'owner';
+        setActiveViewTab(v);
+        renderActivityTables();
+      });
+    }
+
+  })();
 </script>
 
 </body>
 </html>
-
