@@ -214,7 +214,7 @@
     display: none !important;
   }
 
-  .activity-tables-wrap { display:grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1.4fr); gap:12px; }
+  .activity-tables-wrap { display:grid; grid-template-columns: minmax(0,1fr) minmax(0,1.7fr); gap:12px; }
   @media (max-width: 1100px) {
     .activity-tables-wrap { grid-template-columns: minmax(0,1fr); }
   }
@@ -264,6 +264,19 @@
 
 /* Engineer mode: show Save button */
 body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
+
+  /* Archived projects */
+  .project.archived { opacity: 0.7; }
+  .project.archived-hidden { display: none; }
+
+  /* ===== UI polish: Activity + POD Settings padding ===== */
+  /* Make the Recent Activity modal slightly wider so the Recent Log table fits better */
+  #activity-backdrop .modal { width: 920px; }
+
+  /* Add a little extra right-side breathing room on the Proof of Delivery settings pane */
+  #tab-pod { padding-right: 12px; }
+
+
 </style>
 </head>
 <body>
@@ -275,6 +288,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
     <span class="spacer"></span>
     <button id="assignmentsBtn" class="btn">👥 Assignments</button>
     <button id="activityBtn" class="btn">📊 Activity</button>
+    <button id="archivedToggleBtn" class="btn">🗄️ Archived: Off</button>
     <button id="settingsBtn" class="btn">⚙️ Settings</button>
   </div>
 
@@ -349,6 +363,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
         <!-- Tabs -->
         <div class="tabs" id="settings-tabs">
           <button class="tab-btn" data-tab="tab-order">Project Order</button>
+          <button class="tab-btn" data-tab="tab-archived">Archived Projects</button>
           <button class="tab-btn" data-tab="tab-invoice">Invoice Contacts</button>
           <button class="tab-btn" data-tab="tab-timeline">Default Timeline</button>
           <button class="tab-btn" data-tab="tab-risk">Risk Assessment</button>
@@ -361,6 +376,19 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           <div id="proj-order-wrap">
             <div id="proj-order-list" class="reorder-list"></div>
             <div style="font-size:11px; color:#666; margin-top:4px;">Drag to change display/save order.</div>
+          </div>
+        </div>
+
+
+        <!-- Archived Projects -->
+        <div class="tab-pane" id="tab-archived">
+          <div class="settings-section-title">Archived Projects</div>
+          <div style="font-size:11px; color:#666; margin-bottom:8px;">
+            Restore projects from here. Archived projects are hidden from the main view by default.
+          </div>
+          <div id="archived-proj-list" class="reorder-list"></div>
+          <div style="font-size:11px; color:#666; margin-top:8px;">
+            Tip: To permanently remove an archived project later, we can add a manual purge option (not automatic).
           </div>
         </div>
 
@@ -773,6 +801,51 @@ const Settings = {
 };
 Settings.load();
 
+/* Archive / Restore projects */
+let SHOW_ARCHIVED = false;
+function isProjectArchived(project){ return project && project.dataset && project.dataset.archived === 'true'; }
+function applyArchiveVisibility(project){
+  if (!project) return;
+  const archived = isProjectArchived(project);
+  if (archived){
+    project.classList.add('archived');
+    if (!SHOW_ARCHIVED) project.classList.add('archived-hidden');
+    else project.classList.remove('archived-hidden');
+  } else {
+    project.classList.remove('archived');
+    project.classList.remove('archived-hidden');
+  }
+}
+function refreshArchiveVisibility(){
+  document.querySelectorAll('.project').forEach(applyArchiveVisibility);
+}
+
+function refreshSettingsProjectListsIfOpen(){
+  try{
+    if (settingsBackdrop && settingsBackdrop.style.display === 'flex'){
+      buildProjectOrderList();
+      buildArchivedProjectsList();
+    }
+  }catch(e){}
+}
+
+function archiveProject(project){
+  if (!project) return;
+  project.dataset.archived = 'true';
+  if (!project.dataset.archivedAt) project.dataset.archivedAt = String(Date.now());
+  applyArchiveVisibility(project);
+  refreshSettingsProjectListsIfOpen();
+  markDirty();
+}
+function restoreProject(project){
+  if (!project) return;
+  delete project.dataset.archived;
+  delete project.dataset.archivedAt;
+  applyArchiveVisibility(project);
+  refreshSettingsProjectListsIfOpen();
+  markDirty();
+}
+
 let hasLocalEdits = false;
 const markDirty = ()=> { if (!READ_ONLY) hasLocalEdits = true; };
 
@@ -1114,6 +1187,7 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
   [...timeline.querySelectorAll('.timeline-item')].forEach(el=>{ applyCompletionStyle(el); updateSubtaskHours(el); updateSubtaskDashes(el); updateInvoiceBadge(el); updateTaskMetaDisplay(el); });
   updateTotalHours(timeline); updateCurrentIndicator(timeline);
   updateFinalInvoiceUI(timeline);
+  applyArchiveVisibility(div);
   return div;
 }
 
@@ -1438,15 +1512,65 @@ function editProject(ev, btn){
     updateFinalInvoiceUI(project.querySelector('.timeline'));
     markDirty();
   });
-  addContextItem('Delete Project', ()=>{
+  if (!isProjectArchived(project)) {
+  addContextItem('Archive Project', ()=>{
+    if (confirm('Archive this project? It will be hidden from the active view but can be restored later.')) {
+      archiveProject(project);
+    }
+  });
+} else {
+  addContextItem('Restore Project', ()=>{
+    if (confirm('Restore this project back to active view?')) {
+      restoreProject(project);
+      // If Settings is open, keep lists fresh immediately
+      buildArchivedProjectsList();
+      buildProjectOrderList();
+    }
+  });
+}
+addContextItem('Delete Project', ()=>{
     if (confirm('Delete this project and all its tasks? This cannot be undone.')) {
       project.remove();
       markDirty();
     }
   });
-  contextMenu.style.top = (window.scrollY + rect.bottom + 4) + 'px';
-  contextMenu.style.left = (window.scrollX + rect.left) + 'px';
-  contextMenu.style.display='block';
+  // Position the context menu so it stays fully on-screen
+  // (no refactors; just clamp/flip based on viewport bounds)
+  const desiredTopBelow = window.scrollY + rect.bottom + 4;
+  const desiredLeft = window.scrollX + rect.left;
+
+  contextMenu.style.display = 'block';
+  contextMenu.style.visibility = 'hidden';
+  contextMenu.style.top = desiredTopBelow + 'px';
+  contextMenu.style.left = desiredLeft + 'px';
+
+  // Measure after display so we can clamp
+  const menuW = contextMenu.offsetWidth || 0;
+  const menuH = contextMenu.offsetHeight || 0;
+
+  const viewportLeft = window.scrollX;
+  const viewportTop = window.scrollY;
+  const viewportRight = window.scrollX + window.innerWidth;
+  const viewportBottom = window.scrollY + window.innerHeight;
+
+  // Prefer below; if it would overflow the bottom, flip above the button
+  let top = desiredTopBelow;
+  if (top + menuH + 8 > viewportBottom) {
+    top = window.scrollY + rect.top - menuH - 4;
+  }
+  // Clamp vertically (in case menu is taller than available space)
+  top = Math.max(viewportTop + 8, Math.min(top, viewportBottom - menuH - 8));
+
+  // Clamp horizontally so it doesn't run off the right edge
+  let left = desiredLeft;
+  if (left + menuW + 8 > viewportRight) {
+    left = viewportRight - menuW - 8;
+  }
+  left = Math.max(viewportLeft + 8, left);
+
+  contextMenu.style.top = top + 'px';
+  contextMenu.style.left = left + 'px';
+  contextMenu.style.visibility = 'visible';
 }
 
 /* INVOICE EMAIL GENERATOR (unchanged gating via visibility) */
@@ -1748,6 +1872,8 @@ function serializeState(){
       poNumber: parsed.poNumber,
       estDate: parsed.estDate,
       salesOrder: parsed.salesOrder,
+      archived: (project.dataset.archived === 'true'),
+      archivedAt: project.dataset.archivedAt || '',
       tasks
     };
   });
@@ -1795,6 +1921,11 @@ function loadState(state){
       }))
     });
     ensureProjectPid(proj);
+    if (p.archived) {
+      proj.dataset.archived = 'true';
+      if (p.archivedAt) proj.dataset.archivedAt = String(p.archivedAt);
+    }
+    applyArchiveVisibility(proj);
   });
 }
 
@@ -2058,9 +2189,18 @@ const printBtn = document.getElementById('printBtn');
 const printTabloidBtn = document.getElementById('printTabloidBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const assignmentsBtn = document.getElementById('assignmentsBtn');
+const archivedToggleBtn = document.getElementById('archivedToggleBtn');
 
 /* Attach listeners */
 if (saveBtn) saveBtn.addEventListener('click', ()=> saveToGoogle({silent:false}));
+if (archivedToggleBtn) {
+  archivedToggleBtn.addEventListener('click', ()=>{
+    SHOW_ARCHIVED = !SHOW_ARCHIVED;
+    archivedToggleBtn.textContent = SHOW_ARCHIVED ? '🗄️ Archived: On' : '🗄️ Archived: Off';
+    document.querySelectorAll('.project').forEach(p=>applyArchiveVisibility(p));
+  });
+}
+
 if (loadBtn) loadBtn.addEventListener('click', async ()=>{
   if (!(IS_ADMIN || IS_ENGINEER)) return;
   if (!READ_ONLY && hasLocalEdits && !confirm('This will overwrite your current unsaved changes with the latest from Google. Continue?')) return;
@@ -2088,6 +2228,9 @@ function initTabs(){
     const btn = e.target.closest('.tab-btn');
     if (!btn) return;
     activateTab(btn.dataset.tab);
+    // Keep project lists fresh when switching tabs
+    if (btn.dataset.tab === 'tab-order') buildProjectOrderList();
+    if (btn.dataset.tab === 'tab-archived') buildArchivedProjectsList();
   });
 }
 
@@ -2099,10 +2242,12 @@ const setFinalEmail = document.getElementById('set-final-email');
 
 /* Project Order list */
 const projOrderList = document.getElementById('proj-order-list');
+const archivedProjList = document.getElementById('archived-proj-list');
+
 
 function buildProjectOrderList(){
   projOrderList.innerHTML = '';
-  const projects = [...document.querySelectorAll('#project-container .project')];
+  const projects = [...document.querySelectorAll('#project-container .project')].filter(p=> !p.classList.contains('archived'));
   if (projects.length === 0){
     projOrderList.innerHTML = '<div style="font-size:12px; color:#777;">No active projects.</div>';
     return;
@@ -2119,6 +2264,33 @@ function buildProjectOrderList(){
     projOrderList.appendChild(item);
   });
 }
+
+function buildArchivedProjectsList(){
+  if (!archivedProjList) return;
+  archivedProjList.innerHTML = '';
+  const archived = [...document.querySelectorAll('#project-container .project.archived')];
+  if (archived.length === 0){
+    archivedProjList.innerHTML = '<div style="font-size:12px; color:#777;">No archived projects.</div>';
+    return;
+  }
+  archived.forEach(p=>{
+    ensureProjectPid(p);
+    const name = p.querySelector('.project-header').childNodes[0].textContent.trim();
+    const row = document.createElement('div');
+    row.className = 're-item';
+    row.style.justifyContent = 'space-between';
+    row.innerHTML = `<span class="re-name"></span><button class="btn" style="padding:6px 10px; font-size:12px;">Restore</button>`;
+    row.querySelector('.re-name').textContent = name;
+    row.querySelector('button').addEventListener('click', ()=>{
+      restoreProject(p);
+      // Refresh lists so the project disappears from Archived list and returns to Project Order
+      buildArchivedProjectsList();
+      buildProjectOrderList();
+    });
+    archivedProjList.appendChild(row);
+  });
+}
+
 let dragReItem = null;
 function attachReorderDnD(item){
   item.addEventListener('dragstart', ()=>{
@@ -2285,6 +2457,9 @@ function openSettings(){
   // Project order
   buildProjectOrderList();
 
+
+  // Archived projects
+  buildArchivedProjectsList();
   // Default timeline
   buildDefaultTimelineList();
 
@@ -2365,7 +2540,7 @@ function canonicalOwnerListFromData(rows){
 
 function gatherAssignmentData(){
   const rows = [];
-  const projects = [...document.querySelectorAll('#project-container .project')];
+  const projects = [...document.querySelectorAll('#project-container .project')].filter(p=> !p.classList.contains('archived'));
   projects.forEach(project => {
     const projName = project.querySelector('.project-header').childNodes[0].textContent.trim();
     const timeline = project.querySelector('.timeline');
