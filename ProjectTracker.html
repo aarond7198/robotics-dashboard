@@ -273,6 +273,15 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
   /* Make the Recent Activity modal slightly wider so the Recent Log table fits better */
   #activity-backdrop .modal { width: 920px; }
 
+  /* --- UI polish: Activity Recent Log should use full modal width when agg panel is hidden --- */
+  #activity-backdrop .activity-tables-wrap #activity-agg-panel.activity-panel-hidden + #activity-events-panel {
+    grid-column: 1 / -1;
+  }
+  #activity-backdrop .activity-tables-wrap #activity-events-panel.activity-panel-hidden + #activity-agg-panel {
+    grid-column: 1 / -1;
+  }
+
+
   /* Add a little extra right-side breathing room on the Proof of Delivery settings pane */
   #tab-pod { padding-right: 12px; }
 
