@@ -114,7 +114,8 @@
   body.ro #settingsBtn,
   body.ro .edit-btn,
   body.ro #ready-invoice-btn,
-  body.ro #risk-btn { display: none !important; }
+  body.ro #risk-btn,
+  body.ro #pod-btn { display: none !important; }
 
   /* === MODE-SPECIFIC UI VISIBILITY (Admin / Engineer / View) === */
   /* View-only: also hide Assignments entrypoint */
@@ -306,6 +307,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
         </div>
         <button id="ready-invoice-btn" class="btn" style="display:none;">Ready to Invoice…</button>
         <button id="risk-btn" class="btn" style="display:none;">Create Risk Assessment…</button>
+        <button id="pod-btn" class="btn" style="display:none;">Create Proof of Delivery…</button>
         <button id="subtask-modal-done" class="btn btn-primary">Done</button>
       </div>
     </div>
@@ -350,6 +352,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           <button class="tab-btn" data-tab="tab-invoice">Invoice Contacts</button>
           <button class="tab-btn" data-tab="tab-timeline">Default Timeline</button>
           <button class="tab-btn" data-tab="tab-risk">Risk Assessment</button>
+          <button class="tab-btn" data-tab="tab-pod">Proof of Delivery</button>
         </div>
 
         <!-- Project Order -->
@@ -413,6 +416,28 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           </div>
         </div>
       </div>
+
+        <!-- Proof of Delivery -->
+        <div class="tab-pane" id="tab-pod">
+          <div class="settings-section-title">Proof of Delivery</div>
+          <div style="display:grid; gap:10px;">
+            <label>GitHub DOCX URL (blob or raw)
+              <input id="set-pod-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.docx">
+              <div style="font-size:11px; color:#666; margin-top:4px;">
+                Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
+              </div>
+            </label>
+            <label>Filename Pattern
+              <input id="set-pod-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
+                     placeholder="[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx">
+              <div style="font-size:11px; color:#666; margin-top:4px;">
+                Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
+              </div>
+            </label>
+          </div>
+        </div>
+
       <div class="modal-footer" style="grid-template-columns:1fr auto;">
         <div></div>
         <button id="settings-save" class="btn btn-primary">Save</button>
@@ -734,6 +759,11 @@ const Settings = {
     /* Risk Assessment download settings */
     riskGithubUrl: '',
     riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm',
+
+
+    /* Proof of Delivery download settings */
+    podGithubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/GCG%20AFS_Acceptance%20Testing%20Sign%20Off%20v1.0.docx',
+    podFileNamePattern: '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx',
 
     /* Editable default timeline */
     defaultTimeline: []   // falls back to DEFAULT_TIMELINE if empty
@@ -1098,6 +1128,7 @@ const addSubtaskWrap=document.getElementById('add-subtask-wrap');
 const modalSummary=document.getElementById('modal-summary');
 const readyInvoiceBtn=document.getElementById('ready-invoice-btn');
 const riskBtn = document.getElementById('risk-btn');
+const podBtn  = document.getElementById('pod-btn');
 let currentTask=null;
 
 function openSubtaskModal(taskElem){
@@ -1113,6 +1144,10 @@ function openSubtaskModal(taskElem){
   const isRisk = /^risk\s*assessment$/i.test(taskName.trim());
   riskBtn.style.display = (IS_ADMIN && isRisk) ? 'inline-block' : 'none';
   riskBtn.onclick = (IS_ADMIN && isRisk) ? (()=>downloadRiskFromGithub(taskElem)) : null;
+
+  const isPOD = /^proof\s*of\s*delivery$/i.test(taskName.trim());
+  podBtn.style.display = (IS_ADMIN && isPOD) ? 'inline-block' : 'none';
+  podBtn.onclick = (IS_ADMIN && isPOD) ? (()=>downloadPODFromGithub(taskElem)) : null;
 
   addSubtaskWrap.style.display = IS_ADMIN ? 'block' : 'none';
   modalDone.textContent = (IS_ADMIN ? 'Done' : 'Close');
@@ -1616,6 +1651,68 @@ async function downloadRiskFromGithub(taskElem){
   }
 }
 
+function buildPODFileName(details){
+  const pattern = (Settings.data.podFileNamePattern || '').trim() || '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx';
+  const now = new Date();
+  const yyyy = String(now.getFullYear());
+  const mm = pad2(now.getMonth()+1);
+  const dd = pad2(now.getDate());
+
+  const tokenMap = {
+    'CUSTOMER': details.customer || '',
+    'PROJECT': details.projName || '',
+    'APPLICATION': details.application || '',
+    'SALESORDER': details.salesOrder || '',
+    'PO': details.poNumber || '',
+    'ROBOT': normalizeRobot(details.robot || '') || '',
+    'YYYY': yyyy, 'MM': mm, 'DD': dd,
+    'YYYY-MM-DD': `${yyyy}-${mm}-${dd}`,
+    'MM-DD-YYYY': `${mm}-${dd}-${yyyy}`,
+    'MM DD YYYY': `${mm} ${dd} ${yyyy}`
+  };
+
+  const out = pattern.replace(/\[([^\]]+)\]/g, (_, keyRaw)=>{
+    const k = String(keyRaw || '').trim().toUpperCase();
+    return Object.prototype.hasOwnProperty.call(tokenMap, k) ? tokenMap[k] : `[${keyRaw}]`;
+  });
+
+  const ext = out.toLowerCase().endsWith('.docx') ? '' : '.docx';
+  const safe = (out + ext).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
+  return safe || `Proof of Delivery ${mm} ${dd} ${yyyy}.docx`;
+}
+
+async function downloadPODFromGithub(taskElem){
+  try{
+    const urlInput = (Settings.data.podGithubUrl || '').trim();
+    if (!urlInput) { alert('Please set the Proof of Delivery DOCX URL in Settings.'); return; }
+    const rawUrl = toRawGithub(urlInput);
+    if (!rawUrl) { alert('The GitHub URL does not look valid. Paste a public blob/raw link.'); return; }
+
+    const details = getProjectDetails(taskElem);
+    const filename = buildPODFileName(details);
+
+    showLoading(true);
+    const res = await fetch(rawUrl, { mode:'cors', cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    const blob = await res.blob();
+    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+    const a = document.createElement('a');
+    const href = URL.createObjectURL(finalBlob);
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(href), 1500);
+  } catch (err) {
+    console.error(err);
+    alert('Could not download Proof of Delivery file.\n\nTips:\n• Confirm the GitHub link is public\n• Use a blob/raw URL and Save Settings\n• We auto-convert to raw.githubusercontent.com');
+  } finally {
+    showLoading(false);
+  }
+}
+
 /* Google Save/Load */
 function serializeState(){
   const projects=[...document.querySelectorAll('.project')].map(project=>{
@@ -2050,6 +2147,10 @@ function attachReorderDnD(item){
 const setRiskGithub = document.getElementById('set-risk-github');
 const setRiskPattern = document.getElementById('set-risk-pattern');
 
+/* Proof of Delivery fields */
+const setPodGithub = document.getElementById('set-pod-github');
+const setPodPattern = document.getElementById('set-pod-pattern');
+
 /* -------- Default Timeline Editor -------- */
 const dtlList = document.getElementById('dtl-list');
 const dtlAdd = document.getElementById('dtl-add');
@@ -2177,6 +2278,10 @@ function openSettings(){
   setRiskGithub.value = Settings.data.riskGithubUrl || '';
   setRiskPattern.value = Settings.data.riskFileNamePattern || '';
 
+  // Proof of Delivery
+  setPodGithub.value = Settings.data.podGithubUrl || '';
+  setPodPattern.value = Settings.data.podFileNamePattern || '';
+
   // Project order
   buildProjectOrderList();
 
@@ -2200,6 +2305,10 @@ if (settingsSave) settingsSave.addEventListener('click', async ()=>{
   // Risk
   Settings.data.riskGithubUrl = setRiskGithub.value.trim();
   Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm';
+
+  // Proof of Delivery
+  Settings.data.podGithubUrl = setPodGithub.value.trim();
+  Settings.data.podFileNamePattern = setPodPattern.value.trim() || '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx';
 
   // Project order
   const container = document.getElementById('project-container');
