@@ -10,6 +10,14 @@
   .topbar .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; background: #e8eef9; color: #0b5ed7; }
   .spacer { flex: 1; }
   .project { margin-bottom: 40px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; }
+
+  .project.presale-bucket { 
+    background: #f0f9ff; 
+    border: 1px solid #dbeafe; 
+  }
+.presale-bucket .project-details, .presale-bucket .project-subline { display:none !important; }
+
+  .project.presale-bucket .project-header { color: #075985; }
   .project-header { font-weight: bold; font-size: 18px; margin-bottom: 8px; }
   .project-subheader { font-size: 13px; color: #666; margin-bottom: 12px; }
   .timeline { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; background: #eee; border-radius: 6px; padding: 6px; position: relative; font-size: 10px; min-height: 120px; align-items: stretch; }
@@ -18,6 +26,8 @@
   .timeline-item.completed { opacity: 0.5; }
   .timeline-item span.icon { font-size: 16px; display: block; margin-bottom: 4px; }
   .task-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .timeline-item .note-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#666;opacity:0.9;display:none;}
+  .timeline-item .note-dot.has-next{background:yellowgreen;}
   .timeline-label { font-size: 10px; line-height: 1.2; }
   .task-meta { font-size: 9px; color: #666; margin-top: 2px; min-height: 12px; }
   .timeline-item.final-invoice .timeline-label { display: none; }
@@ -44,6 +54,12 @@
   .current-tag { position: absolute; left: -6px; top: 6px; bottom: 6px; width: 4px; background: #007BFF; border-radius: 4px; }
   .current-text { position: absolute; left: -26px; top: 6px; font-size: 9px; writing-mode: vertical-rl; text-orientation: mixed; color: #007BFF; font-weight: 700; letter-spacing: 0.5px; user-select: none; }
 
+/* Hide CURRENT progress marker inside the 4 pseudo buckets (Pre-Sale / Post-Sale) */
+.project-card.presale-bucket .current-tag,
+.project-card.presale-bucket .current-text{
+  display:none !important;
+}
+
   .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -63,7 +79,7 @@
   }
   /* Wider only for the Assignments modal */
   .modal.assignments-modal {
-    width: 1200px;
+    width: 1400px;
     max-width: calc(100% - 32px);
   }
   /* Slightly wider Activity modal */
@@ -85,7 +101,7 @@
   .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; }
   .btn-primary { background: #007BFF; color: #fff; }
   .btn-ghost { background: transparent; color: #007BFF; }
-  .btn-icon { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; cursor: pointer; }
+  .btn-icon { padding: 6px 10px; font-size: 13px; line-height: 1.1; border: 1px solid #ddd; border-radius: 6px; background: #fafafa; cursor: pointer; }
 
   .subtask-list { display: flex; flex-direction: column; gap: 8px; }
   .subtask-chip { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: center; }
@@ -146,11 +162,88 @@
   .assn-chip.active { background:#0b5ed7; color:#fff; border-color:#0b5ed7; }
   .assn-chip.disabled { opacity:.5; cursor:default; }
   .assn-search { min-width:220px; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
-  .assn-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .assn-table { width:100%; border-collapse:collapse; font-size:12px; table-layout:auto; }
   .assn-table th, .assn-table td { border:1px solid #eee; padding:6px 8px; text-align:left; }
   .assn-table th { background:#f7f7f7; position:sticky; top:0; z-index:1; }
   .assn-actions { display:flex; gap:6px; flex-wrap:wrap; }
-  .assn-note { font-size:11px; color:#666; margin-top:4px; }
+
+  /* ==== Assignments condensed table (ultra-dense + sticky actions) ==== */
+  .assn-table { width:100%; border-collapse:collapse; font-size:10px; table-layout: fixed; }
+  .assn-table th, .assn-table td {
+    border:1px solid #eee;
+    padding:2px 4px;
+    text-align:left;
+    line-height:1.05;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .assn-table th { background:#f7f7f7; position:sticky; top:0; z-index:5; }
+
+  /* Column sizing (tight) */
+  .assn-table th:nth-child(1), .assn-table td:nth-child(1){ width: 220px; }
+  .assn-table th:nth-child(2), .assn-table td:nth-child(2){ width: 140px; }
+  .assn-table th:nth-child(3), .assn-table td:nth-child(3){ width: 200px; }
+  .assn-table th:nth-child(4), .assn-table td:nth-child(4){ width: 48px; text-align:right; }
+  .assn-table th:nth-child(5), .assn-table td:nth-child(5){ width: 130px; }
+  .assn-table th:nth-child(6), .assn-table td:nth-child(6){ width: 96px; }
+
+  /* Priority slider ultra compact */
+  .assn-table td:nth-child(5) input[type="range"]{ width: 86px; height: 14px; margin: 0; }
+  .assn-table td:nth-child(5) span,
+  .assn-table td:nth-child(5) .assn-priority-value{ font-size:10px; margin-left:4px; }
+
+  /* Deadline pill compact */
+  .assn-deadline { font-size:10px; padding:0px 5px; }
+
+  /* Actions column sticky so buttons are always reachable */
+  .assn-table th:nth-child(7),
+  .assn-table td:nth-child(7){
+    width: 170px;
+    position: sticky;
+    right: 0;
+    background: #fff;
+    z-index: 6;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .assn-table th:nth-child(7){ background:#f7f7f7; z-index: 7; }
+
+  .assn-actions{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+  .assn-actions .btn-icon{
+    padding:2px 4px;
+    font-size: 11px;
+    line-height: 1;
+    min-height: 18px;
+  }
+
+  /* Assignments modal: a bit wider + more room for table */
+  .modal.assignments-modal { width: 1500px; max-width: calc(100% - 12px); }
+/* Assignments modal: slightly wider + more room for table */
+  .modal.assignments-modal { width: 1400px; max-width: calc(100% - 16px); }
+
+  
+  /* Assignments: wrap-friendly columns (Excel-like) */
+  .assn-table th, .assn-table td { white-space: nowrap; vertical-align: top; }
+  /* Task/Activity column wraps (2nd column) */
+  .assn-table th:nth-child(2), .assn-table td:nth-child(2) { white-space: normal; word-break: break-word; max-width: 520px; }
+  /* Hours column tight (5th column) */
+  .assn-table th:nth-child(5), .assn-table td:nth-child(5) { width: 70px; max-width: 70px; text-align: right; }
+  /* Keep some columns bounded */
+  .assn-table th:nth-child(3), .assn-table td:nth-child(3) { max-width: 140px; }
+  .assn-table th:nth-child(4), .assn-table td:nth-child(4) { max-width: 130px; }
+  .assn-table th:nth-child(6), .assn-table td:nth-child(6) { max-width: 160px; }
+  /* Actions can wrap */
+  .assn-actions { white-space: normal; max-width: 260px; }
+.assn-note { font-size:11px; color:#666; margin-top:4px; }
 
   /* Deadline pill */
   .assn-deadline {
@@ -286,6 +379,263 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
   #tab-pod { padding-right: 12px; }
 
 
+
+/* ==== Assignments layout tightening ==== */
+#assn-backdrop .modal-content,
+#assn-modal .modal-content,
+#assignments-backdrop .modal-content{
+  width: min(1200px, 96vw);
+  max-height: 88vh;
+}
+#assn-backdrop .modal-body,
+#assn-modal .modal-body,
+#assignments-backdrop .modal-body{
+  overflow: auto;
+}
+
+/* Assignments table should fit the modal width */
+#assn-table, .assn-table{
+  width: 100%;
+  table-layout: fixed;
+}
+#assn-table th, #assn-table td,
+.assn-table th, .assn-table td{
+  padding: 6px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* Make the "Task/Activity" name column usable but not huge */
+#assn-table th:nth-child(2), #assn-table td:nth-child(2),
+.assn-table th:nth-child(2), .assn-table td:nth-child(2){
+  width: 34%;
+}
+
+/* Owner a bit tighter */
+#assn-table th:nth-child(3), #assn-table td:nth-child(3),
+.assn-table th:nth-child(3), .assn-table td:nth-child(3){
+  width: 12%;
+}
+
+/* Deadline tighter */
+#assn-table th:nth-child(4), #assn-table td:nth-child(4),
+.assn-table th:nth-child(4), .assn-table td:nth-child(4){
+  width: 11%;
+}
+
+/* Hours tighter */
+#assn-table th:nth-child(5), #assn-table td:nth-child(5),
+.assn-table th:nth-child(5), .assn-table td:nth-child(5){
+  width: 8%;
+}
+
+/* Priority tighter */
+#assn-table th:nth-child(6), #assn-table td:nth-child(6),
+.assn-table th:nth-child(6), .assn-table td:nth-child(6){
+  width: 12%;
+}
+
+/* Actions column – allow wrap */
+#assn-table th:nth-child(7), #assn-table td:nth-child(7),
+.assn-table th:nth-child(7), .assn-table td:nth-child(7){
+  width: 23%;
+}
+.assn-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.assn-actions .btn-icon{
+  padding: 4px 6px;
+}
+
+
+/* ==== Assignments FINAL ultra-compact overrides (force) ==== */
+
+/* ==== Assignments polish (compact) ==== */
+.assn-table td:nth-child(5), .assn-table th:nth-child(5){ text-align:center !important; } /* Hours */
+.assn-table td:nth-child(7), .assn-table th:nth-child(7){ text-align:center !important; } /* Deadline */
+.assn-table td:nth-child(1), .assn-table th:nth-child(1),
+.assn-table td:nth-child(2), .assn-table th:nth-child(2),
+.assn-table td:nth-child(3), .assn-table th:nth-child(3),
+.assn-table td:nth-child(4), .assn-table th:nth-child(4){ text-align:left !important; }
+.assn-actions .btn-icon{
+  font-size: 13px !important;
+  padding: 2px 6px !important;
+  min-width: 22px !important;
+  min-height: 18px !important;
+}
+
+
+/* ==== Assignments visual tweaks (compact but clearer) ==== */
+.assn-table td:nth-child(5), .assn-table th:nth-child(5){ text-align:center !important; }
+.assn-table td:nth-child(7), .assn-table th:nth-child(7){ text-align:center !important; }
+.assn-actions .btn-icon{
+  padding: 2px 5px !important;
+  font-size: 12px !important;
+  min-height: 18px !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  background: #fafafa !important;
+}
+
+.modal.assignments-modal { width: 1600px; max-width: calc(100% - 12px); }
+
+.assn-table { table-layout: fixed !important; font-size: 10px !important; }
+.assn-table th, .assn-table td {
+  padding: 1px 3px !important;
+  line-height: 1.05 !important;
+  height: auto !important;
+}
+.assn-table tr { height: auto !important; }
+.assn-table td > * { margin: 0 !important; }
+
+/* Columns (Owner, Project, Task, Subtask, Hours, Priority, Deadline, Actions) */
+.assn-table th:nth-child(1), .assn-table td:nth-child(1){ width: 90px !important; }
+.assn-table th:nth-child(2), .assn-table td:nth-child(2){ width: 240px !important; }
+.assn-table th:nth-child(3), .assn-table td:nth-child(3){ width: 160px !important; }
+.assn-table th:nth-child(4), .assn-table td:nth-child(4){ width: 220px !important; }
+.assn-table th:nth-child(5), .assn-table td:nth-child(5){ width: 56px !important; text-align:right !important; }
+.assn-table th:nth-child(6), .assn-table td:nth-child(6){ width: 130px !important; }
+.assn-table th:nth-child(7), .assn-table td:nth-child(7){ width: 110px !important; }
+.assn-table th:nth-child(8), .assn-table td:nth-child(8){
+  width: 190px !important;
+  position: sticky !important;
+  right: 0 !important;
+  z-index: 8 !important;
+  background: #fff !important;
+  overflow: visible !important;
+}
+
+/* Priority control compact */
+.assn-table td:nth-child(6) div { gap: 3px !important; }
+.assn-table td:nth-child(6) input[type="range"]{
+  width: 85px !important;
+  height: 12px !important;
+  margin: 0 !important;
+}
+.assn-table td:nth-child(6) span { font-size: 10px !important; min-width: 14px !important; }
+
+/* Deadline pill compact */
+.assn-deadline { font-size: 10px !important; padding: 0px 5px !important; }
+
+/* Actions compact */
+.assn-actions { gap: 2px !important; }
+.assn-actions .btn-icon{
+  padding: 1px 3px !important;
+  font-size: 11px !important;
+  min-height: 16px !important;
+}
+
+
+/* presale-meta-hide */
+.project-card.presale-bucket .project-meta,
+.project-card.presale-bucket .task-meta,
+.timeline-item.presale-bucket .project-meta,
+.timeline-item.presale-bucket .task-meta{
+  display:none !important;
+}
+
+/* Priority slider read-only style (Engineer/User) */
+.pr-readonly{ opacity:0.75; cursor:default; }
+.pr-readonly::-webkit-slider-thumb{ visibility:hidden; }
+.pr-readonly::-moz-range-thumb{ visibility:hidden; }
+
+
+/* Hide top-level project details for pseudo projects */
+.pseudo-project .project-meta,
+.pseudo-project .project-details,
+.pseudo-project .project-info,
+.pseudo-project .project-subinfo,
+.pseudo-project .project-header-meta,
+.pseudo-project .proj-meta,
+.pseudo-project .proj-details,
+.pseudo-project .project-kv,
+.pseudo-project .kv-row,
+.pseudo-project .kv{
+  display:none !important;
+}
+.pseudo-project .project-subheader,
+.pseudo-project .project-subline{ display:none !important; }
+
+
+
+/* Assignments readability tweaks */
+.wq-table td.hours,
+.wq-table th.hours {
+  text-align: center;
+}
+
+.wq-table td.priority,
+.wq-table th.priority {
+  text-align: center;
+}
+
+/* Slightly increase overall Assignments density without bloating */
+.wq-table td,
+.wq-table th {
+  font-size: 13px;
+  padding: 6px 8px;
+}
+
+.wq-actions .wq-btn,
+.wq-actions .wq-iconbtn {
+  height: 28px;
+  min-width: 34px;
+  font-size: 13px;
+}
+
+
+/* === Assignments: readability tweaks (compact but easier) === */
+#assn-table th:nth-child(5), #assn-table td:nth-child(5) { text-align: center !important; } /* Hours */
+#assn-table th:nth-child(6), #assn-table td:nth-child(6) { text-align: center !important; } /* Priority */
+#assn-table th:nth-child(7), #assn-table td:nth-child(7) { text-align: center !important; } /* Deadline */
+
+#assn-table { font-size: 11px !important; }
+#assn-table th { padding: 4px 6px !important; }
+#assn-table td { padding: 3px 6px !important; line-height: 1.15 !important; }
+
+#assn-table .assn-actions { gap: 6px !important; }
+#assn-table .assn-actions button,
+#assn-table .assn-actions .btn {
+  padding: 3px 10px !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  min-height: 22px !important;
+  border-radius: 6px !important;
+}
+
+/* Stronger fade for completed rows in Assignments */
+#assn-table tr.assn-row-done { opacity: 0.42 !important; }
+
+
+/* Hide progress line for Pre/Post Sale pseudo projects */
+.project[data-application="Pre-Sale"] .project-progress,
+.project.pre-sale .project-progress {
+  display: none !important;
+}
+
+
+/* Hide CURRENT progress marker inside Pre/Post Sale pseudo projects */
+.project[data-application="Pre-Sale"] .current-tag,
+.project[data-application="Pre-Sale"] .current-text,
+.project.pre-sale .current-tag,
+.project.pre-sale .current-text {
+  display: none !important;
+}
+
+
+  /* Hide CURRENT progress marker inside pseudo-bucket projects (Pre-Sale / Post-Sale / On Hold / Dormant) */
+  .project[data-presale-bucket="true"] .current-tag,
+  .project[data-presale-bucket="true"] .current-text,
+  .project[data-system-bucket="true"] .current-tag,
+  .project[data-system-bucket="true"] .current-text {
+    display: none !important;
+  }
+
 </style>
 </head>
 <body>
@@ -331,7 +681,8 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
         <button id="ready-invoice-btn" class="btn" style="display:none;">Ready to Invoice…</button>
         <button id="risk-btn" class="btn" style="display:none;">Create Risk Assessment…</button>
         <button id="pod-btn" class="btn" style="display:none;">Create Proof of Delivery…</button>
-        <button id="subtask-modal-done" class="btn btn-primary">Done</button>
+                <button id="task-notes-btn" class="btn btn-ghost" style="margin-right:6px;">🗒 Notes</button>
+<button id="subtask-modal-done" class="btn btn-primary">Done</button>
       </div>
     </div>
   </div>
@@ -542,9 +893,10 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
                 <th style="min-width:160px;">Task</th>
                 <th style="min-width:180px;">Subtask</th>
                 <th style="min-width:80px;">Hours</th>
+                <th style="min-width:120px;">Priority</th>
                 <th style="min-width:100px;">Deadline</th>
-                <th style="min-width:80px;">Done</th>
-                <th style="min-width:200px;">Actions</th>
+                
+                <th style="min-width:240px;">Actions</th>
               </tr>
             </thead>
             <tbody id="assn-tbody"></tbody>
@@ -639,7 +991,118 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
     </div>
   </div>
 
+  <!-- Notes Modal -->
+  <div id="notes-backdrop" class="modal-backdrop" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="notes-title" style="width: 900px; max-width: calc(100% - 32px);">
+      <div class="modal-header">
+        <div id="notes-title">Notes</div>
+        <button id="notes-close-x" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="notes-meta" style="font-size:12px; color:#666; margin-bottom:10px;"></div>
+        <textarea id="notes-text" style="width:100%; min-height:280px; resize:vertical; padding:10px; border:1px solid #ddd; border-radius:8px; font-family: inherit; font-size: 13px;" placeholder="Type notes here..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px;">
+          <div id="notes-status" style="font-size:12px; color:#666;"></div>
+          <div style="display:flex; gap:8px;">
+            <button id="notes-clear" class="btn">Clear</button>
+            <button id="notes-save" class="btn btn-primary">Save Note</button>
+          </div>
+        </div>
+        <div style="font-size:11px; color:#888; margin-top:6px;">
+          Notes are saved with your normal <b>Save (Google)</b> action. Drafts are cached locally so you can keep working without forcing a full page save.
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:auto;">
+        <button id="notes-close" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+<div id="activity-backdrop" class="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="activity-title">
+      <div class="modal-header">
+        <div id="activity-title">Recent Activity</div>
+        <button id="activity-close" class="modal-close" title="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="activity-chips" id="activity-range-chips">
+          <button class="activity-chip" data-range="today">Today</button>
+          <button class="activity-chip" data-range="week">This Week to Date</button>
+          <button class="activity-chip" data-range="7d">Last Week (Last 7 Days)</button>
+          <button class="activity-chip" data-range="30d">Last 30 Days</button>
+          <button class="activity-chip" data-range="month">This Month</button>
+        </div>
+        <div class="activity-extra">
+          <label style="font-size:12px;">
+            Owner:
+            <select id="activity-owner-filter">
+              <option value="all">All owners</option>
+            </select>
+          </label>
+        </div>
+        <div class="activity-view-tabs" id="activity-view-tabs">
+          <button class="activity-view-tab" data-view="owner">By Owner</button>
+          <button class="activity-view-tab active" data-view="user">By User</button>
+          <button class="activity-view-tab" data-view="project">By Project</button>
+          <button class="activity-view-tab" data-view="log">Recent Log</button>
+        </div>
+        <div class="activity-summary" id="activity-summary"></div>
+        <div class="activity-note">
+          Activity is based on engineer/admin saves and summarizes hours logged and completions per owner in the selected range.
+        </div>
+        <div class="activity-tables-wrap">
+          <div id="activity-agg-panel">
+            <div id="activity-agg-title" style="font-weight:600; font-size:13px; margin-bottom:4px;">By Owner</div>
+            <div style="max-height:260px; overflow:auto; border:1px solid #eee; border-radius:8px;">
+              <table class="activity-table" id="act-agg-table">
+                <thead>
+                  <tr>
+                    <th>Owner</th>
+                    <th>Hours Δ</th>
+                    <th>Subtasks Done</th>
+                    <th>Tasks Done</th>
+                    <th>Events</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="activity-events-panel">
+            <div style="font-weight:600; font-size:13px; margin-bottom:4px;">Recent Events</div>
+            <div style="max-height:260px; overflow:auto; border:1px solid #eee; border-radius:8px;">
+              <table class="activity-table" id="act-events-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Project</th>
+                    <th>Task / Subtask</th>
+                    <th>Owner</th>
+                    <th>Hours Δ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="grid-template-columns:1fr auto;">
+        <div></div>
+        <button id="activity-close-btn" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
 <script>
+
+function isPseudoProjectName(n){
+  n = String(n||'').trim();
+  return n==='Active Work, R&D' || n==='Interesting, On Hold' || n==='Dormant' || n==='Post Sale Support';
+}
+
 /* ================== CORE & ASSIGNMENTS (merged) ================== */
 
 /* Google URL */
@@ -673,6 +1136,59 @@ const IS_VIEW     = (APP_MODE === 'view');
 
 /* Keep legacy name so minimal downstream churn */
 const READ_ONLY = IS_VIEW;
+
+/* Pre-Sale system buckets (always present, always bottom) */
+const PRESALE_BUCKETS = [
+  { name: 'Active Work, R&D', colorClass: 'presale-bucket' },
+  { name: 'Interesting, On Hold', colorClass: 'presale-bucket' },
+  { name: 'Dormant', colorClass: 'presale-bucket' }
+,
+  { name: 'Post Sale Support', colorClass: 'presale-bucket' }];
+
+function isPresaleProjectElem(projectElem){
+  return projectElem && projectElem.dataset && projectElem.dataset.presaleBucket === 'true';
+}
+
+function ensurePresaleBuckets(){
+  const container = document.getElementById('project-container');
+  if (!container) return;
+
+  // Build lookup of existing by title
+  const existing = new Map();
+  [...container.querySelectorAll('.project')].forEach(p=>{
+    const title = (p.querySelector('.project-header')?.childNodes?.[0]?.textContent || '').trim();
+    if (title) existing.set(title, p);
+  });
+
+  // Create any missing
+  PRESALE_BUCKETS.forEach(b=>{
+    if (!existing.has(b.name)){
+      const proj = addProject({
+        name: b.name,
+        robot: 'UR',
+        customer: '',
+        application: 'Pre-Sale',
+        salesOrder: '',
+        poNumber: '',
+        estDate: '',
+        tasks: [],
+        systemBucket: true,
+        presaleBucket: true
+      });
+      existing.set(b.name, proj);
+    }
+  });
+
+  // Tag existing ones and move to bottom in defined order
+  PRESALE_BUCKETS.forEach(b=>{
+    const p = existing.get(b.name);
+    if (!p) return;
+    p.dataset.presaleBucket = 'true';
+    p.dataset.systemBucket = 'true';
+    p.classList.add('presale-bucket');
+    container.appendChild(p); // move to end in order
+  });
+}
 
 /* Last server state (for engineer patch saves) */
 let LAST_SERVER_STATE = null;
@@ -714,6 +1230,15 @@ function computeEngineerChanges(oldProjects, newProjects){
       const oldComp = !!to.completed;
       const newComp = !!tn.completed;
       if (oldComp !== newComp) fieldsTask.completed = newComp;
+      const oldPri = Number((typeof to.priority !== 'undefined') ? to.priority : 3);
+      const newPri = Number((typeof tn.priority !== 'undefined') ? tn.priority : 3);
+      if (oldPri !== newPri) fieldsTask.priority = newPri;
+      const oldNA = (to.nextAction || '');
+      const newNA = (tn.nextAction || '');
+      if (oldNA !== newNA) fieldsTask.nextAction = newNA;
+      const oldNote = (to.note || '');
+      const newNote = (tn.note || '');
+      if (oldNote !== newNote) fieldsTask.note = newNote;
       if (Object.keys(fieldsTask).length){
         changes.push({
           projectIndex: pi,
@@ -736,6 +1261,9 @@ function computeEngineerChanges(oldProjects, newProjects){
         const oldDone = !!so.done;
         const newDone = !!sn.done;
         if (oldDone !== newDone) fieldsSub.done = newDone;
+        const oldSNote = (so.note || '');
+        const newSNote = (sn.note || '');
+        if (oldSNote !== newSNote) fieldsSub.note = newSNote;
         if (Object.keys(fieldsSub).length){
           changes.push({
             projectIndex: pi,
@@ -1105,6 +1633,24 @@ function addTaskToTimeline(timelineElem, insertBefore=null){
   requestAnimationFrame(()=>{ timelineElem.scrollLeft = timelineElem.scrollWidth; });
 }
 
+
+function updateTaskNoteDot(taskElem){
+  if (!taskElem) return;
+  let dot = taskElem.querySelector(':scope > .note-dot');
+  if (!dot){
+    dot = document.createElement('span');
+    dot.className = 'note-dot';
+    taskElem.appendChild(dot);
+  }
+  const note = (taskElem.dataset.note || '').trim();
+  const proj = taskElem.closest('.project');
+  const isPresale = !!(proj && proj.dataset && proj.dataset.presaleBucket === 'true');
+  const next = isPresale ? ((taskElem.dataset.nextAction || '').trim()) : '';
+  const show = !!note || !!next;
+  dot.style.display = show ? 'block' : 'none';
+  if (next) dot.classList.add('has-next'); else dot.classList.remove('has-next');
+}
+
 function buildTask(data){
   const div=document.createElement('div'); div.className='timeline-item'; div.setAttribute('draggable',IS_ADMIN);
   div.innerHTML=`<span class="icon blue">■</span><div class="task-name">${(data.name||'Task')}</div><div class="timeline-label">Hours: <b><span class="task-total">0</span></b></div>`;
@@ -1115,6 +1661,11 @@ function buildTask(data){
   if (data.date) div.dataset.date = data.date;
   if (data.dateText) div.dataset.dateText = data.dateText;
   if (data.robot) div.dataset.robot = normalizeRobot(data.robot);
+  if (typeof data.priority !== 'undefined') div.dataset.priority = (data.priority === '' || data.priority === null || typeof data.priority === 'undefined') ? '' : String(Number(data.priority));
+  else div.dataset.priority = '';
+  if (typeof data.nextAction !== 'undefined') div.dataset.nextAction = String(data.nextAction||'');
+  if (typeof data.note !== 'undefined') div.dataset.note = String(data.note||'');
+  if (data.tid) div.dataset.tid = String(data.tid);
 
   div._subtasks=Array.isArray(data.subtasks)?data.subtasks.map(s=>({
     name:(s&&s.name)?s.name:'Subtask',
@@ -1122,22 +1673,30 @@ function buildTask(data){
     done:!!(s&&s.done),
     owner:(s&&s.owner)||'',
     date:(s&&s.date)||'',
-    dateText:(s&&s.dateText)||''
+    dateText:(s&&s.dateText)||'',
+    priority:(s && typeof s.priority !== 'undefined' && s.priority !== null && String(s.priority).trim()!=='') ? String(s.priority) : '',
+    note:(s&&s.note)||'',
+    sid:(s&&s.sid)||''
   })):[];
   div.addEventListener('click',()=>openSubtaskModal(div));
   if (IS_ADMIN) { addTaskContextMenu(div); enableDragAndDrop(div); }
-  updateSubtaskHours(div); updateSubtaskDashes(div); updateInvoiceBadge(div); updateTaskMetaDisplay(div); return div;
+  updateSubtaskHours(div); updateSubtaskDashes(div); updateInvoiceBadge(div); updateTaskMetaDisplay(div); updateTaskNoteDot(div); return div;
 }
 
-function addProject({name,robot='UR',customer='',application='',salesOrder,poNumber,estDate,tasks}){
+function addProject({name,robot='UR',customer='',application='',salesOrder,poNumber,estDate,tasks, systemBucket=false, presaleBucket=false}){
   const container=document.getElementById('project-container');
   const div=document.createElement('div'); div.className='project';
   const subText = formatSubheader({robot, customer, application, salesOrder, poNumber, estDate});
-  div.innerHTML=`<div class="project-header">${name}<button class="edit-btn" onclick="editProject(event,this)">Edit</button></div>
+  const editHtml = systemBucket ? '' : '<button class="edit-btn" onclick="editProject(event,this)">Edit</button>';
+  div.innerHTML=`<div class="project-header">${name}${editHtml}</div>
     <div class="project-subheader">${subText}</div>
     <div class="timeline"></div><div class="total-hours">Total Hours: 0</div>`;
+  if (isPseudoProjectName(name)) div.classList.add('pseudo-project');
   ensureProjectPid(div);
   div.dataset.robot = normalizeRobot(robot) || 'UR';
+  if (presaleBucket) { div.dataset.presaleBucket = 'true'; div.classList.add('presale-bucket'); }
+  if (systemBucket) { div.dataset.systemBucket = 'true'; }
+
   const timeline=div.querySelector('.timeline');
 
   timeline.addEventListener('dragover', (e)=>{
@@ -1197,6 +1756,8 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
   updateTotalHours(timeline); updateCurrentIndicator(timeline);
   updateFinalInvoiceUI(timeline);
   applyArchiveVisibility(div);
+  updateTaskNoteDot(div);
+
   return div;
 }
 
@@ -1204,6 +1765,7 @@ function addProject({name,robot='UR',customer='',application='',salesOrder,poNum
 const modalBackdrop=document.getElementById('subtask-modal-backdrop');
 const modalClose=document.getElementById('subtask-modal-close');
 const modalDone=document.getElementById('subtask-modal-done');
+const taskNotesBtn=document.getElementById('task-notes-btn');
 const modalTitle=document.getElementById('subtask-modal-title');
 const subtaskRows=document.getElementById('subtask-rows');
 const addSubtaskBtn=document.getElementById('add-subtask-btn');
@@ -1233,12 +1795,14 @@ function openSubtaskModal(taskElem){
   podBtn.onclick = (IS_ADMIN && isPOD) ? (()=>downloadPODFromGithub(taskElem)) : null;
 
   addSubtaskWrap.style.display = IS_ADMIN ? 'block' : 'none';
+  if (taskNotesBtn) taskNotesBtn.style.display = (IS_VIEW ? 'none' : 'inline-block');
   modalDone.textContent = (IS_ADMIN ? 'Done' : 'Close');
 
   modalBackdrop.style.display='flex';
 }
 function closeSubtaskModal(){ modalBackdrop.style.display='none'; currentTask=null; }
 modalClose.addEventListener('click',closeSubtaskModal); modalDone.addEventListener('click',closeSubtaskModal);
+if (taskNotesBtn) { taskNotesBtn.addEventListener('click', ()=>{ if(!currentTask) return; openNotesModal(currentTask, -1); }); }
 modalBackdrop.addEventListener('click',e=>{ if(e.target===modalBackdrop) closeSubtaskModal(); });
 
 addSubtaskBtn.addEventListener('click',()=>{ if(!currentTask || !IS_ADMIN) return; const name=prompt("Subtask Name:","Subtask"); if(!name) return;
@@ -1272,6 +1836,22 @@ function addSubtaskContextMenu(wrap, st, idx, taskElem){
         const v=prompt('Owner (optional):', st.owner||'');
         st.owner = (v||''); renderSubtaskRows(); markDirty();
       });
+      if (IS_ADMIN) {
+      addContextItem('Set Priority…', ()=>{
+              const cur = (typeof st.priority !== 'undefined' && st.priority !== null && String(st.priority).trim()!=='') ? String(st.priority) : '';
+              const v = prompt('Priority (1-5). Leave blank to clear:', cur);
+              if (v === null) return;
+              const vv = String(v).trim();
+              if (vv === '') { st.priority = ''; }
+              else {
+                const n = Number(vv);
+                if (!Number.isFinite(n) || n < 1 || n > 5) { alert('Priority must be 1-5 (or blank).'); return; }
+                st.priority = String(Math.round(n));
+              }
+              renderSubtaskRows(); markDirty();
+            });
+      
+      }
       addContextItem('Set Date/Duration…', ()=> openDateModalForSubtask(taskElem, idx));
       addContextItem('Delete Subtask', ()=>{
         taskElem._subtasks.splice(idx,1); renderSubtaskRows(); markDirty();
@@ -1859,6 +2439,10 @@ function serializeState(){
       baseHours:Number(t.dataset.baseHours||0),
       category:t.dataset.category||'Task',
       completed:isTaskComplete(t),
+      priority: (t.dataset.priority && String(t.dataset.priority).trim()!=='') ? Number(t.dataset.priority) : '',
+      nextAction: t.dataset.nextAction || '',
+      note: t.dataset.note || '',
+      tid: t.dataset.tid || '',
       order:idx,
       invoicePercent: (typeof t.dataset.invoicePercent !== 'undefined') ? Number(t.dataset.invoicePercent) : undefined,
       owner: t.dataset.owner || '',
@@ -1870,7 +2454,10 @@ function serializeState(){
         name:st.name, hours:Number(st.hours||0), done:!!st.done,
         owner: st.owner || '',
         date: st.date || '',
-        dateText: st.dateText || ''
+        dateText: st.dateText || '',
+        note: st.note || '',
+        priority: (typeof st.priority !== 'undefined' && st.priority !== null && String(st.priority).trim()!=='') ? Number(st.priority) : '',
+        sid: st.sid || ''
       }))
     }));
     return {
@@ -1915,6 +2502,10 @@ function loadState(state){
         baseHours:t.baseHours,
         category:t.category,
         completed:!!t.completed,
+        priority: (typeof t.priority !== 'undefined' && t.priority !== null && String(t.priority).trim()!=='') ? Number(t.priority) : '',
+        nextAction: t.nextAction || '',
+        note: t.note || '',
+        tid: t.tid || '',
         invoicePercent: (typeof t.invoicePercent!=='undefined')?t.invoicePercent:undefined,
         owner: t.owner || '',
         date: t.date || '',
@@ -1925,7 +2516,10 @@ function loadState(state){
           name:st.name, hours:st.hours, done:!!st.done,
           owner: st.owner || '',
           date: st.date || '',
-          dateText: st.dateText || ''
+          dateText: st.dateText || '',
+          priority: (typeof st.priority !== 'undefined' && st.priority !== null && String(st.priority).trim()!=='') ? Number(st.priority) : '',
+          note: st.note || '',
+          sid: st.sid || ''
         }))
       }))
     });
@@ -1936,6 +2530,7 @@ function loadState(state){
     }
     applyArchiveVisibility(proj);
   });
+  ensurePresaleBuckets();
 }
 
 async function saveToGoogle({silent=false} = ''){
@@ -2582,6 +3177,9 @@ function gatherAssignmentData(){
           subName: '— base —',
           subIndex: -1,
           hours: baseHours,
+          priority: (task.dataset.priority!==undefined && String(task.dataset.priority).trim()!=='' ? Number(task.dataset.priority) : 0),
+          nextAction: (task.dataset.nextAction || ''),
+          isPresale: (project.dataset.presaleBucket === 'true'),
           done: hasSubs ? null : (task.dataset.completed === 'true'),
           hasSubs,
           deadlineIso: taskDeadlineIso,
@@ -2608,6 +3206,7 @@ function gatherAssignmentData(){
           subName: st.name || '',
           subIndex: sIndex,
           hours: Number(st.hours || 0),
+          priority: Number((st && typeof st.priority !== 'undefined') ? st.priority: (task.dataset.priority||'')),
           done: !!st.done,
           hasSubs,
           deadlineIso: sDateIso,
@@ -2640,6 +3239,147 @@ function openAssignments(){
   assnBackdrop.style.display = 'flex';
 }
 function closeAssignments(){ assnBackdrop.style.display = 'none'; }
+
+/* -------------------- NOTES (Tasks & Subtasks) -------------------- */
+const notesBackdrop = document.getElementById('notes-backdrop');
+
+notesBackdrop.addEventListener('click', (e)=>{ if (e.target === notesBackdrop) closeNotesModal(); });
+const notesClose = document.getElementById('notes-close');
+const notesCloseX = document.getElementById('notes-close-x');
+const notesSave = document.getElementById('notes-save');
+const notesClear = document.getElementById('notes-clear');
+const notesText = document.getElementById('notes-text');
+const notesMeta = document.getElementById('notes-meta');
+const notesStatus = document.getElementById('notes-status');
+
+let notesCtx = { taskElem:null, subIndex:-1, draftKey:'' };
+
+function ensureTaskTid(taskElem){
+  if (!taskElem) return '';
+  if (!taskElem.dataset.tid){
+    taskElem.dataset.tid = 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+  }
+  return taskElem.dataset.tid;
+}
+function ensureSubSid(taskElem, subIndex){
+  if (!taskElem || !taskElem._subtasks || subIndex<0) return '';
+  const st = taskElem._subtasks[subIndex];
+  if (!st.sid){
+    st.sid = 's_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+  }
+  return st.sid;
+}
+function noteDraftKey(taskElem, subIndex){
+  const tid = ensureTaskTid(taskElem) || '';
+  if (subIndex>=0) {
+    const sid = ensureSubSid(taskElem, subIndex) || ('idx_' + subIndex);
+    return `PT_NOTE_DRAFT:sub:${tid}:${sid}`;
+  }
+  return `PT_NOTE_DRAFT:task:${tid}`;
+}
+function hasNoteDraft(taskElem, subIndex){
+  try{
+    const k = noteDraftKey(taskElem, subIndex);
+    const v = localStorage.getItem(k);
+    return !!(v && v.trim());
+  }catch{ return false; }
+}
+
+function openNotesModal(taskElem, subIndex=-1){
+  if (!taskElem) return;
+  ensureTaskTid(taskElem);
+  if (subIndex>=0) ensureSubSid(taskElem, subIndex);
+
+  notesCtx.taskElem = taskElem;
+  notesCtx.subIndex = subIndex;
+  notesCtx.draftKey = noteDraftKey(taskElem, subIndex);
+
+  const proj = taskElem.closest('.project');
+  const projName = proj ? (proj.querySelector('.project-header')?.childNodes?.[0]?.textContent || '').trim() : '';
+  const taskName = (taskElem.querySelector('.task-name')?.textContent || '').trim();
+  const subName = (subIndex>=0 && taskElem._subtasks && taskElem._subtasks[subIndex]) ? (taskElem._subtasks[subIndex].name||'') : '';
+
+  notesMeta.textContent = subIndex>=0 ? `Project: ${projName} • Task: ${taskName} • Subtask: ${subName}` : `Project: ${projName} • Task: ${taskName}`;
+  const saved = (subIndex>=0) ? (taskElem._subtasks[subIndex].note || '') : (taskElem.dataset.note || '');
+
+  let draft = '';
+  try { draft = localStorage.getItem(notesCtx.draftKey) || ''; } catch {}
+  const initial = (draft && draft.trim()) ? draft : (saved || '');
+  notesText.value = initial;
+
+  updateNotesStatus(saved, draft);
+  notesBackdrop.style.display = 'flex';
+  notesText.focus();
+}
+
+function closeNotesModal(){
+  // Commit textarea value into the task note field (staged until the main Save-to-Google).
+  if (notesCtx && notesCtx.taskElem){
+    const v = (notesText && typeof notesText.value !== 'undefined')
+      ? (notesText.value || '').trim()
+      : '';
+
+    const prev = (notesCtx.taskElem.dataset.note || '').trim();
+
+    // Only mark dirty if something actually changed
+    if (v !== prev){
+      notesCtx.taskElem.dataset.note = v;   // staged change
+      markDirty();                          // triggers your “unsaved changes” warning
+
+      // refresh indicators/views
+      assnState.rows = gatherAssignmentData();
+      renderAssignmentsTable();
+      if (typeof updateTaskNoteDot === 'function') updateTaskNoteDot(notesCtx.taskElem);
+
+      // keep existing visuals consistent
+      if (typeof updateSubtaskHours === 'function') updateSubtaskHours(notesCtx.taskElem);
+      if (typeof applyCompletionStyle === 'function') applyCompletionStyle(notesCtx.taskElem);
+    }
+  }
+
+  notesBackdrop.style.display = 'none';
+  notesCtx = { taskElem:null, subIndex:-1, draftKey:'' };
+}
+function updateNotesStatus(saved, draft){
+  const hasSaved = !!(saved && saved.trim());
+  const hasDraft = !!(draft && draft.trim());
+  if (hasDraft && (!hasSaved || draft.trim() !== (saved||'').trim())) {
+    notesStatus.textContent = 'Draft cached locally (not yet saved with project).';
+  } else if (hasSaved) {
+    notesStatus.textContent = 'Saved note exists.';
+  } else {
+    notesStatus.textContent = 'No note saved yet.';
+  }
+}
+
+if (notesText){
+  notesText.addEventListener('input', ()=>{
+    if (!notesCtx.taskElem) return;
+    try { localStorage.setItem(notesCtx.draftKey, notesText.value || ''); } catch {}
+    const saved = (notesCtx.subIndex>=0) ? (notesCtx.taskElem._subtasks[notesCtx.subIndex].note||'') : (notesCtx.taskElem.dataset.note||'');
+    let draft = ''; try { draft = localStorage.getItem(notesCtx.draftKey) || ''; } catch {}
+    updateNotesStatus(saved, draft);
+  });
+}
+
+if (notesSave){
+  notesSave.addEventListener('click', ()=>{ closeNotesModal(); });
+}
+
+if (notesClear){
+  notesClear.addEventListener('click', ()=>{
+    if (!notesCtx.taskElem) return;
+    if (!confirm('Clear this note?')) return;
+    notesText.value = '';
+    try { localStorage.setItem(notesCtx.draftKey, ''); } catch {}
+    const saved = (notesCtx.subIndex>=0) ? (notesCtx.taskElem._subtasks[notesCtx.subIndex].note||'') : (notesCtx.taskElem.dataset.note||'');
+    updateNotesStatus(saved, '');
+  });
+}
+
+[notesClose, notesCloseX].forEach(btn=>{
+  if (btn) btn.addEventListener('click', closeNotesModal);
+});
 
 function renderOwnerChips(){
   assnOwnerChips.innerHTML = '';
@@ -2750,8 +3490,8 @@ function renderAssignmentsTable(){
 
   if (!rows.length){
     const tr = document.createElement('tr');
-    const td = document.createElement('td');
-    td.colSpan = 8;
+const td = document.createElement('td');
+    td.colSpan = 10;
     td.style.color = '#666';
     td.style.fontSize = '12px';
     td.textContent = 'No matching rows.';
@@ -2763,11 +3503,51 @@ function renderAssignmentsTable(){
   rows.forEach(r=>{
     const tr = document.createElement('tr');
 
+    if (r.done) tr.classList.add('assn-row-done');
     const tdOwner = document.createElement('td'); tdOwner.textContent = r.owner;
     const tdProj  = document.createElement('td'); tdProj.textContent = r.projName;
     const tdTask  = document.createElement('td'); tdTask.textContent = r.taskName;
     const tdSub   = document.createElement('td'); tdSub.textContent  = r.subIndex>=0 ? r.subName : '— base —';
     const tdHours = document.createElement('td'); tdHours.textContent = String(r.hours||0);
+
+    // Priority (editable in Assignments; staged like hours)
+    const tdPriority = document.createElement('td');
+    if (IS_ADMIN) {
+      const wrap = document.createElement('div');
+      wrap.style.display = 'flex';
+      wrap.style.alignItems = 'center';
+      wrap.style.gap = '6px';
+      const range = document.createElement('input');
+      range.type = 'range';
+      range.min = '1';
+      range.max = '5';
+      range.step = '1';
+      range.value = String(((r.priority!==undefined && r.priority!==null && String(r.priority).trim()!=='' ) ? Number(r.priority) : 0));
+      range.style.width = '120px';
+      const lbl = document.createElement('span');
+      lbl.style.fontSize = '12px';
+      lbl.style.minWidth = '18px';
+      lbl.textContent = String(range.value);
+      range.addEventListener('input', ()=>{ lbl.textContent = String(range.value); });
+      range.addEventListener('change', ()=>{
+        const v = Number(range.value || 0);
+        if (r.subIndex >= 0) {
+          if (r.taskElem && r.taskElem._subtasks && r.taskElem._subtasks[r.subIndex]) {
+            r.taskElem._subtasks[r.subIndex].priority = v;
+          }
+        } else {
+          r.taskElem.dataset.priority = (String(v)==='0' ? '' : String(v));
+        }
+        markDirty();
+        assnState.rows = gatherAssignmentData();
+        renderAssignmentsTable();
+      });
+      wrap.appendChild(range);
+      wrap.appendChild(lbl);
+      tdPriority.appendChild(wrap);
+    } else {
+      tdPriority.textContent = String(((r.priority!==undefined && r.priority!==null && String(r.priority).trim()!=='' ) ? Number(r.priority) : 0));
+    }
 
     // Deadline pill
     const tdDeadline = document.createElement('td');
@@ -2798,10 +3578,17 @@ function renderAssignmentsTable(){
 
     const tdActions = document.createElement('td');
     tdActions.className = 'assn-actions';
+    // Force visibility/layout across browsers
+    tdActions.style.display = 'flex';
+    tdActions.style.flexWrap = 'wrap';
+    tdActions.style.gap = '6px';
+    tdActions.style.alignItems = 'center';
 
     // Complete (action button with confirmation)
     const btnComplete = document.createElement('button');
     btnComplete.className = 'btn-icon';
+    btnComplete.type = 'button';
+    btnComplete.style.display = 'inline-flex';
     btnComplete.textContent = 'Complete';
     const canComplete = (IS_ENGINEER || IS_ADMIN) && !(r.subIndex === -1 && r.hasSubs) && !r.done;
     btnComplete.disabled = !canComplete;
@@ -2829,6 +3616,8 @@ function renderAssignmentsTable(){
     // + Hours (engineer + admin)
     const btnHours = document.createElement('button');
     btnHours.className = 'btn-icon';
+    btnHours.type = 'button';
+    btnHours.style.display = 'inline-flex';
     btnHours.textContent = '+ Hours';
     btnHours.disabled = !(IS_ENGINEER || IS_ADMIN);
     btnHours.addEventListener('click', ()=>{
@@ -2836,23 +3625,42 @@ function renderAssignmentsTable(){
       const addRaw = prompt(`Add hours to ${r.subIndex>=0 ? 'subtask' : 'task base'}:`, '0');
       const add = Number(addRaw);
       if (!Number.isFinite(add) || add<=0) return;
+
+      // Update underlying task/subtask hours
+      let newHours = 0;
       if (r.subIndex>=0) {
-        const st = r.taskElem._subtasks[r.subIndex];
-        st.hours = (Number(st.hours)||0) + add;
+        const st = (r.taskElem && r.taskElem._subtasks) ? r.taskElem._subtasks[r.subIndex] : null;
+        if (!st) return;
+        newHours = (Number(st.hours)||0) + add;
+        st.hours = newHours;
       } else {
-        r.taskElem.dataset.baseHours = String((Number(r.taskElem.dataset.baseHours)||0) + add);
+        newHours = (Number(r.taskElem.dataset.baseHours)||0) + add;
+        r.taskElem.dataset.baseHours = String(newHours);
       }
+
+      // Also update the current row object (filtered array holds references)
+      r.hours = newHours;
+      // Refresh assignment rows from the DOM to ensure totals/filters reflect latest values
+      assnState.rows = gatherAssignmentData();
+      // Keep in-memory assignment rows in sync so the table totals update immediately
+      assnState.rows.forEach(row=>{
+        if (row.taskElem === r.taskElem && row.subIndex === r.subIndex) {
+          row.hours = newHours;
+        }
+      });
+
       updateSubtaskHours(r.taskElem);
       updateCurrentIndicator(r.taskElem.closest('.timeline'));
       applyCompletionStyle(r.taskElem);
       markDirty();
-      assnState.rows = gatherAssignmentData();
       renderAssignmentsTable();
     });
 
     // ✎ Owner (admin only)
     const btnOwner = document.createElement('button');
     btnOwner.className = 'btn-icon';
+    btnOwner.type = 'button';
+    btnOwner.style.display = 'inline-flex';
     btnOwner.textContent = '✎ Owner';
     if (IS_ADMIN) {
       btnOwner.addEventListener('click', ()=>{
@@ -2875,25 +3683,42 @@ function renderAssignmentsTable(){
 
     const btnOpen = document.createElement('button');
     btnOpen.className = 'btn-icon';
+    btnOpen.type = 'button';
+    btnOpen.style.display = 'inline-flex';
     btnOpen.textContent = '➜ Open';
     btnOpen.addEventListener('click', ()=>{
       r.taskElem.scrollIntoView({behavior:'smooth', block:'center'});
       setTimeout(()=> openSubtaskModal(r.taskElem), 250);
     });
 
+
+    const btnNotes = document.createElement('button');
+    btnNotes.className = 'btn-icon';
+    btnNotes.type = 'button';
+    btnNotes.style.display = 'inline-flex';
+    const scopeKey = (r.subIndex>=0) ? 'sub' : 'task';
+    const hasSaved = (r.subIndex>=0)
+      ? !!((r.taskElem._subtasks && r.taskElem._subtasks[r.subIndex] && (r.taskElem._subtasks[r.subIndex].note||'').trim()))
+      : !!((r.taskElem.dataset.note||'').trim());
+    const hasDraft = hasNoteDraft(r.taskElem, r.subIndex);
+    btnNotes.textContent = (hasSaved || hasDraft) ? '🗒 Notes*' : '🗒 Notes';
+    btnNotes.addEventListener('click', ()=>{
+      openNotesModal(r.taskElem, r.subIndex);
+    });
+
     tdActions.appendChild(btnComplete);
     tdActions.appendChild(btnHours);
     if (IS_ADMIN) tdActions.appendChild(btnOwner);
-    tdActions.appendChild(btnOpen);
+    // Removed Open/Notes buttons per request
 
     tr.appendChild(tdOwner);
     tr.appendChild(tdProj);
     tr.appendChild(tdTask);
     tr.appendChild(tdSub);
     tr.appendChild(tdHours);
-    tr.appendChild(tdDeadline);
-    tr.appendChild(tdDone);
-    tr.appendChild(tdActions);
+    tr.appendChild(tdPriority);
+        tr.appendChild(tdDeadline);
+tr.appendChild(tdActions);
 
     assnTbody.appendChild(tr);
   });
@@ -2902,7 +3727,7 @@ function renderAssignmentsTable(){
 function copyAssignmentsCSV(){
   const rows = assnState.rows.filter(rowMatchesFilters);
   const esc = s => `"${String(s).replace(/"/g,'""')}"`;
-  const header = ['Owner','Project','Task','Subtask','Hours','Deadline','Done'];
+  const header = ['Owner','Project','Task','Subtask','Hours','Priority','Next Action','Deadline','Done'];
   const lines = [header.map(esc).join(',')];
   rows.forEach(r=>{
     lines.push([
@@ -2911,6 +3736,8 @@ function copyAssignmentsCSV(){
       r.taskName,
       r.subIndex>=0 ? r.subName : '— base —',
       r.hours || 0,
+      ((r.priority!==undefined && r.priority!==null && String(r.priority).trim()!=='' ) ? r.priority : 0),
+      (r.isPresale ? (r.nextAction || '') : ''),
       r.deadlineIso || '',
       r.done===null ? '' : (r.done ? 'TRUE' : 'FALSE')
     ].map(esc).join(','));
@@ -2931,7 +3758,7 @@ function printAssignmentsView(){
   `;
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Assignments</title><style>'+styles+'</style></head><body>');
   w.document.write('<h3>Assignments</h3>');
-  w.document.write('<table><thead><tr><th>Owner</th><th>Project</th><th>Task</th><th>Subtask</th><th>Hours</th><th>Deadline</th><th>Done</th></tr></thead><tbody>');
+  w.document.write('<table><thead><tr><th>Owner</th><th>Project</th><th>Task</th><th>Subtask</th><th>Hours</th><th>Priority</th><th>Deadline</th></tr></thead><tbody>');
   rows.forEach(r=>{
     const deadline = r.deadlineIso ? (r.deadlineText || formatDateShort(r.deadlineIso)) : '—';
     const doneText = (r.done===null ? '' : (r.done ? 'Yes' : ''));
@@ -2939,6 +3766,8 @@ function printAssignmentsView(){
       '<tr><td>'+r.owner+'</td><td>'+r.projName+'</td><td>'+r.taskName+
       '</td><td>'+(r.subIndex>=0 ? r.subName : '— base —')+
       '</td><td>'+(r.hours||0)+
+      '</td><td>'+String(((r.priority!==undefined && r.priority!==null && String(r.priority).trim()!=='' ) ? r.priority : 0))+
+      '</td><td>'+ (r.isPresale ? (r.nextAction||'') : '') +
       '</td><td>'+deadline+
       '</td><td>'+doneText+'</td></tr>'
     );
@@ -2988,6 +3817,7 @@ assnPrint.addEventListener('click', printAssignmentsView);
   (async () => {
     try {
       await loadFromGoogle({forceApply:true});
+      ensurePresaleBuckets();
       // Hide inline project edit buttons for non-admin
       if (!IS_ADMIN) document.querySelectorAll('.edit-btn').forEach(b=>{ b.style.display='none'; b.disabled=true; });
       document.querySelectorAll('.timeline-item').forEach(updateTaskIcon);
@@ -3397,4 +4227,3 @@ assnPrint.addEventListener('click', printAssignmentsView);
 
 </body>
 </html>
-
