@@ -787,16 +787,16 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
         <div class="tab-pane" id="tab-risk">
           <div class="settings-section-title">Risk Assessment</div>
           <div style="display:grid; gap:10px;">
-            <label>GitHub XLSM URL (blob or raw)
+            <label>GitHub xlsx URL (blob or raw)
               <input id="set-risk-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsm">
+                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsx">
               <div style="font-size:11px; color:#666; margin-top:4px;">
                 Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
               </div>
             </label>
             <label>Filename Pattern
               <input id="set-risk-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm">
+                     placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx">
               <div style="font-size:11px; color:#666; margin-top:4px;">
                 Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
               </div>
@@ -1323,7 +1323,7 @@ const Settings = {
 
     /* Risk Assessment download settings */
     riskGithubUrl: '',
-    riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm',
+    riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx',
 
 
     /* Proof of Delivery download settings */
@@ -2271,7 +2271,7 @@ invComplete.addEventListener('click', ()=>{
   alert('Marked invoice task as complete.');
 });
 
-/* ---------- GitHub XLSM downloader ---------- */
+/* ---------- GitHub xlsx downloader ---------- */
 function toRawGithub(urlStr){
   try {
     const u = new URL(urlStr);
@@ -2306,7 +2306,7 @@ function toRawGithub(urlStr){
   } catch (_){ return null; }
 }
 function buildRiskFileName(details){
-  const pattern = (Settings.data.riskFileNamePattern || '').trim() || 'Risk Assessment [YYYY-MM-DD].xlsm';
+  const pattern = (Settings.data.riskFileNamePattern || '').trim() || 'Risk Assessment [YYYY-MM-DD].xlsx';
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = pad2(now.getMonth()+1);
@@ -2330,14 +2330,14 @@ function buildRiskFileName(details){
     return Object.prototype.hasOwnProperty.call(tokenMap, k) ? tokenMap[k] : `[${keyRaw}]`;
   });
 
-  const ext = out.toLowerCase().endsWith('.xlsm') ? '' : '.xlsm';
+  const ext = out.toLowerCase().endsWith('.xlsx') ? '' : '.xlsx';
   const safe = (out + ext).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
-  return safe || `Risk Assessment ${yyyy}-${mm}-${dd}.xlsm`;
+  return safe || `Risk Assessment ${yyyy}-${mm}-${dd}.xlsx`;
 }
 async function downloadRiskFromGithub(taskElem){
   try{
     const urlInput = (Settings.data.riskGithubUrl || '').trim();
-    if (!urlInput) { alert('Please set the GitHub XLSM URL in Settings.'); return; }
+    if (!urlInput) { alert('Please set the GitHub xlsx URL in Settings.'); return; }
     const rawUrl = toRawGithub(urlInput);
     if (!rawUrl) { alert('The GitHub URL does not look valid. Paste a public blob/raw link.'); return; }
 
@@ -2348,7 +2348,7 @@ async function downloadRiskFromGithub(taskElem){
     const res = await fetch(rawUrl, { mode:'cors', cache:'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const blob = await res.blob();
-    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.ms-excel.sheet.macroEnabled.12' });
+    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
     const a = document.createElement('a');
     const href = URL.createObjectURL(finalBlob);
@@ -3083,7 +3083,7 @@ if (settingsSave) settingsSave.addEventListener('click', async ()=>{
 
   // Risk
   Settings.data.riskGithubUrl = setRiskGithub.value.trim();
-  Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsm';
+  Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx';
 
   // Proof of Delivery
   Settings.data.podGithubUrl = setPodGithub.value.trim();
@@ -4227,3 +4227,4 @@ assnPrint.addEventListener('click', printAssignmentsView);
 
 </body>
 </html>
+
