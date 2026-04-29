@@ -131,7 +131,9 @@
   body.ro .edit-btn,
   body.ro #ready-invoice-btn,
   body.ro #risk-btn,
-  body.ro #pod-btn { display: none !important; }
+  body.ro #pod-btn,
+  body.ro #signoff-btn,
+  body.ro #doc-btn { display: none !important; }
 
   /* === MODE-SPECIFIC UI VISIBILITY (Admin / Engineer / View) === */
   /* View-only: also hide Assignments entrypoint */
@@ -144,7 +146,8 @@
   body.mode-engineer #settingsBtn,
   body.mode-engineer .edit-btn,
   body.mode-engineer #ready-invoice-btn,
-  body.mode-engineer #risk-btn { display: none !important; }
+  body.mode-engineer #risk-btn,
+  body.mode-engineer #doc-btn { display: none !important; }
 
   .settings-section-title { font-weight:700; margin-top:14px; }
   .reorder-list { margin-top:6px; display:flex; flex-direction:column; gap:6px; }
@@ -337,6 +340,23 @@
   .dtl-ghost { opacity:.5; }
   .dtl-muted { color:#888; font-size:11px; margin-top:6px; }
   .dtl-inline-note { font-size:11px; color:#666; }
+
+
+  /* Documents settings */
+  #settings-backdrop .modal { width: 1120px; max-width: calc(100% - 40px); }
+  #settings-backdrop .modal-body { padding: 18px 24px; }
+  #settings-backdrop .modal-footer { padding: 12px 24px; }
+  #tab-documents { padding: 6px 8px 14px; }
+  .doc-settings-list { display:flex; flex-direction:column; gap:12px; margin-top:12px; padding-right:8px; }
+  .doc-row { display:grid; grid-template-columns: 1fr 1.35fr 1.35fr 1fr auto; gap:12px; align-items:start; padding:14px; border:1px solid #e2e2e2; border-radius:10px; background:#fafafa; }
+  .doc-row label { font-size:11px; color:#555; display:grid; gap:4px; }
+  .doc-row input, .doc-row textarea { width:100%; box-sizing:border-box; padding:6px; border:1px solid #ddd; border-radius:6px; font-size:12px; font-family:inherit; }
+  .doc-row textarea { min-height:31px; resize:vertical; }
+  .doc-row .doc-actions { display:flex; gap:6px; justify-content:flex-end; align-items:end; padding-top:17px; }
+  .doc-help { font-size:11px; color:#666; margin-top:6px; line-height:1.35; }
+  .doc-modal-note { font-size:11px; color:#666; align-self:center; max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @media (max-width: 1000px) { .doc-row { grid-template-columns: 1fr; } .doc-row .doc-actions { justify-content:flex-start; padding-top:0; } }
+
 
   @media print {
     body { background: #fff; padding: 0; }
@@ -679,8 +699,8 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           <span><b>Total:</b> 0</span>
         </div>
         <button id="ready-invoice-btn" class="btn" style="display:none;">Ready to Invoice…</button>
-        <button id="risk-btn" class="btn" style="display:none;">Create Risk Assessment…</button>
-        <button id="pod-btn" class="btn" style="display:none;">Create Proof of Delivery…</button>
+        <button id="doc-btn" class="btn" style="display:none;">Create Document…</button>
+        <span id="doc-note" class="doc-modal-note" style="display:none;"></span>
                 <button id="task-notes-btn" class="btn btn-ghost" style="margin-right:6px;">🗒 Notes</button>
 <button id="subtask-modal-done" class="btn btn-primary">Done</button>
       </div>
@@ -714,7 +734,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
 
   <!-- Settings Modal (Tabbed) -->
   <div id="settings-backdrop" class="modal-backdrop">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" style="width:1000px; max-width:calc(100% - 32px);">
       <div class="modal-header">
         <div id="settings-title">Settings</div>
         <button id="settings-close" class="modal-close" title="Close">✕</button>
@@ -726,8 +746,7 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           <button class="tab-btn" data-tab="tab-archived">Archived Projects</button>
           <button class="tab-btn" data-tab="tab-invoice">Invoice Contacts</button>
           <button class="tab-btn" data-tab="tab-timeline">Default Timeline</button>
-          <button class="tab-btn" data-tab="tab-risk">Risk Assessment</button>
-          <button class="tab-btn" data-tab="tab-pod">Proof of Delivery</button>
+          <button class="tab-btn" data-tab="tab-documents">Documents</button>
         </div>
 
         <!-- Project Order -->
@@ -738,7 +757,6 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
             <div style="font-size:11px; color:#666; margin-top:4px;">Drag to change display/save order.</div>
           </div>
         </div>
-
 
         <!-- Archived Projects -->
         <div class="tab-pane" id="tab-archived">
@@ -783,51 +801,24 @@ body.mode-engineer #saveGoogleBtn { display: inline-block !important; }
           <div class="dtl-help">Fields: <b>Name</b>, <b>Category</b> (Task, Invoice, External), and optional <b>Invoice %</b> (visible when Category = Invoice). Drag ☰ to reorder.</div>
         </div>
 
-        <!-- Risk Assessment -->
-        <div class="tab-pane" id="tab-risk">
-          <div class="settings-section-title">Risk Assessment</div>
-          <div style="display:grid; gap:10px;">
-            <label>GitHub xlsx URL (blob or raw)
-              <input id="set-risk-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.xlsx">
-              <div style="font-size:11px; color:#666; margin-top:4px;">
-                Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
-              </div>
-            </label>
-            <label>Filename Pattern
-              <input id="set-risk-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx">
-              <div style="font-size:11px; color:#666; margin-top:4px;">
-                Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
-              </div>
-            </label>
+        <!-- Documents -->
+        <div class="tab-pane" id="tab-documents">
+          <div class="settings-section-title">Documents Settings</div>
+          <div class="doc-help">
+            Add one row per document type. When a task name matches <b>Tag To Include</b>, the subtask modal will show a document button that downloads the GitHub file and renames it using the filename pattern.
+            <br>Tokens: <b>[Customer]</b> <b>[Project]</b> <b>[Application]</b> <b>[SalesOrder]</b> <b>[PO]</b> <b>[Robot]</b> <b>[YYYY]</b> <b>[MM]</b> <b>[DD]</b> <b>[YYYY-MM-DD]</b> <b>[MM-DD-YYYY]</b> <b>[MM DD YYYY]</b>
           </div>
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="doc-add" class="btn">+ Add Document</button>
+            <button id="doc-reset" class="btn btn-ghost">Reset Defaults</button>
+          </div>
+          <div id="doc-list" class="doc-settings-list"></div>
         </div>
       </div>
 
-        <!-- Proof of Delivery -->
-        <div class="tab-pane" id="tab-pod">
-          <div class="settings-section-title">Proof of Delivery</div>
-          <div style="display:grid; gap:10px;">
-            <label>GitHub DOCX URL (blob or raw)
-              <input id="set-pod-github" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="https://github.com/&lt;owner&gt;/&lt;repo&gt;/blob/main/path/file.docx">
-              <div style="font-size:11px; color:#666; margin-top:4px;">
-                Paste a public repo URL. We auto-convert to <code>raw.githubusercontent.com</code> for download.
-              </div>
-            </label>
-            <label>Filename Pattern
-              <input id="set-pod-pattern" style="width:100%; padding:6px; border:1px solid #ddd; border-radius:6px;"
-                     placeholder="[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx">
-              <div style="font-size:11px; color:#666; margin-top:4px;">
-                Tokens: [Customer] [Project] [Application] [SalesOrder] [PO] [Robot] [YYYY] [MM] [DD] [YYYY-MM-DD] [MM-DD-YYYY] [MM DD YYYY]
-              </div>
-            </label>
-          </div>
-        </div>
-
-      <div class="modal-footer" style="grid-template-columns:1fr auto;">
+      <div class="modal-footer" style="grid-template-columns:1fr auto auto;">
         <div></div>
+        <button id="settings-cancel" class="btn">Cancel</button>
         <button id="settings-save" class="btn btn-primary">Save</button>
       </div>
     </div>
@@ -1321,14 +1312,38 @@ const Settings = {
     finalName: 'Zach',
     finalEmail: 'zschuchardt@gogcg.com',
 
-    /* Risk Assessment download settings */
-    riskGithubUrl: '',
+    /* Configurable document download settings */
+    documents: [
+      {
+        tag: 'Risk Assessment',
+        buttonLabel: 'Create Risk Assessment…',
+        githubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/New%20Risk%20Assessment%20Template.xlsx',
+        fileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx',
+        note: 'Use for project risk assessment template.'
+      },
+      {
+        tag: 'Proof of Delivery',
+        buttonLabel: 'Create Proof of Delivery…',
+        githubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/Proof%20of%20Delivery%20Document.docx',
+        fileNamePattern: '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx',
+        note: 'Use for hardware-only delivery confirmation.'
+      },
+      {
+        tag: 'Project Signoff',
+        buttonLabel: 'Create Project Signoff…',
+        githubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/Project%20Signoff.docx',
+        fileNamePattern: '[Customer], [Project], Project Signoff, [MM DD YYYY].docx',
+        note: 'Use for project closeout / final signoff.'
+      }
+    ],
+
+    /* Legacy fields are kept only so older saved settings can migrate safely */
+    riskGithubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/New%20Risk%20Assessment%20Template.xlsx',
     riskFileNamePattern: '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx',
-
-
-    /* Proof of Delivery download settings */
-    podGithubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/GCG%20AFS_Acceptance%20Testing%20Sign%20Off%20v1.0.docx',
+    podGithubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/Proof%20of%20Delivery%20Document.docx',
     podFileNamePattern: '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx',
+    signoffGithubUrl: 'https://github.com/aarond7198/robotics-dashboard/blob/main/Project%20Signoff.docx',
+    signoffFileNamePattern: '[Customer], [Project], Project Signoff, [MM DD YYYY].docx',
 
     /* Editable default timeline */
     defaultTimeline: []   // falls back to DEFAULT_TIMELINE if empty
@@ -1337,6 +1352,48 @@ const Settings = {
   save() { /* no-op */ }
 };
 Settings.load();
+
+function getDefaultDocuments(){
+  return [
+    {
+      tag: 'Risk Assessment',
+      buttonLabel: 'Create Risk Assessment…',
+      githubUrl: Settings.data.riskGithubUrl || 'https://github.com/aarond7198/robotics-dashboard/blob/main/New%20Risk%20Assessment%20Template.xlsx',
+      fileNamePattern: Settings.data.riskFileNamePattern || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx',
+      note: 'Use for project risk assessment template.'
+    },
+    {
+      tag: 'Proof of Delivery',
+      buttonLabel: 'Create Proof of Delivery…',
+      githubUrl: Settings.data.podGithubUrl || 'https://github.com/aarond7198/robotics-dashboard/blob/main/Proof%20of%20Delivery%20Document.docx',
+      fileNamePattern: Settings.data.podFileNamePattern || '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx',
+      note: 'Use for hardware-only delivery confirmation.'
+    },
+    {
+      tag: 'Project Signoff',
+      buttonLabel: 'Create Project Signoff…',
+      githubUrl: Settings.data.signoffGithubUrl || 'https://github.com/aarond7198/robotics-dashboard/blob/main/Project%20Signoff.docx',
+      fileNamePattern: Settings.data.signoffFileNamePattern || '[Customer], [Project], Project Signoff, [MM DD YYYY].docx',
+      note: 'Use for project closeout / final signoff.'
+    }
+  ];
+}
+
+function normalizeDocumentSettings(){
+  let docs = Array.isArray(Settings.data.documents) ? Settings.data.documents : [];
+  if (!docs.length) docs = getDefaultDocuments();
+  Settings.data.documents = docs
+    .filter(d => d && (String(d.tag||'').trim() || String(d.githubUrl||'').trim() || String(d.fileNamePattern||'').trim()))
+    .map(d => ({
+      tag: String(d.tag || '').trim(),
+      buttonLabel: String(d.buttonLabel || '').trim() || (String(d.tag || '').trim() ? `Create ${String(d.tag).trim()}…` : 'Create Document…'),
+      githubUrl: String(d.githubUrl || '').trim(),
+      fileNamePattern: String(d.fileNamePattern || '').trim(),
+      note: String(d.note || '').trim()
+    }));
+}
+normalizeDocumentSettings();
+
 
 /* Archive / Restore projects */
 let SHOW_ARCHIVED = false;
@@ -1772,8 +1829,8 @@ const addSubtaskBtn=document.getElementById('add-subtask-btn');
 const addSubtaskWrap=document.getElementById('add-subtask-wrap');
 const modalSummary=document.getElementById('modal-summary');
 const readyInvoiceBtn=document.getElementById('ready-invoice-btn');
-const riskBtn = document.getElementById('risk-btn');
-const podBtn  = document.getElementById('pod-btn');
+const docBtn = document.getElementById('doc-btn');
+const docNote = document.getElementById('doc-note');
 let currentTask=null;
 
 function openSubtaskModal(taskElem){
@@ -1786,13 +1843,18 @@ function openSubtaskModal(taskElem){
   readyInvoiceBtn.style.display = (IS_ADMIN && isInv) ? 'inline-block' : 'none';
   readyInvoiceBtn.onclick = (IS_ADMIN && isInv) ? (()=>openInvoiceModal(taskElem)) : null;
 
-  const isRisk = /^risk\s*assessment$/i.test(taskName.trim());
-  riskBtn.style.display = (IS_ADMIN && isRisk) ? 'inline-block' : 'none';
-  riskBtn.onclick = (IS_ADMIN && isRisk) ? (()=>downloadRiskFromGithub(taskElem)) : null;
-
-  const isPOD = /^proof\s*of\s*delivery$/i.test(taskName.trim());
-  podBtn.style.display = (IS_ADMIN && isPOD) ? 'inline-block' : 'none';
-  podBtn.onclick = (IS_ADMIN && isPOD) ? (()=>downloadPODFromGithub(taskElem)) : null;
+  normalizeDocumentSettings();
+  const docCfg = findDocumentConfigForTaskName(taskName);
+  if (docBtn) {
+    docBtn.style.display = (IS_ADMIN && docCfg) ? 'inline-block' : 'none';
+    docBtn.textContent = docCfg ? (docCfg.buttonLabel || `Create ${docCfg.tag}…`) : 'Create Document…';
+    docBtn.onclick = (IS_ADMIN && docCfg) ? (()=>downloadConfiguredDocumentFromGithub(taskElem, docCfg)) : null;
+  }
+  if (docNote) {
+    docNote.style.display = (IS_ADMIN && docCfg && docCfg.note) ? 'inline-block' : 'none';
+    docNote.textContent = docCfg && docCfg.note ? docCfg.note : '';
+    docNote.title = docNote.textContent;
+  }
 
   addSubtaskWrap.style.display = IS_ADMIN ? 'block' : 'none';
   if (taskNotesBtn) taskNotesBtn.style.display = (IS_VIEW ? 'none' : 'inline-block');
@@ -2271,7 +2333,7 @@ invComplete.addEventListener('click', ()=>{
   alert('Marked invoice task as complete.');
 });
 
-/* ---------- GitHub xlsx downloader ---------- */
+/* ---------- GitHub document downloader ---------- */
 function toRawGithub(urlStr){
   try {
     const u = new URL(urlStr);
@@ -2286,86 +2348,51 @@ function toRawGithub(urlStr){
     let ref = '';
     let pathParts = [];
 
-    if (kind === 'blob' || kind === 'raw' || kind === 'tree') {
-      if (parts[3] === 'refs' && parts[4] === 'heads' && parts[5]) {
-        ref = parts[5];
-        pathParts = parts.slice(6);
-      } else {
-        ref = parts[3];
-        pathParts = parts.slice(4);
-      }
-    } else if (kind === 'refs' && parts[3] === 'heads' && parts[4]) {
-      ref = parts[4];
-      pathParts = parts.slice(5);
+    if (kind === 'blob' || kind === 'raw') {
+      if (parts.length < 5) return null;
+      ref = parts[3];
+      pathParts = parts.slice(4);
     } else {
       return null;
     }
-
-    const path = pathParts.join('/');
-    return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
-  } catch (_){ return null; }
-}
-function buildRiskFileName(details){
-  const pattern = (Settings.data.riskFileNamePattern || '').trim() || 'Risk Assessment [YYYY-MM-DD].xlsx';
-  const now = new Date();
-  const yyyy = String(now.getFullYear());
-  const mm = pad2(now.getMonth()+1);
-  const dd = pad2(now.getDate());
-
-  const tokenMap = {
-    'CUSTOMER': details.customer || '',
-    'PROJECT': details.projName || '',
-    'APPLICATION': details.application || '',
-    'SALESORDER': details.salesOrder || '',
-    'PO': details.poNumber || '',
-    'ROBOT': normalizeRobot(details.robot || '') || '',
-    'YYYY': yyyy, 'MM': mm, 'DD': dd,
-    'YYYY-MM-DD': `${yyyy}-${mm}-${dd}`,
-    'MM-DD-YYYY': `${mm}-${dd}-${yyyy}`,
-    'MM DD YYYY': `${mm} ${dd} ${yyyy}`
-  };
-
-  const out = pattern.replace(/\[([^\]]+)\]/g, (_, keyRaw)=>{
-    const k = String(keyRaw || '').trim().toUpperCase();
-    return Object.prototype.hasOwnProperty.call(tokenMap, k) ? tokenMap[k] : `[${keyRaw}]`;
-  });
-
-  const ext = out.toLowerCase().endsWith('.xlsx') ? '' : '.xlsx';
-  const safe = (out + ext).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
-  return safe || `Risk Assessment ${yyyy}-${mm}-${dd}.xlsx`;
-}
-async function downloadRiskFromGithub(taskElem){
-  try{
-    const urlInput = (Settings.data.riskGithubUrl || '').trim();
-    if (!urlInput) { alert('Please set the GitHub xlsx URL in Settings.'); return; }
-    const rawUrl = toRawGithub(urlInput);
-    if (!rawUrl) { alert('The GitHub URL does not look valid. Paste a public blob/raw link.'); return; }
-
-    const details = getProjectDetails(taskElem);
-    const filename = buildRiskFileName(details);
-
-    showLoading(true);
-    const res = await fetch(rawUrl, { mode:'cors', cache:'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    const blob = await res.blob();
-    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-    const a = document.createElement('a');
-    const href = URL.createObjectURL(finalBlob);
-    a.href = href;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(href); a.remove(); }, 0);
-  } catch (e){
-    alert('Download failed: ' + e.message + '\n\nTips:\n• Repo must be public\n• Use a blob/raw URL and Save Settings\n• We auto-convert to raw.githubusercontent.com');
-  } finally {
-    showLoading(false);
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${pathParts.join('/')}`;
+  } catch(e){
+    return null;
   }
 }
 
-function buildPODFileName(details){
-  const pattern = (Settings.data.podFileNamePattern || '').trim() || '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx';
+function findDocumentConfigForTaskName(taskName){
+  const taskKey = String(taskName || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  if (!taskKey) return null;
+  const docs = Array.isArray(Settings.data.documents) ? Settings.data.documents : [];
+  return docs.find(d => String(d.tag || '').trim().replace(/\s+/g, ' ').toLowerCase() === taskKey) || null;
+}
+
+function getDocExt(doc){
+  const pattern = String(doc.fileNamePattern || '').trim().split(/[?#]/)[0];
+  const url = String(doc.githubUrl || '').trim().split(/[?#]/)[0];
+  const pExt = (pattern.match(/\.([A-Za-z0-9]{2,8})$/) || [])[1];
+  const uExt = (decodeURIComponent(url).match(/\.([A-Za-z0-9]{2,8})$/) || [])[1];
+  return (pExt || uExt || 'docx').toLowerCase();
+}
+
+function getMimeForExt(ext){
+  const e = String(ext || '').toLowerCase().replace(/^\./,'');
+  const map = {
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    pdf: 'application/pdf',
+    csv: 'text/csv',
+    txt: 'text/plain'
+  };
+  return map[e] || 'application/octet-stream';
+}
+
+function buildConfiguredDocumentFileName(details, doc){
+  const ext = getDocExt(doc);
+  const fallbackPattern = `[Customer], [Project], ${doc.tag || 'Document'}, [MM DD YYYY].${ext}`;
+  const pattern = (doc.fileNamePattern || '').trim() || fallbackPattern;
   const now = new Date();
   const yyyy = String(now.getFullYear());
   const mm = pad2(now.getMonth()+1);
@@ -2389,26 +2416,28 @@ function buildPODFileName(details){
     return Object.prototype.hasOwnProperty.call(tokenMap, k) ? tokenMap[k] : `[${keyRaw}]`;
   });
 
-  const ext = out.toLowerCase().endsWith('.docx') ? '' : '.docx';
-  const safe = (out + ext).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
-  return safe || `Proof of Delivery ${mm} ${dd} ${yyyy}.docx`;
+  const hasExt = new RegExp('\\.' + ext.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i').test(out);
+  const safe = (out + (hasExt ? '' : `.${ext}`)).replace(/[\\\/\?\*\|"<>\:]+/g, '-').replace(/\s{2,}/g,' ').trim();
+  return safe || `${doc.tag || 'Document'} ${mm} ${dd} ${yyyy}.${ext}`;
 }
 
-async function downloadPODFromGithub(taskElem){
+async function downloadConfiguredDocumentFromGithub(taskElem, doc){
   try{
-    const urlInput = (Settings.data.podGithubUrl || '').trim();
-    if (!urlInput) { alert('Please set the Proof of Delivery DOCX URL in Settings.'); return; }
+    const urlInput = (doc.githubUrl || '').trim();
+    const label = doc.tag || 'Document';
+    if (!urlInput) { alert(`Please set the GitHub URL for ${label} in Settings > Documents.`); return; }
     const rawUrl = toRawGithub(urlInput);
     if (!rawUrl) { alert('The GitHub URL does not look valid. Paste a public blob/raw link.'); return; }
 
     const details = getProjectDetails(taskElem);
-    const filename = buildPODFileName(details);
+    const filename = buildConfiguredDocumentFileName(details, doc);
+    const ext = getDocExt(doc);
 
     showLoading(true);
     const res = await fetch(rawUrl, { mode:'cors', cache:'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
     const blob = await res.blob();
-    const finalBlob = blob.type ? blob : new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const finalBlob = blob.type ? blob : new Blob([blob], { type: getMimeForExt(ext) });
 
     const a = document.createElement('a');
     const href = URL.createObjectURL(finalBlob);
@@ -2420,7 +2449,14 @@ async function downloadPODFromGithub(taskElem){
     setTimeout(()=>URL.revokeObjectURL(href), 1500);
   } catch (err) {
     console.error(err);
-    alert('Could not download Proof of Delivery file.\n\nTips:\n• Confirm the GitHub link is public\n• Use a blob/raw URL and Save Settings\n• We auto-convert to raw.githubusercontent.com');
+    const rawUrl = toRawGithub((doc.githubUrl || '').trim());
+    const fromLocalFile = window.location && window.location.protocol === 'file:';
+    if (rawUrl && fromLocalFile) {
+      const ok = confirm('The document could not be fetched while this tracker is opened as a local file. This can happen from the Downloads folder because browsers restrict local-file pages.\n\nOpen the raw GitHub file in a new tab instead?');
+      if (ok) window.open(rawUrl, '_blank', 'noopener');
+    } else {
+      alert('Could not download document file.\n\nTips:\n• Confirm the GitHub link is public\n• Use a blob/raw URL and Save Settings\n• We auto-convert to raw.githubusercontent.com\n• If testing from Downloads, try the hosted GitHub Pages version');
+    }
   } finally {
     showLoading(false);
   }
@@ -2485,6 +2521,7 @@ function loadState(state){
   if(!state) return;
   if (state.settings) {
     Settings.data = { ...Settings.data, ...state.settings };
+    normalizeDocumentSettings();
   }
   if(!state.projects) return;
   clearAllProjects();
@@ -2818,6 +2855,7 @@ if (printTabloidBtn) printTabloidBtn.addEventListener('click', ()=> exportPDFFit
 const settingsBackdrop = document.getElementById('settings-backdrop');
 const settingsClose = document.getElementById('settings-close');
 const settingsSave = document.getElementById('settings-save');
+const settingsCancel = document.getElementById('settings-cancel');
 
 /* Tabs */
 const settingsTabs = document.getElementById('settings-tabs');
@@ -2835,6 +2873,7 @@ function initTabs(){
     // Keep project lists fresh when switching tabs
     if (btn.dataset.tab === 'tab-order') buildProjectOrderList();
     if (btn.dataset.tab === 'tab-archived') buildArchivedProjectsList();
+    if (btn.dataset.tab === 'tab-documents') buildDocumentsList();
   });
 }
 
@@ -2919,13 +2958,110 @@ function attachReorderDnD(item){
   });
 }
 
-/* Risk fields */
-const setRiskGithub = document.getElementById('set-risk-github');
-const setRiskPattern = document.getElementById('set-risk-pattern');
+/* Documents settings fields */
+const docList = document.getElementById('doc-list');
+const docAdd = document.getElementById('doc-add');
+const docReset = document.getElementById('doc-reset');
+let docSettingsData = [];
 
-/* Proof of Delivery fields */
-const setPodGithub = document.getElementById('set-pod-github');
-const setPodPattern = document.getElementById('set-pod-pattern');
+
+function buildDocumentsList(){
+  normalizeDocumentSettings();
+  docSettingsData = (Settings.data.documents || []).map(d => ({ ...d }));
+  renderDocumentsList();
+}
+
+function htmlAttr(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function htmlText(s){
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderDocumentsList(){
+  if (!docList) return;
+  docList.innerHTML = '';
+  if (!docSettingsData.length){
+    const empty = document.createElement('div');
+    empty.className = 'dtl-muted';
+    empty.textContent = 'No document rows yet. Click “+ Add Document” to create one.';
+    docList.appendChild(empty);
+    return;
+  }
+
+  docSettingsData.forEach((doc, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'doc-row';
+    row.innerHTML = `
+      <label>Tag To Include
+        <input class="doc-tag" value="${htmlAttr(doc.tag)}" placeholder="Exact task name, e.g. Project Signoff">
+      </label>
+      <label>GitHub URL (blob or raw)
+        <input class="doc-url" value="${htmlAttr(doc.githubUrl)}" placeholder="https://github.com/<owner>/<repo>/blob/main/path/file.docx">
+      </label>
+      <label>Filename Pattern
+        <input class="doc-pattern" value="${htmlAttr(doc.fileNamePattern)}" placeholder="[Customer], [Project], ${htmlAttr(doc.tag || 'Document')}, [MM DD YYYY].docx">
+      </label>
+      <label>Button Label / Note
+        <input class="doc-label" value="${htmlAttr(doc.buttonLabel)}" placeholder="Create Document…">
+        <textarea class="doc-note-field" placeholder="Optional note shown in the subtask window">${htmlText(doc.note)}</textarea>
+      </label>
+      <div class="doc-actions">
+        <button class="btn-icon doc-dup" type="button">Copy</button>
+        <button class="btn-icon doc-del" type="button">Delete</button>
+      </div>
+    `;
+
+    const sync = ()=>{
+      docSettingsData[idx] = {
+        tag: row.querySelector('.doc-tag').value.trim(),
+        githubUrl: row.querySelector('.doc-url').value.trim(),
+        fileNamePattern: row.querySelector('.doc-pattern').value.trim(),
+        buttonLabel: row.querySelector('.doc-label').value.trim(),
+        note: row.querySelector('.doc-note-field').value.trim()
+      };
+    };
+    row.querySelectorAll('input, textarea').forEach(el=>el.addEventListener('input', sync));
+    row.querySelector('.doc-del').addEventListener('click', ()=>{
+      if (!confirm('Delete this document setting?')) return;
+      docSettingsData.splice(idx,1);
+      renderDocumentsList();
+    });
+    row.querySelector('.doc-dup').addEventListener('click', ()=>{
+      sync();
+      docSettingsData.splice(idx+1, 0, { ...docSettingsData[idx], tag: `${docSettingsData[idx].tag || 'Document'} Copy` });
+      renderDocumentsList();
+    });
+    docList.appendChild(row);
+  });
+}
+
+function collectDocumentsFromDOM(){
+  if (!docList) return [];
+  return [...docList.querySelectorAll('.doc-row')].map(row => ({
+    tag: row.querySelector('.doc-tag').value.trim(),
+    githubUrl: row.querySelector('.doc-url').value.trim(),
+    fileNamePattern: row.querySelector('.doc-pattern').value.trim(),
+    buttonLabel: row.querySelector('.doc-label').value.trim(),
+    note: row.querySelector('.doc-note-field').value.trim()
+  })).filter(d => d.tag || d.githubUrl || d.fileNamePattern || d.buttonLabel || d.note);
+}
+
+if (docAdd) docAdd.addEventListener('click', ()=>{
+  docSettingsData.push({
+    tag: 'New Document',
+    buttonLabel: 'Create Document…',
+    githubUrl: '',
+    fileNamePattern: '[Customer], [Project], New Document, [MM DD YYYY].docx',
+    note: ''
+  });
+  renderDocumentsList();
+});
+if (docReset) docReset.addEventListener('click', ()=>{
+  if (!confirm('Reset document settings to the default Risk Assessment, Proof of Delivery, and Project Signoff rows?')) return;
+  docSettingsData = getDefaultDocuments();
+  renderDocumentsList();
+});
 
 /* -------- Default Timeline Editor -------- */
 const dtlList = document.getElementById('dtl-list');
@@ -3050,13 +3186,8 @@ function openSettings(){
   setFinalName.value = Settings.data.finalName || '';
   setFinalEmail.value = Settings.data.finalEmail || '';
 
-  // Risk
-  setRiskGithub.value = Settings.data.riskGithubUrl || '';
-  setRiskPattern.value = Settings.data.riskFileNamePattern || '';
-
-  // Proof of Delivery
-  setPodGithub.value = Settings.data.podGithubUrl || '';
-  setPodPattern.value = Settings.data.podFileNamePattern || '';
+  // Documents
+  buildDocumentsList();
 
   // Project order
   buildProjectOrderList();
@@ -3072,7 +3203,12 @@ function openSettings(){
 function closeSettings(){ settingsBackdrop.style.display = 'none'; }
 if (settingsBtn) settingsBtn.addEventListener('click', ()=> { if (IS_ADMIN) openSettings(); });
 if (settingsClose) settingsClose.addEventListener('click', closeSettings);
-if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) closeSettings(); });
+if (settingsCancel) settingsCancel.addEventListener('click', closeSettings);
+// Do not close Settings by clicking the dark backdrop. This prevents accidental unsaved exits while editing long document URLs.
+if (settingsBackdrop) settingsBackdrop.addEventListener('click', e=>{ if(e.target===settingsBackdrop) e.stopPropagation(); });
+document.addEventListener('keydown', e=>{
+  if (e.key === 'Escape' && settingsBackdrop && settingsBackdrop.style.display === 'flex') closeSettings();
+});
 
 if (settingsSave) settingsSave.addEventListener('click', async ()=>{
   // Invoice contacts
@@ -3081,13 +3217,9 @@ if (settingsSave) settingsSave.addEventListener('click', async ()=>{
   Settings.data.finalName = setFinalName.value.trim() || 'Zach';
   Settings.data.finalEmail = setFinalEmail.value.trim() || 'zschuchardt@gogcg.com';
 
-  // Risk
-  Settings.data.riskGithubUrl = setRiskGithub.value.trim();
-  Settings.data.riskFileNamePattern = setRiskPattern.value.trim() || '[Customer] [Project] Risk Assessment [YYYY-MM-DD].xlsx';
-
-  // Proof of Delivery
-  Settings.data.podGithubUrl = setPodGithub.value.trim();
-  Settings.data.podFileNamePattern = setPodPattern.value.trim() || '[Customer], [Project], Proof of Delivery, [MM DD YYYY].docx';
+  // Documents
+  Settings.data.documents = collectDocumentsFromDOM();
+  normalizeDocumentSettings();
 
   // Project order
   const container = document.getElementById('project-container');
